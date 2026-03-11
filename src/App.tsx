@@ -233,6 +233,19 @@ function App() {
 
         const savedModelIds = settings.aiModels ?? ["gemini-flash-latest"];
 
+        // Tự động ép thêm các models mới vào danh sách hiển thị ngoài màn hình Chat
+        const forceModels = [
+          "gemini-3.1-flash-lite-preview",
+          "gemini-3-flash-preview",
+          "stepfun-ai/step-3.5-flash",
+          "meta/llama3-70b-instruct"
+        ];
+        forceModels.forEach(id => {
+          if (!savedModelIds.includes(id)) {
+            savedModelIds.push(id);
+          }
+        });
+
         const projectAiModels: AIModel[] = savedModelIds
           .map((id) => allAvailableModels.find((m) => m.id === id))
           .filter((m): m is AIModel => !!m);
