@@ -1,0 +1,90 @@
+// src-tauri/src/lib.rs
+
+// Khai báo các module
+pub mod commands;
+pub mod git_utils;
+pub mod group_updater;
+mod context_generator;
+mod file_cache;
+mod models;
+mod project_scanner;
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_fs::init())
+        .invoke_handler(tauri::generate_handler![
+            // THAY THẾ DÒNG NÀY
+            // commands::open_project,
+            commands::scan_project, // <-- COMMAND MỚI
+            commands::delete_project_data,
+            commands::load_profile_data, // <-- COMMAND MỚI
+            // ... (các command còn lại)
+            commands::get_file_content,
+            commands::read_file_with_lines,
+            commands::save_file_content,
+            commands::create_file,
+            commands::delete_file,
+            commands::update_groups_in_project_data,
+            commands::start_group_update,
+            commands::start_group_export,
+            commands::start_project_export,
+            commands::calculate_group_stats_from_cache,
+            commands::generate_directory_tree,
+            commands::update_file_exclusions,
+            commands::generate_group_context_for_ai,
+            commands::update_sync_settings,
+            commands::generate_group_context,
+            commands::generate_project_context,
+            commands::update_custom_ignore_patterns,
+            // Các command mới để quản lý hồ sơ
+            commands::list_profiles,
+            commands::create_profile,
+            commands::delete_profile,
+            commands::rename_profile,
+            commands::set_file_watching_setting,
+            commands::start_file_watching,
+            commands::stop_file_watching,
+            commands::list_groups_for_profile,
+            commands::clone_profile,
+            commands::set_export_use_full_tree_setting,
+            commands::set_export_with_line_numbers_setting,
+            commands::set_export_without_comments_setting, // <-- COMMAND MỚI
+            commands::set_export_remove_debug_logs_setting, // <-- COMMAND MỚI
+            commands::set_export_super_compressed_setting,
+            commands::get_expanded_files_for_group,
+            commands::update_group_paths_from_ai,
+            commands::set_export_exclude_extensions_setting, // <-- COMMAND MỚI
+            commands::set_always_apply_text_setting,
+            commands::get_app_settings,
+            commands::set_recent_paths,
+            commands::update_app_settings, // <-- COMMAND MỚI
+            commands::check_git_repository,
+            commands::get_git_commits, // SỬA LỖI: Thiếu dấu phẩy
+            commands::get_commit_diff,
+            commands::generate_commit_context,
+            commands::set_git_export_mode_setting,
+            commands::checkout_commit,
+            commands::checkout_branch,
+            commands::clone_git_repository,
+            commands::get_git_status,
+            // AI Chat History Commands
+            commands::list_chat_sessions,
+            commands::save_chat_session,
+            commands::load_chat_session,
+            commands::delete_chat_session,
+            commands::update_chat_session_title,
+            commands::create_chat_session,
+            commands::delete_all_chat_sessions,
+            // Checkpoint Commands
+            commands::create_checkpoint,
+            commands::revert_to_checkpoint,
+            commands::delete_checkpoint
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}

@@ -1,0 +1,187 @@
+// src/hooks/useSettingsScene.ts
+import { useState, useEffect } from "react";
+import { useAppStore, useAppActions } from "@/store/appStore";
+import { useShallow } from "zustand/react/shallow";
+import { open, message } from "@tauri-apps/plugin-dialog";
+
+export type SettingsTab =
+  | "appearance"
+  | "project"
+  | "profile"
+  | "export"
+  | "ai";
+
+export function useSettingsScene() {
+  const {
+    syncEnabled,
+    syncPath,
+    customIgnorePatterns,
+    activeProfile,
+    isWatchingFiles,
+    rootPath,
+    exportUseFullTree,
+    exportWithLineNumbers,
+    exportWithoutComments,
+    exportRemoveDebugLogs,
+    exportSuperCompressed,
+    alwaysApplyText,
+    exportExcludeExtensions,
+    gitExportModeIsContext,
+    googleApiKey,
+    openRouterApiKey,
+    aiModels, // This should be models
+    systemPrompt,
+    temperature,
+    topP,
+    topK,
+    maxTokens,
+    streamResponse,
+  } = useAppStore(
+    useShallow((state) => ({
+      syncEnabled: state.syncEnabled,
+      syncPath: state.syncPath,
+      customIgnorePatterns: state.customIgnorePatterns,
+      activeProfile: state.activeProfile,
+      isWatchingFiles: state.isWatchingFiles,
+      rootPath: state.rootPath,
+      exportUseFullTree: state.exportUseFullTree,
+      exportWithLineNumbers: state.exportWithLineNumbers,
+      exportWithoutComments: state.exportWithoutComments,
+      exportRemoveDebugLogs: state.exportRemoveDebugLogs,
+      exportSuperCompressed: state.exportSuperCompressed,
+      alwaysApplyText: state.alwaysApplyText,
+      exportExcludeExtensions: state.exportExcludeExtensions,
+      gitExportModeIsContext: state.gitExportModeIsContext,
+      googleApiKey: state.googleApiKey,
+      openRouterApiKey: state.openRouterApiKey,
+      aiModels: state.aiModels,
+      systemPrompt: state.systemPrompt,
+      temperature: state.temperature,
+      topP: state.topP,
+      topK: state.topK,
+      maxTokens: state.maxTokens,
+      streamResponse: state.streamResponse,
+    }))
+  );
+
+  const {
+    setSyncSettings,
+    setCustomIgnorePatterns,
+    setFileWatching,
+    showDashboard,
+    setExportUseFullTree,
+    setExportWithLineNumbers,
+    setExportWithoutComments,
+    setExportRemoveDebugLogs,
+    setExportSuperCompressed,
+    setAlwaysApplyText,
+    setExportExcludeExtensions,
+    setGitExportMode,
+    deleteCurrentProjectData,
+    updateAppSettings,
+  } = useAppActions();
+
+  const [activeTab, setActiveTab] = useState<SettingsTab>("appearance");
+  const [ignoreText, setIgnoreText] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleteProjectDialogOpen, setIsDeleteProjectDialogOpen] =
+    useState(false);
+
+  useEffect(() => {
+    setIgnoreText((customIgnorePatterns || []).join("\n"));
+  }, [customIgnorePatterns]);
+
+  const handleToggleSync = async (enabled: boolean) => {
+    if (enabled && !syncPath) {
+      await message(
+        "Bạn phải chọn một thư mục đồng bộ trước khi bật tính năng này.",
+        { title: "Cảnh báo", kind: "warning" }
+      );
+      return;
+    }
+    setSyncSettings({ enabled, path: syncPath });
+  };
+
+  const handleChooseSyncPath = async () => {
+    try {
+      const result = await open({
+        directory: true,
+        multiple: false,
+        title: "Chọn thư mục để tự động đồng bộ",
+      });
+      if (typeof result === "string") {
+        setSyncSettings({ enabled: true, path: result });
+      }
+    } catch (error) {
+      console.error("Lỗi khi chọn thư mục đồng bộ:", error);
+    }
+  };
+
+  const handleSaveIgnorePatterns = async () => {
+    setIsSaving(true);
+    try {
+      const patterns = ignoreText
+        .split("\n")
+        .map((p) => p.trim())
+        .filter((p) => p.length > 0);
+      await setCustomIgnorePatterns(patterns);
+      showDashboard();
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleConfirmDeleteProjectData = async () => {
+    await deleteCurrentProjectData();
+  };
+
+  return {
+    activeTab,
+    setActiveTab,
+    syncEnabled,
+    syncPath,
+    customIgnorePatterns,
+    activeProfile,
+    isWatchingFiles,
+    rootPath,
+    exportUseFullTree,
+    exportWithLineNumbers,
+    exportWithoutComments,
+    exportRemoveDebugLogs,
+    exportSuperCompressed,
+    alwaysApplyText,
+    exportExcludeExtensions,
+    showDashboard,
+    googleApiKey,
+    openRouterApiKey,
+    aiModels,
+    systemPrompt,
+    temperature,
+    topP,
+    topK,
+    maxTokens,
+    streamResponse,
+    updateAppSettings,
+    setSyncSettings,
+    setCustomIgnorePatterns,
+    setFileWatching,
+    setExportUseFullTree,
+    setExportWithLineNumbers,
+    setExportWithoutComments,
+    setExportRemoveDebugLogs,
+    setExportSuperCompressed,
+    setAlwaysApplyText,
+    setExportExcludeExtensions,
+    gitExportModeIsContext,
+    setGitExportMode,
+    handleToggleSync,
+    handleChooseSyncPath,
+    ignoreText,
+    setIgnoreText,
+    isSaving,
+    handleSaveIgnorePatterns,
+    isDeleteProjectDialogOpen,
+    setIsDeleteProjectDialogOpen,
+    handleConfirmDeleteProjectData,
+  };
+}

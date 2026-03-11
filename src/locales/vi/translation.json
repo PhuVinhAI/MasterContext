@@ -1,0 +1,420 @@
+{
+  "common": {
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "error": "Lỗi",
+    "success": "Thành công",
+    "close": "Đóng",
+    "saving": "Đang lưu...",
+    "saveChanges": "Lưu thay đổi",
+    "syncError": "Lỗi đồng bộ"
+  },
+  "appMenu": {
+    "file": {
+      "title": "Tệp",
+      "openNew": "Mở thư mục mới...",
+      "rescan": "Quét lại thư mục",
+      "exportProject": "Xuất ngữ cảnh dự án...",
+      "copyProject": "Sao chép ngữ cảnh dự án",
+      "closeProject": "Đóng dự án"
+    },
+    "window": {
+      "title": "Cửa sổ",
+      "projectPanel": "Bảng điều khiển Dự án",
+      "gitPanel": "Bảng điều khiển Git",
+      "groupEditorPanel": "Bảng điều khiển Chỉnh sửa Nhóm",
+      "editorPanel": "Bảng điều khiển Editor",
+      "aiPanel": "Bảng điều khiển AI (Beta)"
+    },
+    "errors": {
+      "initFailed": "Không thể khởi tạo menu ứng dụng.",
+      "criticalError": "Lỗi nghiêm trọng"
+    }
+  },
+  "notifications": {
+    "firstScanComplete": {
+      "title": "Quét lần đầu hoàn tất!",
+      "body": "Dữ liệu đã được lưu lại. Các lần quét sau cho dự án này sẽ nhanh hơn đáng kể."
+    }
+  },
+  "dialogs": {
+    "filters": {
+      "text": "Tệp văn bản"
+    },
+    "saveProjectContext": {
+      "title": "Lưu Ngữ cảnh Dự án"
+    },
+    "saveGroupContext": {
+      "title": "Lưu Ngữ cảnh cho nhóm \"{{name}}\""
+    },
+    "saveSuccess": {
+      "body": "Đã lưu file thành công!"
+    },
+    "copyGroupSuccess": {
+      "body": "Đã sao chép ngữ cảnh nhóm \"{{name}}\""
+    }
+  },
+  "analysisSettings": {
+    "title": "Cài đặt Phân tích Nội dung",
+    "description": "Các tệp có phần mở rộng dưới đây sẽ không được đọc nội dung để đếm token hoặc phân tích liên kết, giúp tăng tốc độ quét.",
+    "extensionsLabel": "Các phần mở rộng cần bỏ qua",
+    "extensionsPlaceholder": "png, svg, lock, jpg...",
+    "extensionsHint": "Phân cách các phần mở rộng bằng dấu phẩy (,)."
+  },
+  "editorPanel": {
+    "excludeSelection": "Loại trừ vùng đã chọn",
+    "clearExclusionsTooltip": "Xóa tất cả các vùng loại trừ",
+    "undoExclude": "Bỏ loại trừ",
+    "patchedTooltip": "File này đang được áp dụng một bản vá ảo.",
+    "resetPatch": "Hủy bỏ Diff",
+    "applyToFileTooltip": "Áp dụng bản vá vào file thực tế",
+    "newFileBadge": "Mới",
+    "deletedFileBadge": "Đã xóa"
+  },
+  "stagingPanel": {
+    "title": "{{count}} thay đổi đang chờ",
+    "acceptChange": "Chấp nhận thay đổi",
+    "discardChange": "Hủy bỏ thay đổi",
+    "acceptAll": "Chấp nhận tất cả",
+    "discardAll": "Hủy bỏ tất cả"
+  },
+  "gitPanel": {
+    "checking": "Đang kiểm tra kho Git...",
+    "notARepo": "Thư mục hiện tại không phải là một kho lưu trữ Git.",
+    "title": "Lịch sử Git",
+    "reloadTooltip": "Tải lại commits",
+    "copyContextTooltip": "Sao chép ngữ cảnh",
+    "copyDiffTooltip": "Sao chép diff",
+    "checkoutLatestTooltip": "Quay về trạng thái mới nhất (nhánh '{{branch}}')",
+    "checkoutCommitTooltip": "Quay về trạng thái của commit này",
+    "downloadContextTooltip": "Tải về ngữ cảnh",
+    "downloadDiffTooltip": "Tải về diff",
+    "author": "Tác giả",
+    "date": "Ngày commit",
+    "loadMore": "Tải thêm",
+    "checkoutDialog": {
+      "title": "Xác nhận Checkout Commit?",
+      "description": "Hành động này sẽ đưa dự án của bạn về trạng thái của commit <strong>{{sha}}</strong>.",
+      "warning": "Cảnh báo: Điều này sẽ đặt bạn vào trạng thái \"detached HEAD\". Mọi thay đổi chưa được commit sẽ bị mất. Hãy chắc chắn rằng bạn đã commit hoặc stash các thay đổi của mình.",
+      "confirm": "Xác nhận và Checkout"
+    }
+  },
+  "groupItem": {
+    "tokens": "tokens",
+    "menu": {
+      "rename": "Đổi tên",
+      "editTokenLimit": "Sửa giới hạn Token",
+      "attachToAi": "Đính kèm vào AI",
+      "copyContext": "Sao chép Ngữ cảnh",
+      "exportContext": "Xuất Ngữ cảnh",
+      "delete": "Xóa nhóm"
+    },
+    "deleteDialog": {
+      "title": "Bạn có chắc chắn muốn xóa?",
+      "description": "Hành động này không thể hoàn tác. Nhóm \"{{name}}\" sẽ bị xóa vĩnh viễn."
+    }
+  },
+  "groupManager": {
+    "noGroups": "Không có nhóm nào."
+  },
+  "inlineInputs": {
+    "profilePlaceholder": "Tên hồ sơ...",
+    "groupPlaceholder": "Tên nhóm..."
+  },
+  "statusBar": {
+    "gitBranchTooltip": "Nhánh Git hiện tại",
+    "totalFilesTooltip": "Tổng số tệp tin",
+    "totalDirsTooltip": "Tổng số thư mục",
+    "totalSizeTooltip": "Tổng dung lượng",
+    "tokensValue": "{{count}} tokens",
+    "tokensTooltip": "Ước tính số Tokens",
+    "loadingStats": "Đang tải thống kê...",
+    "settingsTooltip": "Mở cài đặt"
+  },
+  "themeToggle": {
+    "toggle": "Chuyển đổi chủ đề"
+  },
+  "tokenLimitEditor": {
+    "title": "Giới hạn Token",
+    "placeholder": "Không giới hạn"
+  },
+  "groupEditor": {
+    "title": "Chỉnh sửa: {{name}}",
+    "description": "Chọn các tệp và thư mục để đưa vào ngữ cảnh.",
+    "selectAll": "Chọn tất cả",
+    "deselectAll": "Bỏ chọn tất cả",
+    "searchPlaceholder": "Tìm kiếm tệp hoặc thư mục...",
+    "filterExcludedTooltip": "Lọc file có vùng bị loại trừ",
+    "unfilterExcludedTooltip": "Bỏ lọc",
+    "noExcludedFiles": "Không có file nào bị loại trừ.",
+    "filterChangedTooltip": "Lọc file có thay đổi trong Git",
+    "unfilterChangedTooltip": "Bỏ lọc file thay đổi",
+    "noChangedFiles": "Không tìm thấy file nào có thay đổi trong Git.",
+    "noSearchResults": "Không tìm thấy kết quả nào khớp với \"{{searchTerm}}\".",
+    "filterPatchedTooltip": "Lọc file đã áp dụng vá lỗi",
+    "unfilterPatchedTooltip": "Bỏ lọc file vá lỗi",
+    "noPatchedFiles": "Không tìm thấy file nào đã áp dụng vá lỗi.",
+    "filterAddedTooltip": "Lọc các file mới",
+    "unfilterAddedTooltip": "Bỏ lọc file mới",
+    "noAddedFiles": "Không có file mới nào đang chờ.",
+    "filterDeletedTooltip": "Lọc các file đã xóa",
+    "unfilterDeletedTooltip": "Bỏ lọc file đã xóa",
+    "noDeletedFiles": "Không có file đã xóa nào đang chờ."
+  },
+  "aiPanel": {
+    "title": "Trò chuyện AI",
+    "placeholder": "Nhập câu lệnh của bạn...",
+    "noApiKey": "Chưa có API key OpenRouter. Vui lòng thêm trong Cài đặt > AI.",
+    "error": "Đã xảy ra lỗi. Vui lòng kiểm tra API key và kết nối mạng.",
+    "responding": "Đang phản hồi...",
+    "newChat": "Cuộc trò chuyện mới",
+    "history": "Lịch sử",
+    "viewHistory": "Xem lịch sử",
+    "backToChat": "Quay lại trò chuyện",
+    "stopGenerating": "Dừng tạo",
+    "deleteChatDialog": {
+      "title": "Xác nhận xóa cuộc trò chuyện?",
+      "description": "Hành động này sẽ xóa vĩnh viễn cuộc trò chuyện. Không thể hoàn tác."
+    },
+    "clearAllHistory": "Xóa toàn bộ lịch sử",
+    "clearAllDialog": {
+      "title": "Xác nhận xóa toàn bộ lịch sử?",
+      "description": "Hành động này sẽ xóa vĩnh viễn TẤT CẢ các cuộc trò chuyện. Không thể hoàn tác."
+    },
+    "editPrompt": "Chỉnh sửa và gửi lại",
+    "cancelEdit": "Hủy chỉnh sửa",
+    "editingMode": "Đang chỉnh sửa tin nhắn cũ...",
+    "regenerate": "Tạo lại phản hồi",
+    "revertToCheckpoint": "Quay về điểm này",
+    "sessionTokensTooltip": "Token đã dùng / Tối đa",
+    "modes": {
+      "ask": "Ask",
+      "context": "Context",
+      "agent": "Agent"
+    },
+    "toolCall": {
+      "listingFiles": "Liệt kê tệp dự án",
+      "readingFile": "Đang đọc file",
+      "executingTool": "Thực thi công cụ",
+      "modifiedGroup": "Đã sửa đổi nhóm ngữ cảnh",
+      "listingGroupFiles": "Liệt kê tệp trong nhóm hiện tại",
+      "writingFileGeneric": "Đưa thao tác tệp vào hàng đợi",
+      "writeFileSuccess": "Đã đưa vào hàng đợi sửa đổi cho",
+      "writeFileError": "Không thể đưa vào hàng đợi sửa đổi cho",
+      "createFileSuccess": "Đã đưa vào hàng đợi tạo tệp",
+      "createFileError": "Không thể đưa vào hàng đợi tạo tệp",
+      "deleteFileSuccess": "Đã đưa vào hàng đợi xóa tệp",
+      "deleteFileError": "Không thể đưa vào hàng đợi xóa tệp"
+    },
+    "addedExclusion": "Đã thêm vùng loại trừ cho",
+    "addedExclusionError": "Không thể thêm vùng loại trừ cho",
+    "stagingDialog": {
+      "title": "Xác nhận áp dụng thay đổi",
+      "description": "Bạn có các thay đổi chưa được áp dụng. Bạn muốn áp dụng tất cả thay đổi hay hủy bỏ chúng trước khi tiếp tục?",
+      "acceptAll": "Áp dụng tất cả",
+      "discardAll": "Hủy bỏ tất cả"
+    },
+    "revertDialog": {
+      "title": "Khôi phục trạng thái dự án?",
+      "description": "Lượt này đã thực hiện các thay đổi đối với file dự án. Bạn có muốn khôi phục các file về trạng thái trước khi thực hiện lượt này không?",
+      "proceed": "Tiếp tục mà không khôi phục",
+      "revertAndProceed": "Khôi phục & Tiếp tục"
+    }
+  },
+  "mainPanel": {
+    "placeholder": {
+      "title": "Bảng điều khiển Chính",
+      "selectGroupOrFile": "Chọn một nhóm để chỉnh sửa hoặc nhấp vào một file để xem trước",
+      "noGroupSelected": "Chưa có nhóm nào được chọn để chỉnh sửa",
+      "noFileSelected": "Chưa có file nào được chọn để xem"
+    }
+  },
+  "scanning": {
+    "analyzing": "Đang phân tích nội dung...",
+    "scanning": "Đang phân tích dự án...",
+    "initializing": "Đang khởi tạo..."
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "description": "Tùy chỉnh các thiết lập cho ứng dụng.",
+    "profileBadge": "Hồ sơ",
+    "tabs": {
+      "appearance": "Giao diện",
+      "project": "Dự án",
+      "profile": "Hồ sơ",
+      "export": "Xuất File",
+      "ai": "AI"
+    },
+    "appearance": {
+      "title": "Cài đặt Giao diện",
+      "theme": "Chủ đề (Sáng/Tối)",
+      "language": "Ngôn ngữ"
+    },
+    "project": {
+      "title": "Cài đặt Toàn cục Dự án",
+      "watching": {
+        "title": "Theo dõi dự án",
+        "enable": {
+          "label": "Theo dõi thời gian thực",
+          "description": "Tự động quét lại khi có thay đổi file."
+        }
+      },
+      "ignore": {
+        "title": "Các mẫu loại trừ tùy chỉnh",
+        "label": "Mẫu Glob (một mẫu mỗi dòng)",
+        "placeholder": "dist/\n*.log\n__pycache__/",
+        "description": "Các mẫu này sẽ được sử dụng cùng với file .gitignore.",
+        "saveButton": "Lưu và Quét lại"
+      },
+      "dangerZone": {
+        "title": "Vùng nguy hiểm",
+        "deleteData": {
+          "label": "Xóa dữ liệu dự án",
+          "description": "Hành động này sẽ xóa tất cả hồ sơ, nhóm và cài đặt cho dự án này. Không thể hoàn tác.",
+          "button": "Xóa dữ liệu"
+        },
+        "deleteDialog": {
+          "title": "Bạn có chắc chắn không?",
+          "description": "Toàn bộ dữ liệu của dự án này (bao gồm tất cả các hồ sơ và nhóm) sẽ bị xóa vĩnh viễn. Hành động này không thể được hoàn tác.",
+          "confirm": "Tôi hiểu, hãy xóa"
+        }
+      }
+    },
+    "profile": {
+      "title": "Cài đặt cho Hồ sơ Hiện tại",
+      "autoSync": {
+        "title": "Đồng bộ tự động",
+        "enable": {
+          "label": "Bật đồng bộ nền",
+          "description": "Tự động xuất lại khi có thay đổi."
+        },
+        "folder": {
+          "label": "Thư mục đồng bộ",
+          "placeholder": "Chưa chọn..."
+        }
+      },
+      "git": {
+        "title": "Tích hợp Git",
+        "contextMode": {
+          "label": "Chế độ xuất ngữ cảnh",
+          "description": "Bật để sao chép/xuất ra ngữ cảnh thay vì file diff."
+        }
+      },
+      "alwaysApply": {
+        "title": "Văn bản Luôn Áp dụng",
+        "description": "Nội dung này sẽ được thêm vào cuối mỗi file ngữ cảnh được xuất ra.",
+        "placeholder": "Ví dụ: Luôn trả lời bằng tiếng Việt.",
+        "saveButton": "Lưu văn bản"
+      }
+    },
+    "export": {
+      "title": "Cài đặt Xuất File",
+      "fullTree": {
+        "label": "Sử dụng cây thư mục đầy đủ",
+        "description": "Bật để file ngữ cảnh luôn có cấu trúc dự án đầy đủ."
+      },
+      "lineNumbers": {
+        "label": "Thêm số dòng vào nội dung file",
+        "description": "Bật để thêm `số_dòng:` vào đầu mỗi dòng code."
+      },
+      "superCompressed": {
+        "label": "Xuất siêu nén",
+        "description": "Nén nội dung file thành một dòng và đặt cạnh tên file trong cây thư mục."
+      },
+      "removeComments": {
+        "label": "Loại bỏ chú thích (comment)",
+        "description": "Tự động xóa các dòng chú thích khỏi mã nguồn để giảm token."
+      },
+      "removeDebug": {
+        "label": "Loại bỏ debug logs",
+        "description": "Xóa `console.log`, `println!`... khỏi mã nguồn khi xuất."
+      },
+      "excludeExtensions": {
+        "label": "Loại trừ các phần mở rộng",
+        "description": "Các tệp có phần mở rộng này sẽ không được đưa vào file ngữ cảnh.",
+        "placeholder": "png, svg, jpg, lock...",
+        "hint": "Phân cách các phần mở rộng bằng dấu phẩy (,).",
+        "saveButton": "Lưu cài đặt loại trừ"
+      }
+    },
+    "ai": {
+      "title": "Cài đặt AI",
+      "openRouter": {
+        "apiKeyLabel": "OpenRouter API Key",
+        "getApiKeyHint": "Lấy API key của bạn từ <1>cài đặt OpenRouter</1>.",
+        "modelLabel": "Các Model ID"
+      },
+      "google": {
+        "getApiKeyHint": "Lấy API key của bạn từ <1>Google AI Studio</1>."
+      },
+      "streamResponse": {
+        "label": "Stream phản hồi",
+        "description": "Nhận phản hồi từ AI từng phần một để có cảm giác nhanh hơn."
+      },
+      "systemPrompt": {
+        "title": "System Prompt",
+        "description": "Một chỉ dẫn định hướng hành vi của AI trong suốt cuộc trò chuyện.",
+        "placeholder": "Bạn là một trợ lý hữu ích."
+      },
+      "parameters": {
+        "title": "Tham số Nâng cao",
+        "temperature": "Nhiệt độ (Temperature)",
+        "topP": "Top-P",
+        "topK": "Top-K",
+        "maxTokens": "Số Token Tối đa"
+      }
+    }
+  },
+  "welcome": {
+    "subtitle": "Công cụ quản lý và tạo ngữ cảnh cho dự án của bạn.",
+    "openProjectButton": "Mở một dự án...",
+    "openProjectDialogTitle": "Chọn một thư mục dự án",
+    "clonePlaceholder": "Hoặc dán URL kho Git để clone...",
+    "cloneButton": "Clone",
+    "orRecent": "Hoặc mở gần đây",
+    "openRecent": "Mở gần đây",
+    "settingsTooltip": "Cài đặt"
+  },
+  "errors": {
+    "scanError": "Lỗi khi quét dự án: {{error}}",
+    "syncError": "Lỗi đồng bộ: {{error}}",
+    "fileSaveFailed": "Đã xảy ra lỗi khi lưu file.",
+    "projectExportError": "Lỗi khi xuất dự án: {{error}}",
+    "fileExportFailed": "Đã xảy ra lỗi khi xuất file: {{error}}",
+    "startExportFailed": "Không thể bắt đầu xuất file: {{error}}",
+    "copyFailed": "Không thể sao chép: {{error}}",
+    "profileNameRequired": "Tên hồ sơ không được để trống.",
+    "profileNameInvalid": "Tên chỉ được chứa chữ, số, gạch dưới và gạch nối.",
+    "groupNameRequired": "Tên nhóm không được để trống.",
+    "git": {
+      "uncommitted_changes": "Bạn có các thay đổi chưa được commit hoặc các file chưa được theo dõi. Vui lòng commit, stash, hoặc dọn dẹp thư mục làm việc của bạn trước."
+    },
+    "group": {
+      "not_found": "Không tìm thấy nhóm.",
+      "export_no_files": "Nhóm này không chứa file nào để xuất.",
+      "generate_context_no_files": "Nhóm này không chứa file nào để tạo ngữ cảnh."
+    },
+    "profile": {
+      "cannot_delete_default": "Không thể xóa hồ sơ 'default'.",
+      "not_exist": "Hồ sơ không tồn tại.",
+      "cannot_rename_default": "Không thể đổi tên hồ sơ 'default'.",
+      "old_not_exist": "Hồ sơ cũ không tồn tại.",
+      "new_name_exist": "Tên hồ sơ mới đã tồn tại.",
+      "invalid_name": "Tên hồ sơ không hợp lệ."
+    },
+    "project": {
+      "export_no_files": "Dự án không có file nào để xuất.",
+      "generate_context_no_files": "Dự án không có file nào để tạo ngữ cảnh."
+    }
+  },
+  "sidebarPanel": {
+    "title": "Hồ sơ & Nhóm",
+    "createProfile": "Tạo hồ sơ",
+    "createGroup": "Tạo nhóm mới",
+    "renameProfile": "Đổi tên hồ sơ",
+    "deleteProfile": "Xóa hồ sơ",
+    "deleteProfileTitle": "Xác nhận xóa hồ sơ?",
+    "deleteProfileDescription": "Hành động này sẽ xóa vĩnh viễn hồ sơ '{{profile}}' và tất cả các nhóm bên trong nó. Bạn có chắc chắn không?"
+  }
+}
