@@ -18,6 +18,7 @@ import {
   toGooglePayload,
 } from "@/lib/googleAI";
 import { getGoogleTools, getOpenRouterTools } from "@/lib/aiTools";
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 
 export interface AiChatActions {
   sendChatMessage: (prompt: string) => Promise<void>;
@@ -344,7 +345,7 @@ export const createAiChatActions: StateCreator<
 
       try {
         const endpoint = "https://integrate.api.nvidia.com/v1/chat/completions";
-        const response = await fetch(endpoint, {
+        const response = await tauriFetch(endpoint, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${actualApiKey}`,

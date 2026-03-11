@@ -191,8 +191,6 @@ function App() {
           },
         ];
 
-        let allAvailableModels: AIModel[] = [...googleModels];
-
         const nvidiaModels: AIModel[] = [
           {
             provider: "nvidia",
@@ -210,7 +208,7 @@ function App() {
           }
         ];
 
-        allAvailableModels.push(...nvidiaModels);
+        let allAvailableModels: AIModel[] = [...googleModels, ...nvidiaModels];
 
         // Fetch all models from OpenRouter
         try {

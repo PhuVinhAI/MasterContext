@@ -33,6 +33,7 @@ sha2 = "0.10"
 tauri-plugin-clipboard-manager = "2"
 notify = "8.2.0"
 tauri-plugin-notification = "2"
+tauri-plugin-http = "2"
 num_cpus = "1.17.0"
 
 walkdir = "2.5.0"
