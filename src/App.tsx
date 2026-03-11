@@ -149,6 +149,20 @@ function App() {
         const googleModels: AIModel[] = [
           {
             provider: "google",
+            id: "gemini-3-flash-preview",
+            name: "Gemini 3 Flash Preview",
+            context_length: 1048576,
+            pricing: { prompt: "0", completion: "0" },
+          },
+          {
+            provider: "google",
+            id: "gemini-3.1-flash-lite-preview",
+            name: "Gemini 3.1 Flash Lite Preview",
+            context_length: 1048576,
+            pricing: { prompt: "0", completion: "0" },
+          },
+          {
+            provider: "google",
             id: "gemini-flash-latest",
             name: "Gemini 2.5 Flash",
             context_length: 1048576,
