@@ -352,9 +352,6 @@
       "google": {
         "getApiKeyHint": "Lấy API key của bạn từ <1>Google AI Studio</1>."
       },
-      "nvidia": {
-        "getApiKeyHint": "Lấy API key của bạn từ <1>NVIDIA NIM</1>."
-      },
       "streamResponse": {
         "label": "Stream phản hồi",
         "description": "Nhận phản hồi từ AI từng phần một để có cảm giác nhanh hơn."

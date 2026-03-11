@@ -30,7 +30,6 @@ export function useSettingsScene() {
     gitExportModeIsContext,
     googleApiKey,
     openRouterApiKey,
-    nvidiaApiKey,
     aiModels, // This should be models
     systemPrompt,
     temperature,
@@ -57,7 +56,6 @@ export function useSettingsScene() {
       gitExportModeIsContext: state.gitExportModeIsContext,
       googleApiKey: state.googleApiKey,
       openRouterApiKey: state.openRouterApiKey,
-      nvidiaApiKey: state.nvidiaApiKey,
       aiModels: state.aiModels,
       systemPrompt: state.systemPrompt,
       temperature: state.temperature,
@@ -160,7 +158,6 @@ export function useSettingsScene() {
     showDashboard,
     googleApiKey,
     openRouterApiKey,
-    nvidiaApiKey,
     aiModels,
     systemPrompt,
     temperature,

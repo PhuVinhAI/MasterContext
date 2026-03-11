@@ -21,7 +21,7 @@ export interface SettingsActions {
   setAlwaysApplyText: (text: string) => Promise<void>;
   setExportExcludeExtensions: (extensions: string[]) => Promise<void>;
   setGitExportMode: (enabled: boolean) => Promise<void>;
-  updateAppSettings: (settings: Partial<AppSettings>) => Promise<void>;
+  updateAppSettings: (settings: Partial<Omit<AppSettings, 'nvidiaApiKey'>>) => Promise<void>;
 }
 
 export const createSettingsActions: StateCreator<
@@ -277,7 +277,6 @@ export const createSettingsActions: StateCreator<
       nonAnalyzableExtensions,
       openRouterApiKey,
       googleApiKey,
-      nvidiaApiKey,
       aiModels,
       streamResponse,
       systemPrompt,
@@ -293,7 +292,6 @@ export const createSettingsActions: StateCreator<
         newSettings.nonAnalyzableExtensions ?? nonAnalyzableExtensions,
       openRouterApiKey: newSettings.openRouterApiKey ?? openRouterApiKey,
       googleApiKey: newSettings.googleApiKey ?? googleApiKey,
-      nvidiaApiKey: newSettings.nvidiaApiKey ?? nvidiaApiKey,
       aiModels: newSettings.aiModels ?? aiModels.map((m) => m.id),
       streamResponse: newSettings.streamResponse ?? streamResponse,
       systemPrompt: newSettings.systemPrompt ?? systemPrompt,
@@ -317,7 +315,6 @@ export const createSettingsActions: StateCreator<
         nonAnalyzableExtensions: fullSettings.nonAnalyzableExtensions,
         openRouterApiKey: fullSettings.openRouterApiKey ?? "",
         googleApiKey: fullSettings.googleApiKey ?? "",
-        nvidiaApiKey: fullSettings.nvidiaApiKey ?? "",
         aiModels: projectAiModels.length
           ? projectAiModels
           : [

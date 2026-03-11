@@ -74,7 +74,7 @@ export interface ScanCompletePayload {
 export type AiChatMode = "ask" | "context" | "agent";
 
 export interface AIModel {
-  provider: "openrouter" | "google" | "nvidia";
+  provider: "openrouter" | "google";
   id: string;
   name: string;
   context_length: number | null;
@@ -90,7 +90,6 @@ export interface AppSettings {
   openRouterApiKey?: string;
   aiModels?: string[];
   googleApiKey?: string;
-  nvidiaApiKey?: string;
   streamResponse?: boolean;
   systemPrompt?: string;
   temperature?: number;
@@ -252,7 +251,6 @@ export interface AppState {
   aiChatMode: AiChatMode;
   openRouterApiKey: string;
   googleApiKey: string;
-  nvidiaApiKey: string;
   allAvailableModels: AIModel[];
   aiModels: AIModel[];
   chatMessages: ChatMessage[];

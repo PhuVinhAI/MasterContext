@@ -13,10 +13,6 @@
     "notification:allow-request-permission",
     "http:default",
     "http:allow-fetch-cancel",
-    "http:allow-fetch-read-body",
-    {
-      "identifier": "http:allow-fetch",
-      "allow": [{ "url": "https://integrate.api.nvidia.com/*" }]
-    }
+    "http:allow-fetch-read-body"
   ]
 }

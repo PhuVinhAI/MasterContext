@@ -31,7 +31,6 @@ import { type AIModel } from "@/store/types";
 interface AITabProps {
   apiKey: string;
   googleApiKey: string;
-  nvidiaApiKey: string;
   models: AIModel[]; // This is AIModel[]
   streamResponse: boolean;
   systemPrompt: string;
@@ -42,7 +41,6 @@ interface AITabProps {
   onSave: (settings: {
     apiKey: string;
     googleApiKey: string;
-    nvidiaApiKey: string;
     models: string[]; // should send back IDs
     streamResponse: boolean;
     systemPrompt: string;
@@ -56,7 +54,6 @@ interface AITabProps {
 export function AITab({
   apiKey,
   googleApiKey,
-  nvidiaApiKey,
   models, // This is AIModel[]
   streamResponse,
   systemPrompt,
@@ -74,7 +71,6 @@ export function AITab({
   );
   const [localApiKey, setLocalApiKey] = useState(apiKey);
   const [localGoogleApiKey, setLocalGoogleApiKey] = useState(googleApiKey);
-  const [localNvidiaApiKey, setLocalNvidiaApiKey] = useState(nvidiaApiKey);
   const [localModels, setLocalModels] = useState(models.map((m) => m.id));
   const [localStreamResponse, setLocalStreamResponse] =
     useState(streamResponse);
@@ -89,7 +85,6 @@ export function AITab({
   useEffect(() => {
     setLocalApiKey(apiKey);
     setLocalGoogleApiKey(googleApiKey);
-    setLocalNvidiaApiKey(nvidiaApiKey);
     setLocalModels(models.map((m) => m.id));
     setLocalStreamResponse(streamResponse);
     setLocalSystemPrompt(systemPrompt);
@@ -100,7 +95,6 @@ export function AITab({
   }, [
     apiKey,
     googleApiKey,
-    nvidiaApiKey,
     models,
     streamResponse,
     systemPrompt,
@@ -115,7 +109,6 @@ export function AITab({
     await onSave({
       apiKey: localApiKey,
       googleApiKey: localGoogleApiKey,
-      nvidiaApiKey: localNvidiaApiKey,
       models: localModels,
       streamResponse: localStreamResponse,
       systemPrompt: localSystemPrompt,
@@ -142,7 +135,6 @@ export function AITab({
   const isChanged =
     localApiKey !== apiKey ||
     localGoogleApiKey !== googleApiKey ||
-    localNvidiaApiKey !== nvidiaApiKey ||
     modelsChanged ||
     localStreamResponse !== streamResponse ||
     localSystemPrompt !== systemPrompt ||
@@ -214,32 +206,6 @@ export function AITab({
             />
           </p>
         </div>
-        <div className="space-y-2 pt-4 border-t">
-          <Label htmlFor="nvidia-api-key">NVIDIA NIM API Key</Label>
-          <Input
-            id="nvidia-api-key"
-            type="password"
-            value={localNvidiaApiKey}
-            onChange={(e) => setLocalNvidiaApiKey(e.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">
-            <Trans
-              i18nKey="settings.ai.nvidia.getApiKeyHint"
-              components={{
-                1: (
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      openUrl("https://build.nvidia.com/");
-                    }}
-                    className="text-primary underline hover:no-underline"
-                  />
-                ),
-              }}
-            />
-          </p>
-        </div>
         <div className="space-y-2">
           <Label>{t("settings.ai.openRouter.modelLabel")}</Label>
           <div className="flex flex-wrap gap-2 rounded-lg border p-2 min-h-[40px]">
@@ -251,12 +217,10 @@ export function AITab({
                     className={
                       model.provider === "google"
                         ? "text-blue-500 font-medium"
-                        : model.provider === "nvidia"
-                        ? "text-green-600 font-medium"
                         : ""
                     }
                   >
-                    {model.provider === "google" ? "Google" : model.provider === "nvidia" ? "NVIDIA" : "OpenRouter"} /
+                    {model.provider === "google" ? "Google" : "OpenRouter"} /
                   </span>
                   <span className="ml-1">{model.name}</span>
                   <Button
@@ -316,8 +280,6 @@ export function AITab({
                                   className={
                                     model.provider === "google"
                                       ? "font-semibold text-blue-600 dark:text-blue-400"
-                                      : model.provider === "nvidia"
-                                      ? "font-semibold text-green-600 dark:text-green-500"
                                       : ""
                                   }
                                 >

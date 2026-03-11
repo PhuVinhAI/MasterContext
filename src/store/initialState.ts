@@ -61,7 +61,6 @@ export const initialState = {
   aiChatMode: "ask" as "ask" | "context" | "agent",
   openRouterApiKey: "",
   googleApiKey: "",
-  nvidiaApiKey: "",
   allAvailableModels: [],
   aiModels: [],
   chatMessages: [],

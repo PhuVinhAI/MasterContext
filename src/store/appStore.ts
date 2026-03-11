@@ -1,4 +1,4 @@
-﻿// src/store/appStore.ts
+// src/store/appStore.ts
 import { create } from "zustand";
 import {
   type FileNode,
@@ -125,7 +125,6 @@ export interface AppState {
   aiChatMode: AiChatMode;
   openRouterApiKey: string;
   googleApiKey: string;
-  nvidiaApiKey: string;
   allAvailableModels: AIModel[];
   aiModels: AIModel[];
   chatMessages: ChatMessage[];

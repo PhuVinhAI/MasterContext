@@ -205,24 +205,7 @@ function App() {
           },
         ];
 
-        const nvidiaModels: AIModel[] = [
-          {
-            provider: "nvidia",
-            id: "stepfun-ai/step-3.5-flash",
-            name: "Step 3.5 Flash",
-            context_length: 16384,
-            pricing: { prompt: "0", completion: "0" },
-          },
-          {
-            provider: "nvidia",
-            id: "meta/llama3-70b-instruct",
-            name: "Llama 3 70B Instruct",
-            context_length: 8192,
-            pricing: { prompt: "0", completion: "0" },
-          }
-        ];
-
-        let allAvailableModels: AIModel[] = [...googleModels, ...nvidiaModels];
+        let allAvailableModels: AIModel[] = [...googleModels];
 
         // Fetch all models from OpenRouter
         try {
@@ -250,9 +233,7 @@ function App() {
         // Tự động ép thêm các models mới vào danh sách hiển thị ngoài màn hình Chat
         const forceModels = [
           "gemini-3.1-flash-lite-preview",
-          "gemini-3-flash-preview",
-          "stepfun-ai/step-3.5-flash",
-          "meta/llama3-70b-instruct"
+          "gemini-3-flash-preview"
         ];
         forceModels.forEach(id => {
           if (!savedModelIds.includes(id)) {
@@ -269,7 +250,6 @@ function App() {
           nonAnalyzableExtensions: settings.nonAnalyzableExtensions ?? [],
           openRouterApiKey: settings.openRouterApiKey ?? "",
           googleApiKey: settings.googleApiKey ?? "",
-          nvidiaApiKey: settings.nvidiaApiKey ?? "",
           allAvailableModels,
           // SỬA LỖI: Thêm các cài đặt AI bị thiếu vào đây
           streamResponse: settings.streamResponse ?? true,
