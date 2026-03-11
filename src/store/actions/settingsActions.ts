@@ -13,6 +13,7 @@ export interface SettingsActions {
   setCustomIgnorePatterns: (patterns: string[]) => Promise<void>;
   setFileWatching: (enabled: boolean) => Promise<void>;
   setExportUseFullTree: (enabled: boolean) => Promise<void>;
+  setExportOnlyTree: (enabled: boolean) => Promise<void>;
   setExportWithLineNumbers: (enabled: boolean) => Promise<void>;
   setExportWithoutComments: (enabled: boolean) => Promise<void>;
   setExportRemoveDebugLogs: (enabled: boolean) => Promise<void>;
@@ -121,6 +122,24 @@ export const createSettingsActions: StateCreator<
         kind: "error",
       });
       set((state) => ({ exportUseFullTree: !state.exportUseFullTree }));
+    }
+  },
+  setExportOnlyTree: async (enabled: boolean) => {
+    const { rootPath, activeProfile } = get();
+    if (!rootPath) return;
+    set({ exportOnlyTree: enabled });
+    try {
+      await invoke("set_export_only_tree_setting", {
+        path: rootPath,
+        profileName: activeProfile,
+        enabled,
+      });
+    } catch (error) {
+      message(`Không thể lưu cài đặt xuất cây: ${error}`, {
+        title: "Lỗi",
+        kind: "error",
+      });
+      set((state) => ({ exportOnlyTree: !state.exportOnlyTree }));
     }
   },
   setExportWithLineNumbers: async (enabled: boolean) => {
@@ -258,6 +277,7 @@ export const createSettingsActions: StateCreator<
       nonAnalyzableExtensions,
       openRouterApiKey,
       googleApiKey,
+      nvidiaApiKey,
       aiModels,
       streamResponse,
       systemPrompt,
@@ -273,6 +293,7 @@ export const createSettingsActions: StateCreator<
         newSettings.nonAnalyzableExtensions ?? nonAnalyzableExtensions,
       openRouterApiKey: newSettings.openRouterApiKey ?? openRouterApiKey,
       googleApiKey: newSettings.googleApiKey ?? googleApiKey,
+      nvidiaApiKey: newSettings.nvidiaApiKey ?? nvidiaApiKey,
       aiModels: newSettings.aiModels ?? aiModels.map((m) => m.id),
       streamResponse: newSettings.streamResponse ?? streamResponse,
       systemPrompt: newSettings.systemPrompt ?? systemPrompt,
@@ -296,6 +317,7 @@ export const createSettingsActions: StateCreator<
         nonAnalyzableExtensions: fullSettings.nonAnalyzableExtensions,
         openRouterApiKey: fullSettings.openRouterApiKey ?? "",
         googleApiKey: fullSettings.googleApiKey ?? "",
+        nvidiaApiKey: fullSettings.nvidiaApiKey ?? "",
         aiModels: projectAiModels.length
           ? projectAiModels
           : [

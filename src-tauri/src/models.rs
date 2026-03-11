@@ -110,6 +110,7 @@ pub struct AppSettings {
     pub non_analyzable_extensions: Option<Vec<String>>,
     pub open_router_api_key: Option<String>,
     pub google_api_key: Option<String>,
+    pub nvidia_api_key: Option<String>,
     pub ai_models: Option<Vec<String>>,
     pub stream_response: Option<bool>,
     pub system_prompt: Option<String>,
@@ -173,6 +174,7 @@ pub struct CachedProjectData {
     pub custom_ignore_patterns: Option<Vec<String>>, // <-- THÊM TRƯỜNG NÀY
     pub is_watching_files: Option<bool>, // <-- THÊM TRƯỜNG MỚI
     pub export_use_full_tree: Option<bool>, // <-- THÊM TRƯỜNG MỚI NÀY
+    pub export_only_tree: Option<bool>,
     pub export_with_line_numbers: Option<bool>, // <-- THÊM TRƯỜNG MỚI
     pub export_without_comments: Option<bool>, // <-- THÊM TRƯỜNG MỚI
     pub export_remove_debug_logs: Option<bool>, // <-- THÊM TRƯỜNG MỚI

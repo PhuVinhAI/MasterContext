@@ -314,6 +314,10 @@
         "label": "Sử dụng cây thư mục đầy đủ",
         "description": "Bật để file ngữ cảnh luôn có cấu trúc dự án đầy đủ."
       },
+      "onlyTree": {
+        "label": "Chỉ xuất cây thư mục",
+        "description": "Không bao gồm nội dung các file trong ngữ cảnh xuất ra."
+      },
       "lineNumbers": {
         "label": "Thêm số dòng vào nội dung file",
         "description": "Bật để thêm `số_dòng:` vào đầu mỗi dòng code."
@@ -347,6 +351,9 @@
       },
       "google": {
         "getApiKeyHint": "Lấy API key của bạn từ <1>Google AI Studio</1>."
+      },
+      "nvidia": {
+        "getApiKeyHint": "Lấy API key của bạn từ <1>NVIDIA NIM</1>."
       },
       "streamResponse": {
         "label": "Stream phản hồi",

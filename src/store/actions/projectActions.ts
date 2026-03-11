@@ -168,6 +168,7 @@ export const createProjectActions: StateCreator<
         customIgnorePatterns: payload.custom_ignore_patterns ?? [],
         isWatchingFiles: payload.is_watching_files ?? false,
         exportUseFullTree: payload.export_use_full_tree ?? false,
+        exportOnlyTree: payload.export_only_tree ?? false,
         exportWithLineNumbers: payload.export_with_line_numbers ?? true,
         exportWithoutComments: payload.export_without_comments ?? false,
         exportRemoveDebugLogs: payload.export_remove_debug_logs ?? false,
@@ -243,6 +244,7 @@ export const createProjectActions: StateCreator<
     const {
       rootPath,
       activeProfile,
+      exportOnlyTree,
       exportWithLineNumbers,
       exportWithoutComments,
       exportRemoveDebugLogs,
@@ -252,6 +254,7 @@ export const createProjectActions: StateCreator<
       const context = await invoke<string>("generate_project_context", {
         path: rootPath,
         profileName: activeProfile,
+        exportOnlyTree: exportOnlyTree,
         withLineNumbers: exportWithLineNumbers,
         withoutComments: exportWithoutComments,
         removeDebugLogs: exportRemoveDebugLogs,

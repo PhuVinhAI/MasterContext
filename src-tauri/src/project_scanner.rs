@@ -274,6 +274,7 @@ pub fn perform_smart_scan_and_rebuild(
         custom_ignore_patterns: old_data.custom_ignore_patterns, // Giữ lại cài đặt cũ
         is_watching_files: old_data.is_watching_files, // Giữ lại cài đặt cũ
         export_use_full_tree: old_data.export_use_full_tree, // Giữ lại cài đặt cũ
+        export_only_tree: old_data.export_only_tree,
         export_with_line_numbers: old_data.export_with_line_numbers, // Giữ lại cài đặt cũ
         export_without_comments: old_data.export_without_comments, // Giữ lại cài đặt cũ
         export_remove_debug_logs: old_data.export_remove_debug_logs, // Giữ lại cài đặt cũ

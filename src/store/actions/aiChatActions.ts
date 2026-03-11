@@ -226,6 +226,7 @@ export const createAiChatActions: StateCreator<
     const {
       openRouterApiKey,
       googleApiKey,
+      nvidiaApiKey,
       allAvailableModels,
       aiModels,
       selectedAiModel,
@@ -247,9 +248,9 @@ export const createAiChatActions: StateCreator<
     const model = allAvailableModels.find((m) => m.id === selectedAiModel);
     if (!model || !activeChatSession) return;
 
-    const apiKey =
-      model.provider === "google" ? googleApiKey : openRouterApiKey;
-    if (!apiKey) {
+    const isNvidia = model.provider === "nvidia";
+    const actualApiKey = isNvidia ? nvidiaApiKey : (model.provider === "google" ? googleApiKey : openRouterApiKey);
+    if (!actualApiKey) {
       console.error(`API key for ${model.provider} is not set.`);
       set({ isAiPanelLoading: false });
       return;
@@ -281,7 +282,7 @@ export const createAiChatActions: StateCreator<
         const response = await fetch(endpoint, {
           method: "POST",
           headers: {
-            "x-goog-api-key": apiKey,
+            "x-goog-api-key": actualApiKey,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(payload),
@@ -327,16 +328,81 @@ export const createAiChatActions: StateCreator<
         set({ isAiPanelLoading: false, abortController: null });
         await get().actions.saveCurrentChatSession();
       }
+    } else if (isNvidia) {
+      // --- NVIDIA NIM LOGIC ---
+      const tools = getOpenRouterTools(aiChatMode, editingGroupId);
+      const payload: Record<string, any> = {
+        model: selectedAiModel || aiModels[0]?.id,
+        messages: messagesToSend.map(
+          ({ hidden, hiddenContent, attachedFiles, ...msg }) => {
+            const fullContent = (hiddenContent || "") + (msg.content || "");
+            return { ...msg, content: fullContent };
+          }
+        ),
+        tools,
+      };
+
+      try {
+        const endpoint = "https://integrate.api.nvidia.com/v1/chat/completions";
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${actualApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ ...payload, stream: streamResponse }),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || response.statusText);
+        }
+
+        if (streamResponse) {
+          await handleStreamingResponse(response, {
+            getState: get,
+            setState: set,
+          });
+        } else {
+          const assistantMessage = await handleNonStreamingResponse(
+            response,
+            actualApiKey
+          );
+          set((state) => ({
+            chatMessages: [...state.chatMessages, assistantMessage],
+          }));
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          console.log("AI response aborted by user.");
+          return;
+        }
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        console.error("NVIDIA API error:", errorMessage);
+
+        const assistantErrorMessage: ChatMessage = {
+          role: "assistant",
+          content: `${t("aiPanel.error")}\n\n${errorMessage}`,
+        };
+
+        set((state) => ({
+          chatMessages: [...state.chatMessages, assistantErrorMessage],
+        }));
+      } finally {
+        set({ isAiPanelLoading: false });
+        set({ abortController: null });
+        await get().actions.saveCurrentChatSession();
+      }
     } else {
       // --- OPENROUTER LOGIC (existing logic) ---
       const tools = getOpenRouterTools(aiChatMode, editingGroupId);
       const payload: Record<string, any> = {
         model: selectedAiModel || aiModels[0]?.id,
         messages: messagesToSend.map(
-          // Filter out UI-specific properties before sending
           ({ hidden, hiddenContent, attachedFiles, ...msg }) => {
             const fullContent = (hiddenContent || "") + (msg.content || "");
-            // Filter out the hidden property before sending
             return { ...msg, content: fullContent };
           }
         ),
@@ -349,11 +415,11 @@ export const createAiChatActions: StateCreator<
           {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${openRouterApiKey}`,
+              Authorization: `Bearer ${actualApiKey}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify({ ...payload, stream: streamResponse }),
-            signal: controller.signal, // Pass the signal
+            signal: controller.signal,
           }
         );
 
@@ -370,7 +436,7 @@ export const createAiChatActions: StateCreator<
         } else {
           const assistantMessage = await handleNonStreamingResponse(
             response,
-            apiKey
+            actualApiKey
           );
           set((state) => ({
             chatMessages: [...state.chatMessages, assistantMessage],
@@ -396,7 +462,6 @@ export const createAiChatActions: StateCreator<
       } finally {
         set({ isAiPanelLoading: false });
         set({ abortController: null });
-        // Always save the session after the stream attempt is finished.
         await get().actions.saveCurrentChatSession();
       }
     }

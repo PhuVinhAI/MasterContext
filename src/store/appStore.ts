@@ -94,6 +94,7 @@ export interface AppState {
   customIgnorePatterns: string[];
   isWatchingFiles: boolean;
   exportUseFullTree: boolean;
+  exportOnlyTree: boolean;
   exportWithLineNumbers: boolean;
   exportWithoutComments: boolean;
   exportRemoveDebugLogs: boolean;
@@ -124,6 +125,7 @@ export interface AppState {
   aiChatMode: AiChatMode;
   openRouterApiKey: string;
   googleApiKey: string;
+  nvidiaApiKey: string;
   allAvailableModels: AIModel[];
   aiModels: AIModel[];
   chatMessages: ChatMessage[];

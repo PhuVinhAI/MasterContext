@@ -158,5 +158,4 @@ Chúng tôi hoan nghênh đóng góp! Nếu bạn muốn đóng góp cho dự á
 Nếu bạn gặp vấn đề hoặc có câu hỏi:
 
 - Mở [Issue](https://github.com/NguyenHuynhPhuVinh/MasterContext/issues) trên GitHub
-- Kiểm tra tài liệu hoặc liên hệ qua các kênh hỗ trợ khác#   M a s t e r C o n t e x t  
- 
+- Kiểm tra tài liệu hoặc liên hệ qua các kênh hỗ trợ khác

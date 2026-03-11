@@ -314,6 +314,10 @@
         "label": "Use full directory tree",
         "description": "Enable to always have the full project structure in the context file."
       },
+      "onlyTree": {
+        "label": "Export only directory tree",
+        "description": "Do not include file contents in the exported file."
+      },
       "lineNumbers": {
         "label": "Add line numbers to file content",
         "description": "Enable to prepend `line_number:` to each line of code."
@@ -347,6 +351,9 @@
       },
       "google": {
         "getApiKeyHint": "Get your API key from <1>Google AI Studio</1>."
+      },
+      "nvidia": {
+        "getApiKeyHint": "Get your API key from <1>NVIDIA NIM</1>."
       },
       "streamResponse": {
         "label": "Stream responses",

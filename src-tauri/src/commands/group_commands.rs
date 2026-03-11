@@ -128,6 +128,7 @@ pub fn start_group_export(
         let result: Result<String, String> = (|| {
             let project_data = file_cache::load_project_data(&app, &root_path_str, &profile_name)?;
             let use_full_tree = project_data.export_use_full_tree.unwrap_or(false);
+            let export_only_tree = project_data.export_only_tree.unwrap_or(false);
             let with_line_numbers = project_data.export_with_line_numbers.unwrap_or(true);
             let without_comments = project_data.export_without_comments.unwrap_or(false);
             let remove_debug_logs = project_data.export_remove_debug_logs.unwrap_or(false);
@@ -153,6 +154,7 @@ pub fn start_group_export(
                 &expanded_files,
                 use_full_tree,
                 &project_data.file_tree,
+                export_only_tree,
                 with_line_numbers,
                 without_comments,
                 remove_debug_logs,
@@ -183,6 +185,7 @@ pub fn generate_group_context(
     root_path_str: String,
     profile_name: String,
     use_full_tree: bool,
+    export_only_tree: bool,
     with_line_numbers: bool,
     without_comments: bool,
     remove_debug_logs: bool,
@@ -210,6 +213,7 @@ pub fn generate_group_context(
         &expanded_files,
         use_full_tree,
         &project_data.file_tree,
+        export_only_tree,
         with_line_numbers,
         without_comments,
         remove_debug_logs,
@@ -250,6 +254,7 @@ pub fn generate_group_context_for_ai(
         &expanded_files,
         false, // use_full_tree: false (minimal tree)
         &project_data.file_tree,
+        false, // export_only_tree: false
         false, // with_line_numbers: false
         false, // without_comments: false
         false, // remove_debug_logs: false

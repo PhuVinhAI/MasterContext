@@ -193,6 +193,25 @@ function App() {
 
         let allAvailableModels: AIModel[] = [...googleModels];
 
+        const nvidiaModels: AIModel[] = [
+          {
+            provider: "nvidia",
+            id: "stepfun-ai/step-3.5-flash",
+            name: "Step 3.5 Flash",
+            context_length: 16384,
+            pricing: { prompt: "0", completion: "0" },
+          },
+          {
+            provider: "nvidia",
+            id: "meta/llama3-70b-instruct",
+            name: "Llama 3 70B Instruct",
+            context_length: 8192,
+            pricing: { prompt: "0", completion: "0" },
+          }
+        ];
+
+        allAvailableModels.push(...nvidiaModels);
+
         // Fetch all models from OpenRouter
         try {
           const response = await axios.get(
@@ -225,6 +244,7 @@ function App() {
           nonAnalyzableExtensions: settings.nonAnalyzableExtensions ?? [],
           openRouterApiKey: settings.openRouterApiKey ?? "",
           googleApiKey: settings.googleApiKey ?? "",
+          nvidiaApiKey: settings.nvidiaApiKey ?? "",
           allAvailableModels,
           // SỬA LỖI: Thêm các cài đặt AI bị thiếu vào đây
           streamResponse: settings.streamResponse ?? true,

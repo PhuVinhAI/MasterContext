@@ -32,6 +32,7 @@ export function SettingsScene() {
     isWatchingFiles,
     rootPath,
     exportUseFullTree,
+    exportOnlyTree,
     exportWithLineNumbers,
     exportWithoutComments,
     exportRemoveDebugLogs,
@@ -41,6 +42,7 @@ export function SettingsScene() {
     gitExportModeIsContext,
     googleApiKey,
     openRouterApiKey, // This should be apiKey
+    nvidiaApiKey,
     aiModels, // This should be models
     systemPrompt,
     temperature,
@@ -53,6 +55,7 @@ export function SettingsScene() {
     showDashboard,
     setFileWatching,
     setExportUseFullTree,
+    setExportOnlyTree,
     setExportWithLineNumbers,
     setExportWithoutComments,
     setExportRemoveDebugLogs,
@@ -119,6 +122,8 @@ export function SettingsScene() {
           <ExportTab
             exportUseFullTree={exportUseFullTree}
             setExportUseFullTree={setExportUseFullTree}
+            exportOnlyTree={exportOnlyTree}
+            setExportOnlyTree={setExportOnlyTree}
             exportWithLineNumbers={exportWithLineNumbers}
             setExportWithLineNumbers={setExportWithLineNumbers}
             exportWithoutComments={exportWithoutComments}
@@ -136,6 +141,7 @@ export function SettingsScene() {
           <AITab
             apiKey={openRouterApiKey}
             googleApiKey={googleApiKey}
+            nvidiaApiKey={nvidiaApiKey}
             models={aiModels}
             systemPrompt={systemPrompt}
             streamResponse={streamResponse}
@@ -147,6 +153,7 @@ export function SettingsScene() {
               await updateAppSettings({
                 openRouterApiKey: newSettings.apiKey,
                 googleApiKey: newSettings.googleApiKey,
+                nvidiaApiKey: newSettings.nvidiaApiKey,
                 aiModels: newSettings.models,
                 systemPrompt: newSettings.systemPrompt,
                 streamResponse: newSettings.streamResponse,

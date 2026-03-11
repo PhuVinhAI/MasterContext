@@ -48,6 +48,7 @@ export const createProfileActions: StateCreator<
           customIgnorePatterns: profileData.custom_ignore_patterns ?? [],
           isWatchingFiles: profileData.is_watching_files ?? false,
           exportUseFullTree: profileData.export_use_full_tree ?? false,
+          exportOnlyTree: profileData.export_only_tree ?? false,
           exportWithLineNumbers: profileData.export_with_line_numbers ?? true,
           exportWithoutComments: profileData.export_without_comments ?? false,
           exportRemoveDebugLogs: profileData.export_remove_debug_logs ?? false,

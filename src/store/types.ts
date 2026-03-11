@@ -11,6 +11,7 @@ export interface CachedProjectData {
   custom_ignore_patterns?: string[]; // <-- Sửa thành snake_case
   is_watching_files?: boolean | null; // <-- THÊM TRƯỜNG MỚI
   export_use_full_tree?: boolean | null; // <-- THÊM TRƯỜNG MỚI NÀY
+  export_only_tree?: boolean | null;
   export_with_line_numbers?: boolean | null; // <-- THÊM TRƯỜNG MỚI
   export_without_comments?: boolean | null; // <-- THÊM TRƯỜNG MỚI
   export_remove_debug_logs?: boolean | null; // <-- THÊM TRƯỜNG MỚI
@@ -73,7 +74,7 @@ export interface ScanCompletePayload {
 export type AiChatMode = "ask" | "context" | "agent";
 
 export interface AIModel {
-  provider: "openrouter" | "google";
+  provider: "openrouter" | "google" | "nvidia";
   id: string;
   name: string;
   context_length: number | null;
@@ -89,6 +90,7 @@ export interface AppSettings {
   openRouterApiKey?: string;
   aiModels?: string[];
   googleApiKey?: string;
+  nvidiaApiKey?: string;
   streamResponse?: boolean;
   systemPrompt?: string;
   temperature?: number;
@@ -219,6 +221,7 @@ export interface AppState {
   customIgnorePatterns: string[];
   isWatchingFiles: boolean;
   exportUseFullTree: boolean;
+  exportOnlyTree: boolean;
   exportWithLineNumbers: boolean;
   exportWithoutComments: boolean;
   exportRemoveDebugLogs: boolean;
@@ -249,6 +252,7 @@ export interface AppState {
   aiChatMode: AiChatMode;
   openRouterApiKey: string;
   googleApiKey: string;
+  nvidiaApiKey: string;
   allAvailableModels: AIModel[];
   aiModels: AIModel[];
   chatMessages: ChatMessage[];

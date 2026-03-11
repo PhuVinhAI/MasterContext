@@ -35,6 +35,7 @@ export function GroupManager({
     groups,
     activeProfile,
     rootPath,
+    exportOnlyTree,
     exportWithLineNumbers,
     exportWithoutComments,
     exportRemoveDebugLogs,
@@ -45,6 +46,7 @@ export function GroupManager({
         groups: allGroups.get(profileName) || [],
         activeProfile: state.activeProfile,
         rootPath: state.rootPath,
+        exportOnlyTree: state.exportOnlyTree,
         exportWithLineNumbers: state.exportWithLineNumbers,
         // Lấy thêm các cài đặt export khác
         exportWithoutComments: state.exportWithoutComments,
@@ -182,6 +184,7 @@ export function GroupManager({
           rootPathStr: rootPath,
           profileName: profileName,
           useFullTree: true,
+          exportOnlyTree: exportOnlyTree,
           withLineNumbers: exportWithLineNumbers, // Sử dụng giá trị từ state
           withoutComments: exportWithoutComments, // Sử dụng giá trị từ state
           removeDebugLogs: exportRemoveDebugLogs, // Sử dụng giá trị từ state

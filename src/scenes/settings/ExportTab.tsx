@@ -11,6 +11,8 @@ import { Save, Loader2 } from "lucide-react";
 interface ExportTabProps {
   exportUseFullTree: boolean;
   setExportUseFullTree: (enabled: boolean) => void;
+  exportOnlyTree: boolean;
+  setExportOnlyTree: (enabled: boolean) => void;
   exportWithLineNumbers: boolean;
   setExportWithLineNumbers: (enabled: boolean) => void;
   exportWithoutComments: boolean;
@@ -26,6 +28,8 @@ interface ExportTabProps {
 export function ExportTab({
   exportUseFullTree,
   setExportUseFullTree,
+  exportOnlyTree,
+  setExportOnlyTree,
   exportWithLineNumbers,
   setExportWithLineNumbers,
   exportWithoutComments,
@@ -76,10 +80,26 @@ export function ExportTab({
         </div>
         <div className="flex items-center justify-between pt-4 border-t">
           <Label
+            htmlFor="export-only-tree-toggle"
+            className="flex flex-col items-start gap-1"
+          >
+            <span>{t("settings.export.onlyTree.label")}</span>
+            <span className="text-xs text-muted-foreground">
+              {t("settings.export.onlyTree.description")}
+            </span>
+          </Label>
+          <Switch
+            id="export-only-tree-toggle"
+            checked={exportOnlyTree}
+            onCheckedChange={setExportOnlyTree}
+          />
+        </div>
+        <div className="flex items-center justify-between pt-4 border-t">
+          <Label
             htmlFor="export-lines-toggle"
             className={cn(
               "flex flex-col items-start gap-1",
-              exportSuperCompressed && "opacity-50"
+              (exportSuperCompressed || exportOnlyTree) && "opacity-50"
             )}
           >
             <span>{t("settings.export.lineNumbers.label")}</span>
@@ -91,7 +111,7 @@ export function ExportTab({
             id="export-lines-toggle"
             checked={exportWithLineNumbers}
             onCheckedChange={setExportWithLineNumbers}
-            disabled={exportSuperCompressed}
+            disabled={exportSuperCompressed || exportOnlyTree}
           />
         </div>
         <div className="flex items-center justify-between pt-4 border-t">
@@ -99,7 +119,7 @@ export function ExportTab({
             htmlFor="export-super-compressed-toggle"
             className={cn(
               "flex flex-col items-start gap-1",
-              exportWithLineNumbers && "opacity-50"
+              (exportWithLineNumbers || exportOnlyTree) && "opacity-50"
             )}
           >
             <span>{t("settings.export.superCompressed.label")}</span>
@@ -111,13 +131,16 @@ export function ExportTab({
             id="export-super-compressed-toggle"
             checked={exportSuperCompressed}
             onCheckedChange={setExportSuperCompressed}
-            disabled={exportWithLineNumbers}
+            disabled={exportWithLineNumbers || exportOnlyTree}
           />
         </div>
         <div className="flex items-center justify-between pt-4 border-t">
           <Label
             htmlFor="export-comments-toggle"
-            className="flex flex-col items-start gap-1"
+            className={cn(
+              "flex flex-col items-start gap-1",
+              exportOnlyTree && "opacity-50"
+            )}
           >
             <span>{t("settings.export.removeComments.label")}</span>
             <span className="text-xs text-muted-foreground">
@@ -128,12 +151,16 @@ export function ExportTab({
             id="export-comments-toggle"
             checked={exportWithoutComments}
             onCheckedChange={setExportWithoutComments}
+            disabled={exportOnlyTree}
           />
         </div>
         <div className="flex items-center justify-between pt-4 border-t">
           <Label
             htmlFor="export-debug-toggle"
-            className="flex flex-col items-start gap-1"
+            className={cn(
+              "flex flex-col items-start gap-1",
+              exportOnlyTree && "opacity-50"
+            )}
           >
             <span>{t("settings.export.removeDebug.label")}</span>
             <span className="text-xs text-muted-foreground">
@@ -144,6 +171,7 @@ export function ExportTab({
             id="export-debug-toggle"
             checked={exportRemoveDebugLogs}
             onCheckedChange={setExportRemoveDebugLogs}
+            disabled={exportOnlyTree}
           />
         </div>
         <div className="flex flex-col space-y-3 pt-4 border-t">

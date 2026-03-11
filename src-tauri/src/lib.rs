@@ -52,6 +52,7 @@ pub fn run() {
             commands::list_groups_for_profile,
             commands::clone_profile,
             commands::set_export_use_full_tree_setting,
+            commands::set_export_only_tree_setting,
             commands::set_export_with_line_numbers_setting,
             commands::set_export_without_comments_setting, // <-- COMMAND MỚI
             commands::set_export_remove_debug_logs_setting, // <-- COMMAND MỚI

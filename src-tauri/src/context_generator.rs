@@ -223,6 +223,7 @@ pub fn generate_context_from_files(
     file_paths: &[String],
     use_full_tree: bool,
     full_project_tree: &Option<FileNode>,
+    export_only_tree: bool,
     with_line_numbers: bool,
     without_comments: bool,
     remove_debug_logs: bool,
@@ -273,6 +274,23 @@ pub fn generate_context_from_files(
         .unwrap_or_default();
 
     let mut directory_structure = String::new();
+
+    if export_only_tree {
+        format_tree(&tree_builder_root, "", &mut directory_structure);
+        let final_context_with_suffix = format!("Directory structure:\n{}", directory_structure);
+        
+        let mut final_context = final_context_with_suffix;
+        if let Some(text) = always_apply_text {
+            if !text.trim().is_empty() {
+                let _ = writeln!(final_context, "\n================================================");
+                let _ = writeln!(final_context, "**ALWAYS APPLY**");
+                let _ = writeln!(final_context, "================================================");
+                let _ = writeln!(final_context, "{}", text);
+            }
+        }
+        return Ok(final_context);
+    }
+
     let final_context = if super_compressed {
         format_tree_super_compressed(
             &tree_builder_root,
