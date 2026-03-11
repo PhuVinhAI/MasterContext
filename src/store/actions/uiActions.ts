@@ -1,8 +1,6 @@
 // src/store/actions/uiActions.ts
 import { StateCreator } from "zustand";
-import { applyPatch, createPatch } from "diff";
 import { invoke } from "@tauri-apps/api/core";
-import { message } from "@tauri-apps/plugin-dialog";
 import { type FileMetadata } from "../types";
 import { AppState } from "../appStore";
 
@@ -22,7 +20,6 @@ export interface UIActions {
       groupId?: string;
     } | null
   ) => void;
-  _clearRevertedPrompt: () => void;
   _setRecentPaths: (paths: string[]) => void;
   openFileInEditor: (filePath: string) => Promise<void>;
   closeEditor: () => void;
@@ -34,19 +31,13 @@ export interface UIActions {
     startLine: number,
     endLine: number
   ) => Promise<{ success: boolean; message: string }>;
-  stageFileChangeFromAI: (
+  executeFileOperationFromAI: (
     toolName: "write_file" | "create_file" | "delete_file",
     args: any
   ) => Promise<{
     success: boolean;
     message: string;
-    incrementalStats: { added: number; removed: number };
-    cumulativeStats: { added: number; removed: number };
   }>;
-  discardStagedChange: (filePath: string) => void;
-  discardAllStagedChanges: () => Promise<void>;
-  applyStagedChange: (filePath: string) => void;
-  applyAllStagedChanges: () => void;
 }
 
 export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
@@ -92,7 +83,6 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
     set((state) => ({ isEditorPanelVisible: !state.isEditorPanelVisible }));
   },
   setInlineEditingGroup: (state) => set({ inlineEditingGroup: state }),
-  _clearRevertedPrompt: () => set({ revertedPromptContent: null }),
   _setRecentPaths: (paths) => set({ recentPaths: paths }),
   openFileInEditor: async (filePath: string) => {
     const { rootPath, isEditorLoading } = _get();
@@ -178,7 +168,6 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
       _get().actions._updateFileMetadata(activeEditorFile, updatedMetadata);
     } catch (e) {
       console.error("Failed to save exclusion range:", e);
-      // Optionally revert state on error
     }
   },
   removeExclusionRange: async (rangeToRemove) => {
@@ -260,17 +249,14 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
       }
 
       let startOffset = 0;
-      // Sum lengths of all lines BEFORE the start line, plus their newlines
       for (let i = 0; i < startLine - 1; i++) {
         startOffset += lines[i].length + 1;
       }
 
       let endOffset = startOffset;
-      // Sum lengths of all lines WITHIN the range, plus their newlines
       for (let i = startLine - 1; i < endLine; i++) {
         endOffset += lines[i].length + 1;
       }
-      // The range should not include the final newline, so subtract 1.
       endOffset = Math.max(startOffset, endOffset - 1);
 
       const existingRanges =
@@ -306,7 +292,6 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
         }
       );
       _get().actions._updateFileMetadata(filePath, updatedMetadata);
-      // If the modified file is currently open in the editor, update its exclusion state
       if (_get().activeEditorFile === filePath) {
         set({ activeEditorFileExclusions: mergedRanges });
       }
@@ -322,252 +307,59 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
       };
     }
   },
-  stageFileChangeFromAI: async (toolName, args) => {
-    const { rootPath, stagedFileChanges } = _get();
+  executeFileOperationFromAI: async (toolName, args) => {
+    const { rootPath } = _get();
     const { file_path } = args;
     if (!rootPath) {
       return {
         success: false,
         message: "Error: Project path not found.",
-        incrementalStats: { added: 0, removed: 0 },
-        cumulativeStats: { added: 0, removed: 0 },
       };
     }
 
     try {
-      let newPatch: string;
-      let incrementalStats: { added: number; removed: number };
-      let cumulativeStats: { added: number; removed: number };
-      let finalPatchedContent: string | false;
-      let originalContentForStaging: string;
-      let changeTypeForStaging: "create" | "modify" | "delete";
-
-      const existingChange = stagedFileChanges.get(file_path);
-
-      if (existingChange) {
-        // --- LOGIC FOR MODIFYING AN ALREADY STAGED FILE ---
-        const intermediateContent = applyPatch(
-          existingChange.originalContent ?? "",
-          existingChange.patch
-        );
-        if (intermediateContent === false)
-          throw new Error("Could not apply existing patch.");
-
-        const { content, start_line, end_line } = args; // Assuming write_file
-        const finalContent = applyLineChanges(
-          intermediateContent,
-          content,
-          start_line,
-          end_line
-        );
-
-        // Incremental patch: from intermediate to final
-        const incrementalPatch = createPatch(
-          file_path,
-          intermediateContent,
-          finalContent,
-          "",
-          ""
-        );
-        incrementalStats = calculateStatsFromPatch(incrementalPatch);
-
-        newPatch = createPatch(
-          file_path,
-          existingChange.originalContent ?? "",
-          finalContent,
-          "",
-          ""
-        );
-        cumulativeStats = calculateStatsFromPatch(newPatch);
-        finalPatchedContent = finalContent;
-        originalContentForStaging = existingChange.originalContent ?? "";
-        changeTypeForStaging = existingChange.changeType; // Type doesn't change
-      } else {
-        // --- LOGIC FOR A NEW CHANGE ---
-        if (toolName === "create_file") {
-          originalContentForStaging = "";
-          finalPatchedContent = args.content || "";
-          changeTypeForStaging = "create";
-        } else {
-          // delete or modify
-          originalContentForStaging = await invoke<string>("get_file_content", {
-            rootPathStr: rootPath,
-            fileRelPath: file_path,
-          });
-          if (toolName === "delete_file") {
-            finalPatchedContent = ""; // Represent deletion with empty content
-            changeTypeForStaging = "delete";
-          } else {
-            // modify
-            const { content, start_line, end_line } = args;
-            finalPatchedContent = applyLineChanges(
-              originalContentForStaging,
-              content,
-              start_line,
-              end_line
-            );
-            changeTypeForStaging = "modify";
-          }
-        }
-        newPatch = createPatch(
-          file_path,
-          originalContentForStaging,
-          finalPatchedContent as string,
-          "",
-          ""
-        );
-        incrementalStats = calculateStatsFromPatch(newPatch);
-        cumulativeStats = incrementalStats;
-      }
-
-      // 2. Perform the actual file operation
-      if (changeTypeForStaging === "delete") {
+      if (toolName === "delete_file") {
         await invoke("delete_file", {
           rootPathStr: rootPath,
           fileRelPath: file_path,
         });
-      } else {
+      } else if (toolName === "create_file") {
+        await invoke("create_file", {
+          rootPathStr: rootPath,
+          fileRelPath: file_path,
+          content: args.content || "",
+        });
+      } else if (toolName === "write_file") {
+        const originalContent = await invoke<string>("get_file_content", {
+          rootPathStr: rootPath,
+          fileRelPath: file_path,
+        });
+        const finalContent = applyLineChanges(
+          originalContent,
+          args.content,
+          args.start_line,
+          args.end_line
+        );
         await invoke("save_file_content", {
           rootPathStr: rootPath,
           fileRelPath: file_path,
-          content: finalPatchedContent as string, // It won't be false here
+          content: finalContent,
         });
       }
 
-      // 3. Calculate CUMULATIVE diff stats for staging panel
-      // cumulativeStats already calculated above
-
-      // 4. Stage the change for potential revert
-      set((state) => {
-        const newChanges = new Map(state.stagedFileChanges);
-        newChanges.set(file_path, {
-          originalContent: originalContentForStaging,
-          patch: newPatch,
-          changeType: changeTypeForStaging,
-          stats: cumulativeStats, // Store cumulative stats in the staging area
-        });
-        return { stagedFileChanges: newChanges };
-      });
+      // Quét lại ngay lập tức để cập nhật UI
+      _get().actions.rescanProject();
 
       return {
         success: true,
-        message: `Successfully applied and staged change for ${file_path}.`,
-        incrementalStats, // Return incremental stats for chat UI
-        cumulativeStats,
+        message: `Successfully executed ${toolName} on ${file_path}.`,
       };
     } catch (e) {
       return {
         success: false,
         message: `Error during file operation for ${file_path}: ${String(e)}`,
-        incrementalStats: { added: 0, removed: 0 },
-        cumulativeStats: { added: 0, removed: 0 },
       };
     }
-  },
-  discardStagedChange: (filePath) => {
-    const { rootPath, stagedFileChanges } = _get();
-    if (!rootPath) return;
-
-    const change = stagedFileChanges.get(filePath);
-    if (!change) return;
-
-    const revertOperation = async () => {
-      try {
-        if (change.changeType === "create") {
-          await invoke("delete_file", {
-            rootPathStr: rootPath,
-            fileRelPath: filePath,
-          });
-        } else {
-          // Modify or Delete
-          await invoke("save_file_content", {
-            rootPathStr: rootPath,
-            fileRelPath: filePath,
-            content: change.originalContent ?? "",
-          });
-        }
-        // If successful, remove from staging
-        set((state) => {
-          const newChanges = new Map(state.stagedFileChanges);
-          newChanges.delete(filePath);
-          return { stagedFileChanges: newChanges };
-        });
-
-        // After reverting, rescan to get the correct file tree state
-        _get()
-          .actions.rescanProject()
-          .then(() => {
-            _get().actions.openFileInEditor(filePath);
-          });
-      } catch (e) {
-        console.error(`Failed to revert change for ${filePath}:`, e);
-        message(`Failed to revert change for ${filePath}: ${e}`, {
-          title: "Revert Error",
-          kind: "error",
-        });
-      }
-    };
-
-    revertOperation();
-  },
-  discardAllStagedChanges: async () => {
-    const { rootPath, stagedFileChanges } = _get();
-    if (!rootPath || stagedFileChanges.size === 0) return;
-
-    const revertPromises: Promise<void>[] = [];
-
-    // Create a list of all revert operations
-    for (const [filePath, change] of stagedFileChanges.entries()) {
-      if (change.changeType === "create") {
-        revertPromises.push(
-          invoke("delete_file", {
-            rootPathStr: rootPath,
-            fileRelPath: filePath,
-          })
-        );
-      } else {
-        // For both Modify and Delete, we write back the original content.
-        // For a deleted file, originalContent exists and writing it back effectively undeletes it.
-        revertPromises.push(
-          invoke("save_file_content", {
-            rootPathStr: rootPath,
-            fileRelPath: filePath,
-            content: change.originalContent ?? "",
-          })
-        );
-      }
-    }
-
-    try {
-      // Execute all revert operations concurrently
-      await Promise.all(revertPromises);
-
-      // If all reverts succeed, clear the staging map
-      set({ stagedFileChanges: new Map() });
-
-      // After reverting all files, rescan the project to update the UI correctly
-      await _get().actions.rescanProject();
-    } catch (e) {
-      console.error("Failed to revert all changes:", e);
-      await message(`Lỗi khi hủy bỏ tất cả các thay đổi: ${e}`, {
-        title: "Lỗi Hủy Bỏ",
-        kind: "error",
-      });
-    }
-  },
-  applyStagedChange: (filePath: string) => {
-    // This is now a "confirm" action. It just removes the ability to revert.
-    set((state) => {
-      const newChanges = new Map(state.stagedFileChanges);
-      newChanges.delete(filePath);
-      return { stagedFileChanges: newChanges };
-    });
-  },
-  applyAllStagedChanges: () => {
-    // "Accepts" all changes by clearing the staging map. The files are already modified on disk.
-    set({ stagedFileChanges: new Map() });
-    // Trigger a rescan to update metadata like token counts based on the new content.
-    _get().actions.rescanProject();
   },
 });
 
@@ -584,20 +376,7 @@ const applyLineChanges = (
   const originalLines = originalContent.split("\n");
   const newLines = newContent.split("\n");
   const startIndex = startLine - 1;
-  // If endLine is not provided, it means we are replacing from start_line until the end of the new content.
-  // If endLine is provided, it's a replacement of a specific range.
   const endIndex = endLine ? endLine : startIndex;
   originalLines.splice(startIndex, endIndex - startIndex, ...newLines);
   return originalLines.join("\n");
-};
-
-// Helper to calculate stats from a patch string
-const calculateStatsFromPatch = (patch: string) => {
-  let added = 0;
-  let removed = 0;
-  patch.split("\n").forEach((line) => {
-    if (line.startsWith("+") && !line.startsWith("+++")) added++;
-    if (line.startsWith("-") && !line.startsWith("---")) removed++;
-  });
-  return { added, removed };
 };

@@ -3,7 +3,6 @@ import { useAppStore } from "@/store/appStore";
 import { useTranslation } from "react-i18next";
 import { GroupEditorPanel } from "./GroupEditorPanel";
 import { EditorPanel } from "@/components/EditorPanel";
-import { StagingPanel } from "@/components/StagingPanel";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -71,7 +70,6 @@ export function MainPanel() {
           </ResizablePanel>
         )}
       </ResizablePanelGroup>
-      <StagingPanel />
     </div>
   );
 }

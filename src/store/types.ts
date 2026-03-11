@@ -136,7 +136,6 @@ export interface ChatMessage {
   content: string | null; // Allow null content for tool calls
   attachedFiles?: AttachedItem[]; // Files attached to this specific message
   hiddenContent?: string;
-  checkpointId?: string;
   generationInfo?: GenerationInfo;
   tool_calls?: ToolCall[]; // Add tool_calls
   hidden?: boolean; // For hidden user messages
@@ -150,7 +149,6 @@ export interface ToolCall {
     arguments: string; // JSON string
   };
   status?: "success" | "error"; // To track execution status for UI
-  diffStats?: { added: number; removed: number };
 }
 
 export interface AIChatSessionHeader {
@@ -204,15 +202,6 @@ export interface AppState {
   activeEditorFileContent: string | null;
   isEditorLoading: boolean;
   activeEditorFileExclusions: [number, number][] | null;
-  stagedFileChanges: Map<
-    string,
-    {
-      originalContent: string | null; // The content before ANY staged changes
-      patch: string; // The cumulative patch from the original content
-      changeType: "create" | "modify" | "delete";
-      stats: { added: number; removed: number };
-    }
-  >; // filePath -> { patch, stats, changeType }
 
   // Dữ liệu riêng của hồ sơ active
   syncEnabled: boolean;
@@ -267,13 +256,5 @@ export interface AppState {
   streamResponse: boolean;
   selectedAiModel: string;
   editingMessageIndex: number | null;
-  revertedPromptContent: string | null;
-  revertConfirmation: {
-    type: "regenerate" | "edit";
-    fromIndex: number;
-    newPromptForEdit?: string;
-    checkpointId: string;
-  } | null;
-  currentTurnCheckpointId: string | null;
   aiAttachedFiles: AttachedItem[];
 }

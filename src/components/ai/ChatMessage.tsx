@@ -16,10 +16,8 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { type ChatMessage as ChatMessageType } from "@/store/types";
 import { Button } from "@/components/ui/button";
-import { useAppActions } from "@/store/appStore";
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -41,7 +39,6 @@ export function ChatMessage({
   onStartEdit,
 }: ChatMessageProps) {
   const { t } = useTranslation();
-  const { revertToTurnCheckpoint } = useAppActions();
 
   if (message.hidden) {
     return null;
@@ -223,43 +220,24 @@ export function ChatMessage({
           const filePath = args.file_path ?? "unknown file";
           const fileName = filePath.split("/").pop() ?? filePath;
           const success = tool.status !== "error";
-          const stats = tool.diffStats;
 
           toolContent = (
-            <div className="flex flex-col">
-              <div className="flex items-baseline gap-1.5">
-                <span
-                  className={cn(
-                    "font-medium",
-                    success ? "text-foreground" : "text-destructive"
-                  )}
-                >
-                  {t(
-                    success
-                      ? "aiPanel.toolCall.writeFileSuccess"
-                      : "aiPanel.toolCall.writeFileError"
-                  )}
-                </span>
-                <code className="font-medium" title={filePath}>
-                  {fileName}
-                </code>
-              </div>
-              {stats && (
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge
-                    variant="outline"
-                    className="font-mono text-xs text-green-600 dark:text-green-500 border-green-500/50"
-                  >
-                    +{stats.added}
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className="font-mono text-xs text-red-600 dark:text-red-500 border-red-500/50"
-                  >
-                    -{stats.removed}
-                  </Badge>
-                </div>
-              )}
+            <div className="flex items-baseline gap-1.5">
+              <span
+                className={cn(
+                  "font-medium",
+                  success ? "text-foreground" : "text-destructive"
+                )}
+              >
+                {t(
+                  success
+                    ? "aiPanel.toolCall.writeFileSuccess"
+                    : "aiPanel.toolCall.writeFileError"
+                )}
+              </span>
+              <code className="font-medium" title={filePath}>
+                {fileName}
+              </code>
             </div>
           );
         } catch (e) {
@@ -364,22 +342,21 @@ export function ChatMessage({
                 <div className="border-b border-background/50 pb-2">
                   <div className="flex flex-wrap gap-1.5">
                     {message.attachedFiles.map((item) => (
-                      <Badge
+                      <span
                         key={item.id}
-                        variant="outline"
-                        className="font-normal bg-background/50"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium border rounded-md bg-background/50"
                       >
                         {item.type === "file" && (
-                          <FileText className="h-3 w-3 mr-1.5" />
+                          <FileText className="h-3 w-3" />
                         )}
                         {item.type === "folder" && (
-                          <Folder className="h-3 w-3 mr-1.5" />
+                          <Folder className="h-3 w-3" />
                         )}
                         {item.type === "group" && (
-                          <ListChecks className="h-3 w-3 mr-1.5" />
+                          <ListChecks className="h-3 w-3" />
                         )}
                         {item.name}
-                      </Badge>
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -410,23 +387,6 @@ export function ChatMessage({
             </div>
           )}
         </div>
-        {message.role === "user" && message.checkpointId && (
-          <div className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7"
-              onClick={(e) => {
-                e.stopPropagation(); // prevent opening edit mode
-                revertToTurnCheckpoint(message.checkpointId!);
-              }}
-              title={t("aiPanel.revertToCheckpoint")}
-            >
-              <RotateCcw className="h-3 w-3 mr-1.5" />
-              {t("aiPanel.revertToCheckpoint")}
-            </Button>
-          </div>
-        )}
         {message.role === "assistant" &&
           !isAiPanelLoading &&
           isLastAssistantMessageInTurn && (

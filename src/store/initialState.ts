@@ -30,7 +30,6 @@ export const initialState = {
   activeEditorFileContent: null,
   isEditorLoading: false,
   activeEditorFileExclusions: null,
-  stagedFileChanges: new Map(), // filePath -> { originalContent, changeType, stats }
   syncEnabled: false,
   syncPath: null,
   customIgnorePatterns: [],
@@ -77,9 +76,6 @@ export const initialState = {
   streamResponse: true,
   selectedAiModel: "openai/gpt-3.5-turbo",
   editingMessageIndex: null,
-  revertConfirmation: null,
-  revertedPromptContent: null,
-  currentTurnCheckpointId: null,
   aiAttachedFiles: [] as AttachedItem[],
 };
 

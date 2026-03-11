@@ -1,7 +1,7 @@
 // src/scenes/GroupEditorPanel.tsx
 import { useCallback, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useAppStore, useAppActions, type AppState } from "@/store/appStore";
+import { useAppStore, useAppActions } from "@/store/appStore";
 import { useShallow } from "zustand/react/shallow";
 import { FileTreeView, type FileNode } from "@/components/FileTreeView";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,6 @@ import {
   X,
   Search,
   GitMerge,
-  FileDiff,
-  FilePlus,
-  FileMinus,
   Loader2,
 } from "lucide-react";
 import { Scissors } from "lucide-react";
@@ -31,23 +28,18 @@ const filterNode = (node: FileNode, searchTerm: string): FileNode | null => {
   const term = searchTerm.toLowerCase();
   const isMatch = node.name.toLowerCase().includes(term);
 
-  // Case 1: It's a file. Return it if it matches, otherwise null.
   if (!node.children) {
     return isMatch ? node : null;
   }
 
-  // Case 2: It's a directory. If its name matches, return the whole sub-tree.
-  // This allows a user to find a folder and see all its contents.
   if (isMatch) {
     return node;
   }
 
-  // Case 3: Directory name doesn't match. Filter its children recursively.
   const filteredChildren = node.children
     .map((child) => filterNode(child, searchTerm))
     .filter(Boolean) as FileNode[];
 
-  // If any children matched, return this directory with only the matching children.
   if (filteredChildren.length > 0) {
     return { ...node, children: filteredChildren };
   }
@@ -60,19 +52,16 @@ const filterForExcludedFiles = (
   node: FileNode,
   metadataCache: Record<string, any>
 ): FileNode | null => {
-  // Trường hợp 1: Node là file
   if (!node.children) {
     const meta = metadataCache[node.path];
     const hasExclusions = meta?.excluded_ranges?.length > 0;
     return hasExclusions ? node : null;
   }
 
-  // Trường hợp 2: Node là thư mục
   const filteredChildren = node.children
     .map((child) => filterForExcludedFiles(child, metadataCache))
     .filter(Boolean) as FileNode[];
 
-  // Nếu thư mục này chứa file bị loại trừ, giữ lại thư mục
   if (filteredChildren.length > 0) {
     return { ...node, children: filteredChildren };
   }
@@ -85,12 +74,10 @@ const filterForChangedFiles = (
   node: FileNode,
   changedPaths: Set<string>
 ): FileNode | null => {
-  // Trường hợp 1: Node là file
   if (!node.children) {
     return changedPaths.has(node.path) ? node : null;
   }
 
-  // Trường hợp 2: Node là thư mục
   const filteredChildren = node.children
     .map((child) => filterForChangedFiles(child, changedPaths))
     .filter(Boolean) as FileNode[];
@@ -101,91 +88,8 @@ const filterForChangedFiles = (
   return null;
 };
 
-// --- HÀM LỌC MỚI: Chỉ giữ lại các file đã áp dụng patch ---
-const filterForPatchedFiles = (
-  node: FileNode,
-  patchedPaths: Set<string>
-): FileNode | null => {
-  // Trường hợp 1: Node là file
-  if (!node.children) {
-    return patchedPaths.has(node.path) ? node : null;
-  }
-
-  // Trường hợp 2: Node là thư mục
-  const filteredChildren = node.children
-    .map((child) => filterForPatchedFiles(child, patchedPaths))
-    .filter(Boolean) as FileNode[];
-
-  if (filteredChildren.length > 0) {
-    return { ...node, children: filteredChildren };
-  }
-
-  return null;
-};
-
-// --- HÀM LỌC MỚI: Chỉ giữ lại các file đã thêm ---
-const filterForAddedFiles = (
-  node: FileNode,
-  stagedChanges: AppState["stagedFileChanges"]
-): FileNode | null => {
-  if (!node.children) {
-    const change = stagedChanges.get(node.path);
-    return change?.changeType === "create" ? node : null;
-  }
-
-  const filteredChildren = node.children
-    .map((child) => filterForAddedFiles(child, stagedChanges))
-    .filter(Boolean) as FileNode[];
-
-  if (filteredChildren.length > 0) {
-    return { ...node, children: filteredChildren };
-  }
-  return null;
-};
-
-// --- HÀM LỌC MỚI: Chỉ giữ lại các file đã xóa ---
-const filterForDeletedFiles = (
-  node: FileNode,
-  stagedChanges: AppState["stagedFileChanges"]
-): FileNode | null => {
-  if (!node.children) {
-    const change = stagedChanges.get(node.path);
-    return change?.changeType === "delete" ? node : null;
-  }
-
-  const filteredChildren = node.children
-    .map((child) => filterForDeletedFiles(child, stagedChanges))
-    .filter(Boolean) as FileNode[];
-
-  if (filteredChildren.length > 0) {
-    return { ...node, children: filteredChildren };
-  }
-  return null;
-};
-
-// --- HÀM LỌC MỚI: Chỉ giữ lại các file đã sửa ---
-const filterForModifiedFiles = (
-  node: FileNode,
-  stagedChanges: AppState["stagedFileChanges"]
-): FileNode | null => {
-  if (!node.children) {
-    const change = stagedChanges.get(node.path);
-    return change?.changeType === "modify" ? node : null;
-  }
-
-  const filteredChildren = node.children
-    .map((child) => filterForModifiedFiles(child, stagedChanges))
-    .filter(Boolean) as FileNode[];
-
-  if (filteredChildren.length > 0) {
-    return { ...node, children: filteredChildren };
-  }
-  return null;
-};
-
 export function GroupEditorPanel() {
   const { t } = useTranslation();
-  // <-- Đổi tên component
   const {
     toggleEditingPath,
     selectAllFiles,
@@ -201,7 +105,6 @@ export function GroupEditorPanel() {
     fileMetadataCache,
     tempSelectedPaths,
     gitStatus,
-    stagedFileChanges,
   } = useAppStore(
     useShallow((state) => ({
       group: state.groups.find((g) => g.id === state.editingGroupId),
@@ -210,16 +113,11 @@ export function GroupEditorPanel() {
       fileMetadataCache: state.fileMetadataCache,
       tempSelectedPaths: state.tempSelectedPaths,
       gitStatus: state.gitStatus,
-      stagedFileChanges: state.stagedFileChanges,
     }))
   );
 
   const [showOnlyExcluded, setShowOnlyExcluded] = useState(false);
   const [showOnlyChanged, setShowOnlyChanged] = useState(false);
-  const [showOnlyPatched, setShowOnlyPatched] = useState(false);
-  const [showOnlyAdded, setShowOnlyAdded] = useState(false);
-  const [showOnlyDeleted, setShowOnlyDeleted] = useState(false);
-  const [showOnlyModified, setShowOnlyModified] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   const changedFilesSet = useMemo(() => {
@@ -236,76 +134,6 @@ export function GroupEditorPanel() {
     );
   }, [fileMetadataCache]);
 
-  const patchedFilesSet = useMemo(() => {
-    return new Set(stagedFileChanges.keys());
-  }, [stagedFileChanges]);
-
-  const hasAnyPatches = useMemo(
-    () => patchedFilesSet.size > 0,
-    [patchedFilesSet]
-  );
-
-  const stagedStats = useMemo(() => {
-    const stats = { added: 0, deleted: 0, modified: 0 };
-    for (const change of stagedFileChanges.values()) {
-      if (change.changeType === "create") stats.added++;
-      if (change.changeType === "delete") stats.deleted++;
-      if (change.changeType === "modify") stats.modified++;
-    }
-    return stats;
-  }, [stagedFileChanges]);
-
-  const augmentedFileTree = useMemo(() => {
-    if (!fileTree) return null;
-
-    // Deep clone the tree to avoid mutating the original state
-    const treeCopy = JSON.parse(JSON.stringify(fileTree)) as FileNode;
-
-    // Helper to find or create nodes in the tree
-    const findOrCreateNode = (path: string): FileNode | null => {
-      const parts = path.split("/");
-      let currentNode: FileNode = treeCopy;
-
-      for (let i = 0; i < parts.length; i++) {
-        const part = parts[i];
-        if (!currentNode.children) {
-          currentNode.children = [];
-        }
-
-        let childNode = currentNode.children.find((n) => n.name === part);
-
-        if (!childNode) {
-          const isLastPart = i === parts.length - 1;
-          const newPath = parts.slice(0, i + 1).join("/");
-          childNode = {
-            name: part,
-            path: newPath,
-            children: isLastPart ? null : [],
-          };
-          currentNode.children.push(childNode);
-          // Keep children sorted (folders first, then alphabetically)
-          currentNode.children.sort((a, b) => {
-            const aIsDir = !!a.children;
-            const bIsDir = !!b.children;
-            if (aIsDir !== bIsDir) return aIsDir ? -1 : 1;
-            return a.name.localeCompare(b.name);
-          });
-        }
-        currentNode = childNode;
-      }
-      return currentNode;
-    };
-
-    // Inject deleted/new files into the tree
-    for (const [filePath, change] of stagedFileChanges.entries()) {
-      if (change.changeType === "delete" || change.changeType === "create") {
-        findOrCreateNode(filePath);
-      }
-    }
-
-    return treeCopy;
-  }, [fileTree, stagedFileChanges]);
-
   const handleTogglePath = useCallback(
     (toggledNode: FileNode, isSelected: boolean) => {
       toggleEditingPath(toggledNode, isSelected);
@@ -314,57 +142,31 @@ export function GroupEditorPanel() {
   );
 
   const filteredFileTree = useMemo(() => {
-    if (!augmentedFileTree || !fileMetadataCache) return null;
+    if (!fileTree || !fileMetadataCache) return null;
 
-    let tree: FileNode | null = augmentedFileTree;
+    let tree: FileNode | null = fileTree;
 
-    // 0. Lọc theo trạng thái "chỉ hiển thị file có patch"
-    if (showOnlyAdded && tree) {
-      tree = filterForAddedFiles(tree, stagedFileChanges);
-    }
-
-    if (showOnlyDeleted && tree) {
-      tree = filterForDeletedFiles(tree, stagedFileChanges);
-    }
-
-    if (showOnlyModified && tree) {
-      tree = filterForModifiedFiles(tree, stagedFileChanges);
-    }
-
-    if (showOnlyPatched && tree) {
-      tree = filterForPatchedFiles(tree, patchedFilesSet);
-    }
-
-    // 1. Lọc theo trạng thái "chỉ hiển thị file có thay đổi"
     if (showOnlyChanged && tree) {
       tree = filterForChangedFiles(tree, changedFilesSet);
     }
 
-    // 2. Lọc theo trạng thái "chỉ hiển thị file bị loại trừ"
     if (tree && showOnlyExcluded) {
       const excludedTree = filterForExcludedFiles(tree, fileMetadataCache);
       tree = excludedTree;
     }
 
-    // 3. Áp dụng bộ lọc tìm kiếm
     if (tree && searchTerm.trim()) {
       tree = filterNode(tree, searchTerm);
     }
 
     return tree;
   }, [
-    augmentedFileTree,
+    fileTree,
     fileMetadataCache,
     searchTerm,
     showOnlyExcluded,
     showOnlyChanged,
-    showOnlyPatched,
-    patchedFilesSet,
     changedFilesSet,
-    showOnlyAdded,
-    showOnlyDeleted,
-    showOnlyModified,
-    stagedFileChanges,
   ]);
 
   if (!group || !fileTree || tempSelectedPaths === null) {
@@ -414,7 +216,7 @@ export function GroupEditorPanel() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={t("groupEditor.searchPlaceholder")}
-            className="pl-8 pr-[13rem]" // Tăng padding cho nhiều nút hơn
+            className="pl-8 pr-[13rem]"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -469,110 +271,10 @@ export function GroupEditorPanel() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <TooltipProvider delayDuration={100}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "h-7 w-7",
-                      showOnlyPatched && "bg-accent text-accent-foreground"
-                    )}
-                    onClick={() => setShowOnlyPatched(!showOnlyPatched)}
-                    disabled={!showOnlyPatched && !hasAnyPatches}
-                  >
-                    <FileDiff className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {showOnlyPatched
-                      ? t("groupEditor.unfilterPatchedTooltip")
-                      : t("groupEditor.filterPatchedTooltip")}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <div className="h-4 w-px bg-border mx-1" />
-            <TooltipProvider delayDuration={100}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "h-7 w-7",
-                      showOnlyAdded && "bg-accent text-accent-foreground"
-                    )}
-                    onClick={() => setShowOnlyAdded(!showOnlyAdded)}
-                    disabled={!showOnlyAdded && stagedStats.added === 0}
-                  >
-                    <FilePlus className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {showOnlyAdded
-                      ? t("groupEditor.unfilterAddedTooltip")
-                      : t("groupEditor.filterAddedTooltip")}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider delayDuration={100}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "h-7 w-7",
-                      showOnlyModified && "bg-accent text-accent-foreground"
-                    )}
-                    onClick={() => setShowOnlyModified(!showOnlyModified)}
-                    disabled={!showOnlyModified && stagedStats.modified === 0}
-                  >
-                    <FileDiff className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {showOnlyModified
-                      ? t("groupEditor.unfilterPatchedTooltip")
-                      : t("groupEditor.filterPatchedTooltip")}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider delayDuration={100}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "h-7 w-7",
-                      showOnlyDeleted && "bg-accent text-accent-foreground"
-                    )}
-                    onClick={() => setShowOnlyDeleted(!showOnlyDeleted)}
-                    disabled={!showOnlyDeleted && stagedStats.deleted === 0}
-                  >
-                    <FileMinus className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {showOnlyDeleted
-                      ? t("groupEditor.unfilterDeletedTooltip")
-                      : t("groupEditor.filterDeletedTooltip")}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
           </div>
         </div>
       </div>
+      {/* File Tree */}
       <main className="flex-1 overflow-hidden">
         <ScrollArea className="h-full p-4">
           {filteredFileTree ? (
@@ -582,28 +284,17 @@ export function GroupEditorPanel() {
               onToggle={handleTogglePath}
               gitStatus={gitStatus?.files ?? null}
               onAttachFile={attachItemToAi}
-              stagedChangeType={
-                stagedFileChanges.get(filteredFileTree.path)?.changeType ?? null
-              }
             />
           ) : (
             <div className="text-center text-muted-foreground p-4">
               {
-                showOnlyAdded
-                  ? t("groupEditor.noAddedFiles")
-                  : showOnlyDeleted
-                  ? t("groupEditor.noDeletedFiles")
-                  : showOnlyModified
-                  ? t("groupEditor.noPatchedFiles")
-                  : showOnlyPatched
-                  ? t("groupEditor.noPatchedFiles")
-                  : showOnlyChanged
+                showOnlyChanged
                   ? t("groupEditor.noChangedFiles")
                   : showOnlyExcluded
                   ? t("groupEditor.noExcludedFiles")
                   : searchTerm
                   ? t("groupEditor.noSearchResults", { searchTerm })
-                  : "" /* Fallback for when no filter is active but tree is null */
+                  : ""
               }
             </div>
           )}

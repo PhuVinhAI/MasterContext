@@ -1,14 +1,11 @@
 // src/components/FileTreeView.tsx
-import { useState, useEffect, useRef } from "react"; // <-- Thêm useEffect, useRef
+import { useState, useEffect, useRef } from "react";
 import {
   ChevronRight,
   Folder,
   File as FileIcon,
   Paperclip,
   Scissors,
-  FileDiff, // Modified
-  FilePlus, // Added
-  FileMinus, // Deleted
 } from "lucide-react";
 import { useAppActions, useAppStore } from "@/store/appStore";
 import { useShallow } from "zustand/react/shallow";
@@ -62,7 +59,6 @@ interface FileTreeViewProps {
   onToggle: (node: FileNode, isSelected: boolean) => void;
   gitStatus: Record<string, string> | null;
   onAttachFile: (item: AttachedItem) => void;
-  stagedChangeType: "create" | "modify" | "delete" | null;
   level?: number;
 }
 
@@ -72,14 +68,12 @@ export function FileTreeView({
   onToggle,
   gitStatus,
   onAttachFile,
-  stagedChangeType,
   level = 0,
 }: FileTreeViewProps) {
   const { openFileInEditor } = useAppActions();
-  const { fileMetadataCache, stagedFileChanges, aiAttachedFiles } = useAppStore(
+  const { fileMetadataCache, aiAttachedFiles } = useAppStore(
     useShallow((state) => ({
       fileMetadataCache: state.fileMetadataCache,
-      stagedFileChanges: state.stagedFileChanges,
       aiAttachedFiles: state.aiAttachedFiles,
     }))
   );
@@ -161,26 +155,9 @@ export function FileTreeView({
               {hasExclusions && (
                 <Scissors className="h-3.5 w-3.5 text-destructive shrink-0" />
               )}
-              {stagedChangeType === "create" && (
-                <FilePlus className="h-3.5 w-3.5 text-green-500 shrink-0" />
-              )}
-              {stagedChangeType === "modify" && (
-                <FileDiff className="h-3.5 w-3.5 text-yellow-500 shrink-0" />
-              )}
-              {stagedChangeType === "delete" && (
-                <FileMinus className="h-3.5 w-3.5 text-red-500 shrink-0" />
-              )}
             </>
           )}
-          <span
-            className={cn(
-              "ml-2 truncate",
-              stagedChangeType === "create" &&
-                "text-green-600 dark:text-green-500",
-              stagedChangeType === "delete" &&
-                "text-red-600 dark:text-red-500 line-through"
-            )}
-          >
+          <span className="ml-2 truncate">
             {node.name}
           </span>
           <div className="ml-auto flex items-center gap-1 pl-2">
@@ -226,9 +203,6 @@ export function FileTreeView({
               onToggle={onToggle}
               gitStatus={gitStatus}
               onAttachFile={onAttachFile}
-              stagedChangeType={
-                stagedFileChanges.get(child.path)?.changeType ?? null
-              }
               level={level + 1}
             />
           ))}
