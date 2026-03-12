@@ -1,12 +1,17 @@
 // src/store/actions/aiChatActions.ts
 import { StateCreator } from "zustand";
 import { AppState } from "../appStore";
+import i18n from "@/i18n";
+
+// Đặt ở đầu file để tránh nhầm lẫn — dùng trước khi định nghĩa
+// Helper to get translations
+const t = (key: string) => i18n.t(key);
+
 import {
   type ChatMessage,
   type AIChatSession,
   type AttachedItem,
 } from "../types";
-import i18n from "@/i18n";
 import { invoke } from "@tauri-apps/api/core";
 import {
   handleNonStreamingResponse,
@@ -428,6 +433,3 @@ export const createAiChatActions: StateCreator<
     await get().actions.fetchAiResponse();
   },
 });
-
-// Helper to get translations
-const t = (key: string) => i18n.t(key);

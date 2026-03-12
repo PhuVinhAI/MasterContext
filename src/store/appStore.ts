@@ -90,6 +90,7 @@ export interface AppState {
   exportWithoutComments: boolean;
   exportRemoveDebugLogs: boolean;
   exportSuperCompressed: boolean;
+  exportClaudeMode: boolean;
   alwaysApplyText: string | null;
   exportExcludeExtensions: string[];
   gitExportModeIsContext: boolean;

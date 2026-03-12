@@ -5,6 +5,25 @@ import { invoke } from "@tauri-apps/api/core";
 import { type AppSettings } from "../types";
 import { message } from "@tauri-apps/plugin-dialog";
 
+/**
+ * Helper tái sử dụng cho các setter export toggle: optimistic update + invoke + rollback.
+ */
+const _persistExportToggle = async (
+  rootPath: string,
+  activeProfile: string,
+  invokeCmd: string,
+  value: boolean,
+  onError: () => void,
+  errorMsg: string
+) => {
+  try {
+    await invoke(invokeCmd, { path: rootPath, profileName: activeProfile, enabled: value });
+  } catch (error) {
+    await message(`${errorMsg}: ${error}`, { title: "Lỗi", kind: "error" });
+    onError();
+  }
+};
+
 export interface SettingsActions {
   setSyncSettings: (settings: {
     enabled: boolean;
@@ -111,129 +130,57 @@ export const createSettingsActions: StateCreator<
     const { rootPath, activeProfile } = get();
     if (!rootPath) return;
     set({ exportUseFullTree: enabled });
-    try {
-      await invoke("set_export_use_full_tree_setting", {
-        path: rootPath,
-        profileName: activeProfile,
-        enabled,
-      });
-    } catch (error) {
-      message(`Không thể lưu cài đặt xuất file: ${error}`, {
-        title: "Lỗi",
-        kind: "error",
-      });
-      set((state) => ({ exportUseFullTree: !state.exportUseFullTree }));
-    }
+    await _persistExportToggle(rootPath, activeProfile, "set_export_use_full_tree_setting", enabled,
+      () => set((s) => ({ exportUseFullTree: !s.exportUseFullTree })),
+      "Không thể lưu cài đặt xuất file");
   },
   setExportOnlyTree: async (enabled: boolean) => {
     const { rootPath, activeProfile } = get();
     if (!rootPath) return;
     set({ exportOnlyTree: enabled });
-    try {
-      await invoke("set_export_only_tree_setting", {
-        path: rootPath,
-        profileName: activeProfile,
-        enabled,
-      });
-    } catch (error) {
-      message(`Không thể lưu cài đặt xuất cây: ${error}`, {
-        title: "Lỗi",
-        kind: "error",
-      });
-      set((state) => ({ exportOnlyTree: !state.exportOnlyTree }));
-    }
+    await _persistExportToggle(rootPath, activeProfile, "set_export_only_tree_setting", enabled,
+      () => set((s) => ({ exportOnlyTree: !s.exportOnlyTree })),
+      "Không thể lưu cài đặt xuất cây");
   },
   setExportWithLineNumbers: async (enabled: boolean) => {
     const { rootPath, activeProfile } = get();
     if (!rootPath) return;
     set({ exportWithLineNumbers: enabled });
-    try {
-      await invoke("set_export_with_line_numbers_setting", {
-        path: rootPath,
-        profileName: activeProfile,
-        enabled,
-      });
-    } catch (error) {
-      message(`Không thể lưu cài đặt số dòng: ${error}`, {
-        title: "Lỗi",
-        kind: "error",
-      });
-      set((state) => ({ exportWithLineNumbers: !state.exportWithLineNumbers }));
-    }
+    await _persistExportToggle(rootPath, activeProfile, "set_export_with_line_numbers_setting", enabled,
+      () => set((s) => ({ exportWithLineNumbers: !s.exportWithLineNumbers })),
+      "Không thể lưu cài đặt số dòng");
   },
   setExportWithoutComments: async (enabled: boolean) => {
     const { rootPath, activeProfile } = get();
     if (!rootPath) return;
     set({ exportWithoutComments: enabled });
-    try {
-      await invoke("set_export_without_comments_setting", {
-        path: rootPath,
-        profileName: activeProfile,
-        enabled,
-      });
-    } catch (error) {
-      message(`Không thể lưu cài đặt loại bỏ chú thích: ${error}`, {
-        title: "Lỗi",
-        kind: "error",
-      });
-      set((state) => ({ exportWithoutComments: !state.exportWithoutComments }));
-    }
+    await _persistExportToggle(rootPath, activeProfile, "set_export_without_comments_setting", enabled,
+      () => set((s) => ({ exportWithoutComments: !s.exportWithoutComments })),
+      "Không thể lưu cài đặt loại bỏ chú thích");
   },
   setExportRemoveDebugLogs: async (enabled: boolean) => {
     const { rootPath, activeProfile } = get();
     if (!rootPath) return;
     set({ exportRemoveDebugLogs: enabled });
-    try {
-      await invoke("set_export_remove_debug_logs_setting", {
-        path: rootPath,
-        profileName: activeProfile,
-        enabled,
-      });
-    } catch (error) {
-      message(`Không thể lưu cài đặt loại bỏ debug logs: ${error}`, {
-        title: "Lỗi",
-        kind: "error",
-      });
-      set((state) => ({
-        exportRemoveDebugLogs: !state.exportRemoveDebugLogs,
-      }));
-    }
+    await _persistExportToggle(rootPath, activeProfile, "set_export_remove_debug_logs_setting", enabled,
+      () => set((s) => ({ exportRemoveDebugLogs: !s.exportRemoveDebugLogs })),
+      "Không thể lưu cài đặt loại bỏ debug logs");
   },
   setExportSuperCompressed: async (enabled: boolean) => {
     const { rootPath, activeProfile } = get();
     if (!rootPath) return;
     set({ exportSuperCompressed: enabled });
-    try {
-      await invoke("set_export_super_compressed_setting", {
-        path: rootPath,
-        profileName: activeProfile,
-        enabled,
-      });
-    } catch (error) {
-      message(`Không thể lưu cài đặt xuất siêu nén: ${error}`, {
-        title: "Lỗi",
-        kind: "error",
-      });
-      set((state) => ({ exportSuperCompressed: !state.exportSuperCompressed }));
-    }
+    await _persistExportToggle(rootPath, activeProfile, "set_export_super_compressed_setting", enabled,
+      () => set((s) => ({ exportSuperCompressed: !s.exportSuperCompressed })),
+      "Không thể lưu cài đặt xuất siêu nén");
   },
   setExportClaudeMode: async (enabled: boolean) => {
     const { rootPath, activeProfile } = get();
     if (!rootPath) return;
     set({ exportClaudeMode: enabled });
-    try {
-      await invoke("set_export_claude_mode_setting", {
-        path: rootPath,
-        profileName: activeProfile,
-        enabled,
-      });
-    } catch (error) {
-      message(`Không thể lưu cài đặt Claude Mode: ${error}`, {
-        title: "Lỗi",
-        kind: "error",
-      });
-      set((state) => ({ exportClaudeMode: !state.exportClaudeMode }));
-    }
+    await _persistExportToggle(rootPath, activeProfile, "set_export_claude_mode_setting", enabled,
+      () => set((s) => ({ exportClaudeMode: !s.exportClaudeMode })),
+      "Không thể lưu cài đặt Claude Mode");
   },
   setAlwaysApplyText: async (text: string) => {
     const { rootPath, activeProfile } = get();
@@ -274,21 +221,9 @@ export const createSettingsActions: StateCreator<
     const { rootPath, activeProfile } = get();
     if (!rootPath) return;
     set({ gitExportModeIsContext: enabled });
-    try {
-      await invoke("set_git_export_mode_setting", {
-        path: rootPath,
-        profileName: activeProfile,
-        enabled,
-      });
-    } catch (error) {
-      message(`Không thể lưu cài đặt Git: ${error}`, {
-        title: "Lỗi",
-        kind: "error",
-      });
-      set((state) => ({
-        gitExportModeIsContext: !state.gitExportModeIsContext,
-      }));
-    }
+    await _persistExportToggle(rootPath, activeProfile, "set_git_export_mode_setting", enabled,
+      () => set((s) => ({ gitExportModeIsContext: !s.gitExportModeIsContext })),
+      "Không thể lưu cài đặt Git");
   },
   updateAppSettings: async (newSettings) => {
     const {
@@ -297,6 +232,7 @@ export const createSettingsActions: StateCreator<
       openRouterApiKey,
       googleApiKey,
       aiModels,
+      allAvailableModels,
       streamResponse,
       systemPrompt,
       temperature,
@@ -304,7 +240,6 @@ export const createSettingsActions: StateCreator<
       topK,
       maxTokens,
     } = get();
-    const { allAvailableModels } = get();
     const fullSettings: AppSettings = {
       recentPaths: newSettings.recentPaths ?? recentPaths,
       nonAnalyzableExtensions:
