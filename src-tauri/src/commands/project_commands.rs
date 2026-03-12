@@ -72,6 +72,7 @@ pub fn start_project_export(window: Window, app: AppHandle, path: String, profil
             let without_comments = project_data.export_without_comments.unwrap_or(false);
             let remove_debug_logs = project_data.export_remove_debug_logs.unwrap_or(false);
             let super_compressed = project_data.export_super_compressed.unwrap_or(false);
+            let export_claude_mode = project_data.export_claude_mode.unwrap_or(false);
             let always_apply_text = project_data.always_apply_text;
             let exclude_extensions = project_data.export_exclude_extensions;
             let all_files: Vec<String> = project_data.file_metadata_cache.keys().cloned().collect();
@@ -91,6 +92,7 @@ pub fn start_project_export(window: Window, app: AppHandle, path: String, profil
                 &always_apply_text,
                 &exclude_extensions,
                 &project_data.file_metadata_cache,
+                export_claude_mode,
             )
         })();
         match result {
@@ -110,6 +112,7 @@ pub fn generate_project_context(app: AppHandle, path: String, profile_name: Stri
     let use_full_tree = project_data.export_use_full_tree.unwrap_or(false);
     let always_apply_text = project_data.always_apply_text;
     let exclude_extensions = project_data.export_exclude_extensions;
+    let export_claude_mode = project_data.export_claude_mode.unwrap_or(false);
     let all_files: Vec<String> = project_data.file_metadata_cache.keys().cloned().collect();
     if all_files.is_empty() {
         return Err("project.generate_context_no_files".to_string());
@@ -127,6 +130,7 @@ pub fn generate_project_context(app: AppHandle, path: String, profile_name: Stri
         &always_apply_text,
         &exclude_extensions,
         &project_data.file_metadata_cache,
+        export_claude_mode,
     )
 }
 

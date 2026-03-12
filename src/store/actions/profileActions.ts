@@ -53,6 +53,7 @@ export const createProfileActions: StateCreator<
           exportWithoutComments: profileData.export_without_comments ?? false,
           exportRemoveDebugLogs: profileData.export_remove_debug_logs ?? false,
           exportSuperCompressed: profileData.export_super_compressed ?? false,
+          exportClaudeMode: profileData.export_claude_mode ?? false,
           alwaysApplyText: profileData.always_apply_text ?? null,
           exportExcludeExtensions: profileData.export_exclude_extensions ?? [],
           gitExportModeIsContext:

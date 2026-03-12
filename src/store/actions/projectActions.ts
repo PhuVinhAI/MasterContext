@@ -173,6 +173,7 @@ export const createProjectActions: StateCreator<
         exportWithoutComments: payload.export_without_comments ?? false,
         exportRemoveDebugLogs: payload.export_remove_debug_logs ?? false,
         exportSuperCompressed: payload.export_super_compressed ?? false,
+        exportClaudeMode: payload.export_claude_mode ?? false,
         alwaysApplyText: payload.always_apply_text ?? null,
         exportExcludeExtensions: payload.export_exclude_extensions ?? [],
         gitExportModeIsContext: payload.git_export_mode_is_context ?? false,
@@ -248,6 +249,7 @@ export const createProjectActions: StateCreator<
       exportWithLineNumbers,
       exportWithoutComments,
       exportRemoveDebugLogs,
+      exportClaudeMode,
     } = get();
     if (!rootPath || !activeProfile) return;
     try {
@@ -259,6 +261,7 @@ export const createProjectActions: StateCreator<
         withoutComments: exportWithoutComments,
         removeDebugLogs: exportRemoveDebugLogs,
         superCompressed: false, // Copy should not be compressed
+        exportClaudeMode: exportClaudeMode,
       });
       await writeText(context);
       await message("Đã sao chép ngữ cảnh dự án vào clipboard!", {

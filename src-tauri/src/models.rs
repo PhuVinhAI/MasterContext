@@ -182,6 +182,7 @@ pub struct CachedProjectData {
     pub always_apply_text: Option<String>,
     pub export_exclude_extensions: Option<Vec<String>>,
     pub git_export_mode_is_context: Option<bool>,
+    pub export_claude_mode: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

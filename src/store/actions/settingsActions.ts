@@ -18,6 +18,7 @@ export interface SettingsActions {
   setExportWithoutComments: (enabled: boolean) => Promise<void>;
   setExportRemoveDebugLogs: (enabled: boolean) => Promise<void>;
   setExportSuperCompressed: (enabled: boolean) => Promise<void>;
+  setExportClaudeMode: (enabled: boolean) => Promise<void>;
   setAlwaysApplyText: (text: string) => Promise<void>;
   setExportExcludeExtensions: (extensions: string[]) => Promise<void>;
   setGitExportMode: (enabled: boolean) => Promise<void>;
@@ -214,6 +215,24 @@ export const createSettingsActions: StateCreator<
         kind: "error",
       });
       set((state) => ({ exportSuperCompressed: !state.exportSuperCompressed }));
+    }
+  },
+  setExportClaudeMode: async (enabled: boolean) => {
+    const { rootPath, activeProfile } = get();
+    if (!rootPath) return;
+    set({ exportClaudeMode: enabled });
+    try {
+      await invoke("set_export_claude_mode_setting", {
+        path: rootPath,
+        profileName: activeProfile,
+        enabled,
+      });
+    } catch (error) {
+      message(`Không thể lưu cài đặt Claude Mode: ${error}`, {
+        title: "Lỗi",
+        kind: "error",
+      });
+      set((state) => ({ exportClaudeMode: !state.exportClaudeMode }));
     }
   },
   setAlwaysApplyText: async (text: string) => {

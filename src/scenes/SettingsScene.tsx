@@ -37,6 +37,7 @@ export function SettingsScene() {
     exportWithoutComments,
     exportRemoveDebugLogs,
     exportSuperCompressed,
+    exportClaudeMode,
     alwaysApplyText,
     exportExcludeExtensions,
     gitExportModeIsContext,
@@ -59,6 +60,7 @@ export function SettingsScene() {
     setExportWithoutComments,
     setExportRemoveDebugLogs,
     setExportSuperCompressed,
+    setExportClaudeMode,
     setAlwaysApplyText,
     setExportExcludeExtensions,
     handleToggleSync,
@@ -129,6 +131,8 @@ export function SettingsScene() {
             setExportWithoutComments={setExportWithoutComments}
             exportSuperCompressed={exportSuperCompressed}
             setExportSuperCompressed={setExportSuperCompressed}
+            exportClaudeMode={exportClaudeMode}
+            setExportClaudeMode={setExportClaudeMode}
             exportRemoveDebugLogs={exportRemoveDebugLogs}
             setExportRemoveDebugLogs={setExportRemoveDebugLogs}
             exportExcludeExtensions={exportExcludeExtensions}

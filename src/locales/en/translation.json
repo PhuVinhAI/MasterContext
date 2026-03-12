@@ -326,6 +326,10 @@
         "label": "Super compressed export",
         "description": "Compress file content into a single line next to the filename in the tree."
       },
+      "claudeMode": {
+        "label": "Claude / AI Agent Mode",
+        "description": "Format the exported file with a JSON manifest and meta tags, optimized for AI Agents to read."
+      },
       "removeComments": {
         "label": "Remove comments",
         "description": "Automatically remove comment blocks from the source code to reduce tokens."

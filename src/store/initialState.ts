@@ -40,6 +40,7 @@ export const initialState = {
   exportWithoutComments: false,
   exportRemoveDebugLogs: false,
   exportSuperCompressed: false,
+  exportClaudeMode: false,
   alwaysApplyText: null,
   exportExcludeExtensions: [],
   gitExportModeIsContext: false,

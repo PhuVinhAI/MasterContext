@@ -19,6 +19,8 @@ interface ExportTabProps {
   setExportWithoutComments: (enabled: boolean) => void;
   exportSuperCompressed: boolean;
   setExportSuperCompressed: (enabled: boolean) => void;
+  exportClaudeMode: boolean;
+  setExportClaudeMode: (enabled: boolean) => void;
   exportRemoveDebugLogs: boolean;
   setExportRemoveDebugLogs: (enabled: boolean) => void;
   exportExcludeExtensions: string[];
@@ -36,6 +38,8 @@ export function ExportTab({
   setExportWithoutComments,
   exportSuperCompressed,
   setExportSuperCompressed,
+  exportClaudeMode,
+  setExportClaudeMode,
   exportRemoveDebugLogs,
   setExportRemoveDebugLogs,
   exportExcludeExtensions,
@@ -119,7 +123,7 @@ export function ExportTab({
             htmlFor="export-super-compressed-toggle"
             className={cn(
               "flex flex-col items-start gap-1",
-              (exportWithLineNumbers || exportOnlyTree) && "opacity-50"
+              (exportWithLineNumbers || exportOnlyTree || exportClaudeMode) && "opacity-50"
             )}
           >
             <span>{t("settings.export.superCompressed.label")}</span>
@@ -131,7 +135,27 @@ export function ExportTab({
             id="export-super-compressed-toggle"
             checked={exportSuperCompressed}
             onCheckedChange={setExportSuperCompressed}
-            disabled={exportWithLineNumbers || exportOnlyTree}
+            disabled={exportWithLineNumbers || exportOnlyTree || exportClaudeMode}
+          />
+        </div>
+        <div className="flex items-center justify-between pt-4 border-t">
+          <Label
+            htmlFor="export-claude-mode-toggle"
+            className={cn(
+              "flex flex-col items-start gap-1",
+              (exportSuperCompressed || exportOnlyTree) && "opacity-50"
+            )}
+          >
+            <span>{t("settings.export.claudeMode.label")}</span>
+            <span className="text-xs text-muted-foreground">
+              {t("settings.export.claudeMode.description")}
+            </span>
+          </Label>
+          <Switch
+            id="export-claude-mode-toggle"
+            checked={exportClaudeMode}
+            onCheckedChange={setExportClaudeMode}
+            disabled={exportSuperCompressed || exportOnlyTree}
           />
         </div>
         <div className="flex items-center justify-between pt-4 border-t">

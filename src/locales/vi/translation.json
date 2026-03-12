@@ -326,6 +326,10 @@
         "label": "Xuất siêu nén",
         "description": "Nén nội dung file thành một dòng và đặt cạnh tên file trong cây thư mục."
       },
+      "claudeMode": {
+        "label": "Chế độ Claude / AI Agent",
+        "description": "Định dạng file xuất kèm JSON manifest và thẻ meta để tối ưu cho AI Agent dễ dàng đọc hiểu."
+      },
       "removeComments": {
         "label": "Loại bỏ chú thích (comment)",
         "description": "Tự động xóa các dòng chú thích khỏi mã nguồn để giảm token."

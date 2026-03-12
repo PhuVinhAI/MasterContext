@@ -40,6 +40,7 @@ pub fn perform_auto_export(project_path: &str, _profile_name: &str, data: &model
         always_apply_text,
         exclude_extensions,
         &data.file_metadata_cache,
+        data.export_claude_mode.unwrap_or(false),
     ) {
         let file_name = sync_path_base.join("_PROJECT_CONTEXT.txt");
         let _ =
@@ -66,6 +67,7 @@ pub fn perform_auto_export(project_path: &str, _profile_name: &str, data: &model
                 always_apply_text,
                 exclude_extensions,
                 &data.file_metadata_cache,
+                data.export_claude_mode.unwrap_or(false),
             ) {
                 let safe_name = sanitize_group_name(&group.name);
                 let file_name = sync_path_base.join(format!("{}_context.txt", safe_name));

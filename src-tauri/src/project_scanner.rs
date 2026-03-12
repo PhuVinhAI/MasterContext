@@ -279,6 +279,7 @@ pub fn perform_smart_scan_and_rebuild(
         export_without_comments: old_data.export_without_comments, // Giữ lại cài đặt cũ
         export_remove_debug_logs: old_data.export_remove_debug_logs, // Giữ lại cài đặt cũ
         export_super_compressed: old_data.export_super_compressed,
+        export_claude_mode: old_data.export_claude_mode,
         always_apply_text: old_data.always_apply_text,
         export_exclude_extensions: old_data.export_exclude_extensions,
         git_export_mode_is_context: old_data.git_export_mode_is_context,

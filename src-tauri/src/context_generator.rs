@@ -231,6 +231,7 @@ pub fn generate_context_from_files(
     always_apply_text: &Option<String>,
     exclude_extensions: &Option<Vec<String>>,
     metadata_cache: &BTreeMap<String, crate::models::FileMetadata>,
+    export_claude_mode: bool,
 ) -> Result<String, String> {
     let root_path = Path::new(root_path_str);
     let mut tree_builder_root = BTreeMap::new();
@@ -291,7 +292,104 @@ pub fn generate_context_from_files(
         return Ok(final_context);
     }
 
-    let final_context = if super_compressed {
+    let final_context = if export_claude_mode {
+        let mut sections: BTreeMap<String, Vec<String>> = BTreeMap::new();
+        let mut manifest_entries = Vec::new();
+        let mut total_files = 0;
+        let mut files_content_map: BTreeMap<String, String> = BTreeMap::new();
+
+        let mut sorted_files = file_paths.to_vec();
+        sorted_files.sort();
+
+        let final_files: Vec<_> = sorted_files
+            .into_iter()
+            .filter(|file_rel_path| {
+                let extension = Path::new(file_rel_path)
+                    .extension()
+                    .and_then(std::ffi::OsStr::to_str)
+                    .unwrap_or("");
+                !exclude_set.contains(extension)
+            })
+            .collect();
+
+        for file_rel_path in final_files {
+            let file_path = root_path.join(&file_rel_path);
+            if let Ok(mut content) = fs::read_to_string(&file_path) {
+                if let Some(metadata) = metadata_cache.get(&file_rel_path) {
+                    if let Some(ranges) = &metadata.excluded_ranges {
+                        if !ranges.is_empty() {
+                            let mut final_content = String::with_capacity(content.len());
+                            let mut last_index = 0;
+                            for (start, end) in ranges {
+                                if *start >= last_index {
+                                    final_content.push_str(&content[last_index..*start]);
+                                }
+                                last_index = *end;
+                            }
+                            if last_index < content.len() {
+                                final_content.push_str(&content[last_index..]);
+                            }
+                            content = final_content;
+                        }
+                    }
+                }
+                if without_comments {
+                    content = remove_comments_from_content(&content, &file_rel_path);
+                }
+                if remove_debug_logs {
+                    content = remove_debug_logs_from_content(&content);
+                }
+
+                let line_count = content.lines().count();
+                let size_kb = content.len() as f64 / 1024.0;
+                let ext = Path::new(&file_rel_path).extension().and_then(|s| s.to_str()).unwrap_or("").to_string();
+                let parent_dir = Path::new(&file_rel_path).parent().unwrap_or(Path::new("")).to_string_lossy().to_string();
+                let section_name = if parent_dir.is_empty() { "root".to_string() } else { parent_dir };
+
+                manifest_entries.push(serde_json::json!({
+                    "file": file_rel_path,
+                    "lang": ext,
+                    "lines": line_count,
+                    "size_kb": (size_kb * 100.0).round() / 100.0
+                }));
+
+                files_content_map.insert(file_rel_path.clone(), content);
+                sections.entry(section_name).or_default().push(file_rel_path.clone());
+                total_files += 1;
+            }
+        }
+
+        let manifest = serde_json::json!({
+            "project": root_path.file_name().unwrap_or_default().to_string_lossy(),
+            "total_files": total_files,
+            "sections": sections.keys().collect::<Vec<_>>(),
+            "index": manifest_entries
+        });
+
+        let mut out = String::new();
+        let _ = writeln!(out, "===MANIFEST_START===\n{}\n===MANIFEST_END===\n", serde_json::to_string_pretty(&manifest).unwrap_or_default());
+
+        for (section, files) in sections {
+            let _ = writeln!(out, "===SECTION: {}===\n", section);
+            for file_rel_path in files {
+                let content = &files_content_map[&file_rel_path];
+                let ext = Path::new(&file_rel_path).extension().and_then(|s| s.to_str()).unwrap_or("");
+                let lines = content.lines().count();
+
+                let _ = writeln!(out, "#FILE {} {} {}", file_rel_path, ext, lines);
+                if with_line_numbers {
+                    for (i, line) in content.lines().enumerate() {
+                        let _ = writeln!(out, "{}: {}", i + 1, line);
+                    }
+                } else {
+                    let _ = writeln!(out, "{}", content);
+                }
+                let _ = writeln!(out, "#ENDFILE\n");
+            }
+            let _ = writeln!(out, "===ENDSECTION===\n");
+        }
+        out
+    } else if super_compressed {
         format_tree_super_compressed(
             &tree_builder_root,
             "",

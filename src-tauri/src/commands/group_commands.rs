@@ -133,6 +133,7 @@ pub fn start_group_export(
             let without_comments = project_data.export_without_comments.unwrap_or(false);
             let remove_debug_logs = project_data.export_remove_debug_logs.unwrap_or(false);
             let super_compressed = project_data.export_super_compressed.unwrap_or(false);
+            let export_claude_mode = project_data.export_claude_mode.unwrap_or(false);
             let always_apply_text = project_data.always_apply_text;
             let exclude_extensions = project_data.export_exclude_extensions;
             let root_path = Path::new(&root_path_str);
@@ -162,6 +163,7 @@ pub fn start_group_export(
                 &always_apply_text,
                 &exclude_extensions,
                 &project_data.file_metadata_cache,
+                export_claude_mode,
             )
         })();
         match result {
@@ -194,6 +196,7 @@ pub fn generate_group_context(
     let project_data = file_cache::load_project_data(&app, &root_path_str, &profile_name)?;
     let always_apply_text = project_data.always_apply_text;
     let exclude_extensions = project_data.export_exclude_extensions;
+    let export_claude_mode = project_data.export_claude_mode.unwrap_or(false);
     let root_path = Path::new(&root_path_str);
     let group = project_data
         .groups
@@ -221,6 +224,7 @@ pub fn generate_group_context(
         &always_apply_text,
         &exclude_extensions,
         &project_data.file_metadata_cache,
+        export_claude_mode,
     )
 }
 
@@ -262,6 +266,7 @@ pub fn generate_group_context_for_ai(
         &None, // always_apply_text: None
         &project_data.export_exclude_extensions, // Keep user's exclude extensions
         &project_data.file_metadata_cache,
+        false, // export_claude_mode: false (giữ cấu trúc chuẩn cho internal AI)
     )
 }
 

@@ -16,6 +16,7 @@ export interface CachedProjectData {
   export_without_comments?: boolean | null; // <-- THÊM TRƯỜNG MỚI
   export_remove_debug_logs?: boolean | null; // <-- THÊM TRƯỜNG MỚI
   export_super_compressed?: boolean | null;
+  export_claude_mode?: boolean | null;
   always_apply_text?: string | null;
   export_exclude_extensions?: string[];
   git_export_mode_is_context?: boolean | null;
@@ -38,7 +39,7 @@ export interface FileMetadata {
   size: number;
   mtime: number;
   token_count: number;
-  excluded_ranges?: [number, number][];
+  excluded_ranges?: [number, number][]; // <-- THÊM TRƯỜNG MỚI
 }
 
 export interface ProjectStats {
@@ -214,6 +215,7 @@ export interface AppState {
   exportWithoutComments: boolean;
   exportRemoveDebugLogs: boolean;
   exportSuperCompressed: boolean;
+  exportClaudeMode: boolean;
   alwaysApplyText: string | null;
   exportExcludeExtensions: string[];
   gitExportModeIsContext: boolean;

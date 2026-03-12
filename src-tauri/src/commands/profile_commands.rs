@@ -114,6 +114,7 @@ pub fn clone_profile(
         export_without_comments: Some(false),
         export_remove_debug_logs: Some(false),
         export_super_compressed: Some(false),
+        export_claude_mode: Some(false),
         always_apply_text: Some("".to_string()),
         export_exclude_extensions: Some(vec![]),
         git_export_mode_is_context: Some(false),
