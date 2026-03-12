@@ -400,18 +400,20 @@ pub fn generate_context_from_files(
 
         // Bước 2: Tạo dummy manifest với line_start = 0 để tính toán độ dài phần Header (theo dòng)
         let mut dummy_entries = Vec::new();
-        for file_rel_path in sections.keys() {
-            let content = &files_content_map[file_rel_path];
-            let ext = Path::new(file_rel_path).extension().and_then(|s| s.to_str()).unwrap_or("");
-            let lines = content.lines().count();
-            let size_kb = content.len() as f64 / 1024.0;
-            dummy_entries.push(serde_json::json!({
-                "file": file_rel_path,
-                "lang": ext,
-                "lines": lines,
-                "size_kb": (size_kb * 100.0).round() / 100.0,
-                "line_start": 0
-            }));
+        for files in sections.values() {
+            for file_rel_path in files {
+                let content = &files_content_map[file_rel_path];
+                let ext = Path::new(file_rel_path).extension().and_then(|s| s.to_str()).unwrap_or("");
+                let lines = content.lines().count();
+                let size_kb = content.len() as f64 / 1024.0;
+                dummy_entries.push(serde_json::json!({
+                    "file": file_rel_path,
+                    "lang": ext,
+                    "lines": lines,
+                    "size_kb": (size_kb * 100.0).round() / 100.0,
+                    "line_start": 0
+                }));
+            }
         }
 
         let dummy_manifest = serde_json::json!({
@@ -427,20 +429,22 @@ pub fn generate_context_from_files(
 
         // Bước 3: Build real manifest với line_start đã được map chuẩn xác
         let mut real_entries = Vec::new();
-        for file_rel_path in sections.keys() {
-            let content = &files_content_map[file_rel_path];
-            let ext = Path::new(file_rel_path).extension().and_then(|s| s.to_str()).unwrap_or("");
-            let lines = content.lines().count();
-            let size_kb = content.len() as f64 / 1024.0;
-            let relative_start = file_start_lines.get(file_rel_path).unwrap_or(&0);
-                
-            real_entries.push(serde_json::json!({
-                "file": file_rel_path,
-                "lang": ext,
-                "lines": lines,
-                "size_kb": (size_kb * 100.0).round() / 100.0,
-                "line_start": prefix_line_count + relative_start + 1
-            }));
+        for files in sections.values() {
+            for file_rel_path in files {
+                let content = &files_content_map[file_rel_path];
+                let ext = Path::new(file_rel_path).extension().and_then(|s| s.to_str()).unwrap_or("");
+                let lines = content.lines().count();
+                let size_kb = content.len() as f64 / 1024.0;
+                let relative_start = file_start_lines.get(file_rel_path).unwrap_or(&0);
+                    
+                real_entries.push(serde_json::json!({
+                    "file": file_rel_path,
+                    "lang": ext,
+                    "lines": lines,
+                    "size_kb": (size_kb * 100.0).round() / 100.0,
+                    "line_start": prefix_line_count + relative_start + 1
+                }));
+            }
         }
 
         let final_manifest = serde_json::json!({
