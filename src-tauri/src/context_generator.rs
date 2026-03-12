@@ -294,7 +294,6 @@ pub fn generate_context_from_files(
 
     let final_context = if export_claude_mode {
         let mut sections: BTreeMap<String, Vec<String>> = BTreeMap::new();
-        let mut manifest_entries = Vec::new();
         let mut total_files = 0;
         let mut files_content_map: BTreeMap<String, String> = BTreeMap::new();
 
@@ -340,18 +339,8 @@ pub fn generate_context_from_files(
                     content = remove_debug_logs_from_content(&content);
                 }
 
-                let line_count = content.lines().count();
-                let size_kb = content.len() as f64 / 1024.0;
-                let ext = Path::new(&file_rel_path).extension().and_then(|s| s.to_str()).unwrap_or("").to_string();
                 let parent_dir = Path::new(&file_rel_path).parent().unwrap_or(Path::new("")).to_string_lossy().to_string();
                 let section_name = if parent_dir.is_empty() { "root".to_string() } else { parent_dir };
-
-                manifest_entries.push(serde_json::json!({
-                    "file": file_rel_path,
-                    "lang": ext,
-                    "lines": line_count,
-                    "size_kb": (size_kb * 100.0).round() / 100.0
-                }));
 
                 files_content_map.insert(file_rel_path.clone(), content);
                 sections.entry(section_name).or_default().push(file_rel_path.clone());
@@ -359,36 +348,112 @@ pub fn generate_context_from_files(
             }
         }
 
-        let manifest = serde_json::json!({
+        // Bước 1: Render các sections trước để đếm exctly số dòng
+        let mut sections_out = String::new();
+        let mut file_start_lines: BTreeMap<String, usize> = BTreeMap::new();
+        let mut current_relative_line = 0;
+
+        for (section, files) in sections.iter() {
+            let section_header = format!("===SECTION: {}===\n\n", section);
+            sections_out.push_str(&section_header);
+            current_relative_line += section_header.matches('\n').count();
+
+            for file_rel_path in files {
+                let content = &files_content_map[file_rel_path];
+                let ext = Path::new(file_rel_path).extension().and_then(|s| s.to_str()).unwrap_or("");
+                let lines = content.lines().count();
+                let size_kb = content.len() as f64 / 1024.0;
+                let size_kb_rounded = (size_kb * 100.0).round() / 100.0;
+
+                // Ghi nhận vị trí bắt đầu của file này
+                file_start_lines.insert(file_rel_path.clone(), current_relative_line);
+
+                let file_header = format!("#FILE {} {} {} {}kb\n", file_rel_path, ext, lines, size_kb_rounded);
+                sections_out.push_str(&file_header);
+                current_relative_line += 1;
+
+                if with_line_numbers {
+                    for (i, line) in content.lines().enumerate() {
+                        let line_str = format!("{}: {}\n", i + 1, line);
+                        sections_out.push_str(&line_str);
+                        current_relative_line += 1;
+                    }
+                } else {
+                    if !content.is_empty() {
+                        sections_out.push_str(content);
+                        current_relative_line += content.matches('\n').count();
+                        if !content.ends_with('\n') {
+                            sections_out.push('\n');
+                            current_relative_line += 1;
+                        }
+                    }
+                }
+                
+                let file_footer = "#ENDFILE\n\n";
+                sections_out.push_str(file_footer);
+                current_relative_line += 2;
+            }
+            let section_footer = "===ENDSECTION===\n\n";
+            sections_out.push_str(section_footer);
+            current_relative_line += 2;
+        }
+
+        // Bước 2: Tạo dummy manifest với line_start = 0 để tính toán độ dài phần Header (theo dòng)
+        let mut dummy_entries = Vec::new();
+        for file_rel_path in sections.keys() {
+            let content = &files_content_map[file_rel_path];
+            let ext = Path::new(file_rel_path).extension().and_then(|s| s.to_str()).unwrap_or("");
+            let lines = content.lines().count();
+            let size_kb = content.len() as f64 / 1024.0;
+            dummy_entries.push(serde_json::json!({
+                "file": file_rel_path,
+                "lang": ext,
+                "lines": lines,
+                "size_kb": (size_kb * 100.0).round() / 100.0,
+                "line_start": 0
+            }));
+        }
+
+        let dummy_manifest = serde_json::json!({
             "project": root_path.file_name().unwrap_or_default().to_string_lossy(),
             "total_files": total_files,
             "sections": sections.keys().collect::<Vec<_>>(),
-            "index": manifest_entries
+            "index": dummy_entries
         });
 
-        let mut out = String::new();
-        let _ = writeln!(out, "===MANIFEST_START===\n{}\n===MANIFEST_END===\n", serde_json::to_string_pretty(&manifest).unwrap_or_default());
+        let dummy_json = serde_json::to_string_pretty(&dummy_manifest).unwrap_or_default();
+        let dummy_prefix = format!("===MANIFEST_START===\n{}\n===MANIFEST_END===\n\n", dummy_json);
+        let prefix_line_count = dummy_prefix.matches('\n').count();
 
-        for (section, files) in sections {
-            let _ = writeln!(out, "===SECTION: {}===\n", section);
-            for file_rel_path in files {
-                let content = &files_content_map[&file_rel_path];
-                let ext = Path::new(&file_rel_path).extension().and_then(|s| s.to_str()).unwrap_or("");
-                let lines = content.lines().count();
-
-                let _ = writeln!(out, "#FILE {} {} {}", file_rel_path, ext, lines);
-                if with_line_numbers {
-                    for (i, line) in content.lines().enumerate() {
-                        let _ = writeln!(out, "{}: {}", i + 1, line);
-                    }
-                } else {
-                    let _ = writeln!(out, "{}", content);
-                }
-                let _ = writeln!(out, "#ENDFILE\n");
-            }
-            let _ = writeln!(out, "===ENDSECTION===\n");
+        // Bước 3: Build real manifest với line_start đã được map chuẩn xác
+        let mut real_entries = Vec::new();
+        for file_rel_path in sections.keys() {
+            let content = &files_content_map[file_rel_path];
+            let ext = Path::new(file_rel_path).extension().and_then(|s| s.to_str()).unwrap_or("");
+            let lines = content.lines().count();
+            let size_kb = content.len() as f64 / 1024.0;
+            let relative_start = file_start_lines.get(file_rel_path).unwrap_or(&0);
+                
+            real_entries.push(serde_json::json!({
+                "file": file_rel_path,
+                "lang": ext,
+                "lines": lines,
+                "size_kb": (size_kb * 100.0).round() / 100.0,
+                "line_start": prefix_line_count + relative_start + 1
+            }));
         }
-        out
+
+        let final_manifest = serde_json::json!({
+            "project": root_path.file_name().unwrap_or_default().to_string_lossy(),
+            "total_files": total_files,
+            "sections": sections.keys().collect::<Vec<_>>(),
+            "index": real_entries
+        });
+
+        let final_json = serde_json::to_string_pretty(&final_manifest).unwrap_or_default();
+        let mut final_out = format!("===MANIFEST_START===\n{}\n===MANIFEST_END===\n\n", final_json);
+        final_out.push_str(&sections_out);
+        final_out
     } else if super_compressed {
         format_tree_super_compressed(
             &tree_builder_root,
