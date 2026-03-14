@@ -23,7 +23,7 @@ export function KiloPanel() {
   }, [kiloLogs]);
 
   return (
-    <div className="flex flex-col h-full bg-card border-l">
+    <div className="flex flex-col h-full bg-card">
       <header className="flex items-center justify-between p-4 border-b shrink-0 gap-4">
         <div className="flex items-center gap-2">
           <Terminal className="h-5 w-5 text-muted-foreground" />

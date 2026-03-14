@@ -690,8 +690,25 @@ function App() {
           {!isSidebarVisible && !isGitPanelVisible && (
             <style>{`[data-slot="resizable-handle"] { display: none; }`}</style>
           )}
-          <ResizablePanel id="main-panel" order={3} defaultSize={40}>
-            <MainPanel />
+          <ResizablePanel id="center-container" order={3} defaultSize={40}>
+            {isKiloPanelVisible ? (
+              <ResizablePanelGroup direction="vertical">
+                <ResizablePanel id="main-panel" order={1} defaultSize={70}>
+                  <MainPanel />
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel
+                  id="kilo-panel"
+                  order={2}
+                  defaultSize={30}
+                  minSize={15}
+                >
+                  <KiloPanel />
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            ) : (
+              <MainPanel />
+            )}
           </ResizablePanel>
           {isAiPanelVisible && (
             <>
@@ -704,20 +721,6 @@ function App() {
                 maxSize={35}
               >
                 <AIPanel />
-              </ResizablePanel>
-            </>
-          )}
-          {isKiloPanelVisible && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel
-                id="kilo-panel"
-                order={5}
-                defaultSize={25}
-                minSize={20}
-                maxSize={40}
-              >
-                <KiloPanel />
               </ResizablePanel>
             </>
           )}
