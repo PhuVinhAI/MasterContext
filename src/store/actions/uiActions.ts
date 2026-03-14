@@ -36,6 +36,10 @@ export interface UIActions {
     success: boolean;
     message: string;
   }>;
+  setInlineEditingGroup: (
+    state: { mode: "create" | "rename"; profileName: string; groupId?: string } | null
+  ) => void;
+  _setRecentPaths: (paths: string[]) => void;
 }
 
 export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
