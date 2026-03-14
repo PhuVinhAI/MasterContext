@@ -198,7 +198,7 @@ async function executeKiloWorkflow(url: string, tabId?: number, isManual: boolea
     showNotification(`${prefix} Đang Chạy`, 'Đang gửi mã nguồn xuống cho Kilo CLI xử lý...', 'info', tabId);
 
     // Đợi Kilo process kết thúc (Local server trả về HTTP 200 hoặc HTTP 500)
-    const response = await fetch('http://localhost:9999/api/kilo', {
+    const response = await fetch('http://127.0.0.1:9999/api/kilo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt })
@@ -214,6 +214,6 @@ async function executeKiloWorkflow(url: string, tabId?: number, isManual: boolea
     }
   } catch (error) {
     console.error(`Lỗi khi execute Kilo (${prefix}):`, error);
-    showNotification(`${prefix} Lỗi Kết Nối`, 'Không thể kết nối máy chủ Kilo Local (Cổng 9999). Bạn đã chạy "ai-kilo-server" chưa?', 'error', tabId);
+    showNotification(`${prefix} Lỗi Kết Nối`, 'Không kết nối được Cổng 9999. Hãy chắc chắn bạn đã Bật Server trong Kilo Panel của Master Context.', 'error', tabId);
   }
 }

@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+resources
 
 # Editor directories and files
 .vscode/*
@@ -24,4 +25,4 @@ dist-ssr
 *.sw?
 
 # Bỏ qua thư mục tạm của Kilo Auto-Watch
-.kilo-tasks
+.master-context
