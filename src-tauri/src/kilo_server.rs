@@ -29,6 +29,7 @@ pub struct ErrorResponse {
 struct AppStateExt {
     project_state: Arc<Mutex<Option<String>>>,
     app_handle: AppHandle,
+    model_state: Arc<Mutex<String>>,
 }
 
 #[tauri::command]
@@ -36,6 +37,7 @@ pub async fn start_kilo_server(
     app_handle: AppHandle,
     project_state: tauri::State<'_, crate::ActiveProjectState>,
     server_handle: tauri::State<'_, crate::KiloServerHandle>,
+    model_state: tauri::State<'_, crate::KiloModelState>,
 ) -> Result<(), String> {
     let mut handle_lock = server_handle.0.lock().unwrap();
     if handle_lock.is_some() {
@@ -48,6 +50,7 @@ pub async fn start_kilo_server(
     let state = AppStateExt {
         project_state: project_state.0.clone(),
         app_handle: app_handle.clone(),
+        model_state: model_state.0.clone(),
     };
 
     let cors = CorsLayer::new()
@@ -86,29 +89,80 @@ pub async fn start_kilo_server(
 }
 
 #[tauri::command]
-pub fn open_kilo_terminal(project_path: String) -> Result<(), String> {
-    #[cfg(target_os = "windows")]
-    {
-        std::process::Command::new("cmd")
-            .args(&["/c", "start", "cmd", "/K", "echo [Kilo CLI Ready] - Ban co the chay cac lenh 'kilo' tai day. && kilo --help"])
-            .current_dir(project_path)
-            .spawn()
-            .map_err(|e| format!("Lỗi mở CMD: {}", e))?;
+pub fn check_kilo_installed() -> Result<bool, String> {
+    let is_windows = cfg!(target_os = "windows");
+    let cmd_name = if is_windows { "kilo.cmd" } else { "kilo" };
+    let output = std::process::Command::new(cmd_name)
+        .arg("--version")
+        .output();
+    
+    match output {
+        Ok(out) => Ok(out.status.success()),
+        Err(_) => Ok(false)
     }
-    #[cfg(target_os = "macos")]
-    {
-        std::process::Command::new("open")
-            .args(&["-a", "Terminal", &project_path])
-            .spawn()
-            .map_err(|e| format!("Lỗi mở Terminal: {}", e))?;
+}
+
+#[tauri::command]
+pub async fn install_kilo_cli(app_handle: tauri::AppHandle) -> Result<(), String> {
+    let is_windows = cfg!(target_os = "windows");
+    let cmd_name = if is_windows { "npm.cmd" } else { "npm" };
+    
+    let _ = app_handle.emit("kilo_log", "[SYSTEM] Đang cài đặt Kilo CLI (@kilocode/cli)...");
+    
+    let output = tokio::process::Command::new(cmd_name)
+        .args(&["install", "-g", "@kilocode/cli"])
+        .output()
+        .await
+        .map_err(|e| format!("Lỗi thực thi npm: {}", e))?;
+
+    if output.status.success() {
+        let _ = app_handle.emit("kilo_log", "[SYSTEM] Cài đặt Kilo CLI thành công. Vui lòng khởi động lại server nếu cần.");
+        Ok(())
+    } else {
+        let err_msg = String::from_utf8_lossy(&output.stderr);
+        let _ = app_handle.emit("kilo_log", format!("[ERROR] Lỗi cài đặt: {}", err_msg));
+        Err(format!("Lỗi cài đặt: {}", err_msg))
     }
-    #[cfg(target_os = "linux")]
-    {
-        std::process::Command::new("gnome-terminal")
-            .arg(format!("--working-directory={}", project_path))
-            .spawn()
-            .map_err(|e| format!("Lỗi mở Terminal: {}", e))?;
+}
+
+#[tauri::command]
+pub async fn get_kilo_models() -> Result<Vec<String>, String> {
+    let is_windows = cfg!(target_os = "windows");
+    let cmd_name = if is_windows { "kilo.cmd" } else { "kilo" };
+    let output = tokio::process::Command::new(cmd_name)
+        .arg("models")
+        .output()
+        .await
+        .map_err(|e| format!("Lỗi khi lấy danh sách model Kilo: {}", e))?;
+
+    if !output.status.success() {
+        let err = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Lỗi Kilo models: {}", err));
     }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut models = Vec::new();
+    for line in stdout.lines() {
+        let trimmed = line.trim();
+        if !trimmed.is_empty() {
+            models.push(trimmed.to_string());
+        }
+    }
+    Ok(models)
+}
+
+#[tauri::command]
+pub async fn set_kilo_model(model: String, state: tauri::State<'_, crate::KiloModelState>) -> Result<(), String> {
+    *state.0.lock().unwrap() = model.clone();
+    
+    // Thử set model trực tiếp bằng lệnh CLI
+    let is_windows = cfg!(target_os = "windows");
+    let cmd_name = if is_windows { "kilo.cmd" } else { "kilo" };
+    let _ = tokio::process::Command::new(cmd_name)
+        .args(&["config", "set", "model", &model])
+        .output()
+        .await;
+        
     Ok(())
 }
 
@@ -200,26 +254,37 @@ async fn handle_kilo(
     let is_windows = cfg!(target_os = "windows");
     let cmd_name = if is_windows { "kilo.cmd" } else { "kilo" };
 
-    let _ = app_handle.emit("kilo_log", format!("[SYSTEM] Bắt đầu chạy Kilo CLI tại: {}", current_dir));
-
-    let mut child = if is_windows {
-        let command_string = format!("{} run --auto \"{}\"", cmd_name, short_prompt);
-        Command::new("cmd.exe")
-            .args(&["/c", &command_string])
-            .current_dir(&current_dir)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-    } else {
-        Command::new(cmd_name)
-            .args(&["run", "--auto", &short_prompt])
-            .current_dir(&current_dir)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
+    let selected_model = {
+        let lock = state.model_state.lock().unwrap();
+        lock.clone()
     };
 
-    match child {
+    let _ = app_handle.emit("kilo_log", format!("[SYSTEM] Bắt đầu chạy Kilo CLI tại: {}", current_dir));
+
+    let mut child_cmd = if is_windows {
+        let command_string = format!("{} run --auto \"{}\"", cmd_name, short_prompt);
+        let mut c = Command::new("cmd.exe");
+        c.args(&["/c", &command_string])
+         .current_dir(&current_dir)
+         .stdout(Stdio::piped())
+         .stderr(Stdio::piped());
+        c
+    } else {
+        let mut c = Command::new(cmd_name);
+        c.args(&["run", "--auto", &short_prompt])
+         .current_dir(&current_dir)
+         .stdout(Stdio::piped())
+         .stderr(Stdio::piped());
+        c
+    };
+
+    if !selected_model.is_empty() {
+        child_cmd.env("KILO_MODEL", &selected_model);
+        child_cmd.env("KILOCODE_MODEL", &selected_model);
+        let _ = app_handle.emit("kilo_log", format!("[SYSTEM] Sử dụng AI Model: {}", selected_model));
+    }
+
+    match child_cmd.spawn() {
         Ok(mut process) => {
             let stdout = process.stdout.take().expect("Failed to open stdout");
             let stderr = process.stderr.take().expect("Failed to open stderr");

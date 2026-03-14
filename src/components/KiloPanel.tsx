@@ -10,7 +10,7 @@ import { type KiloActivity } from "./kilo/types";
 import { stripAnsi } from "./kilo/utils";
 
 export function KiloPanel() {
-  const { startKiloServer, stopKiloServer, clearKiloLogs, openKiloTerminal } = useAppActions();
+  const { startKiloServer, stopKiloServer, clearKiloLogs, checkKiloInstalled, fetchKiloModels } = useAppActions();
   const { isKiloServerRunning, kiloLogs } = useAppStore(
     useShallow((state) => ({
       isKiloServerRunning: state.isKiloServerRunning,
@@ -19,6 +19,12 @@ export function KiloPanel() {
   );
 
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    checkKiloInstalled().then(() => {
+      fetchKiloModels();
+    });
+  }, [checkKiloInstalled, fetchKiloModels]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -118,7 +124,6 @@ export function KiloPanel() {
         onStart={startKiloServer}
         onStop={stopKiloServer}
         onClearLogs={clearKiloLogs}
-        onOpenTerminal={openKiloTerminal}
       />
       
       <ScrollArea className="flex-1 min-h-0" viewportRef={scrollRef}>

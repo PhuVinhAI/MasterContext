@@ -15,15 +15,18 @@ pub struct ActiveProjectState(pub Arc<Mutex<Option<String>>>);
 
 // State quản lý việc bật tắt server
 pub struct KiloServerHandle(pub Arc<Mutex<Option<tokio::sync::oneshot::Sender<()>>>>);
+pub struct KiloModelState(pub Arc<Mutex<String>>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let active_project = Arc::new(Mutex::new(None));
     let kilo_handle = Arc::new(Mutex::new(None));
+    let kilo_model = Arc::new(Mutex::new(String::new()));
 
     tauri::Builder::default()
         .manage(ActiveProjectState(active_project))
         .manage(KiloServerHandle(kilo_handle))
+        .manage(KiloModelState(kilo_model))
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -99,7 +102,10 @@ pub fn run() {
             kilo_server::start_kilo_server,
             kilo_server::stop_kilo_server,
             kilo_server::get_kilo_server_status,
-            kilo_server::open_kilo_terminal
+            kilo_server::check_kilo_installed,
+            kilo_server::install_kilo_cli,
+            kilo_server::get_kilo_models,
+            kilo_server::set_kilo_model
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

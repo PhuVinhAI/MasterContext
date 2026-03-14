@@ -19,7 +19,10 @@ export interface UIActions {
   clearKiloLogs: () => void;
   startKiloServer: () => Promise<void>;
   stopKiloServer: () => Promise<void>;
-  openKiloTerminal: () => Promise<void>;
+  checkKiloInstalled: () => Promise<void>;
+  installKiloCli: () => Promise<void>;
+  fetchKiloModels: () => Promise<void>;
+  setSelectedKiloModel: (model: string) => Promise<void>;
   openFileInEditor: (filePath: string) => Promise<void>;
   closeEditor: () => void;
   addExclusionRange: (start: number, end: number) => Promise<void>;
@@ -113,14 +116,55 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
       console.error("Failed to stop Kilo Server", e);
     }
   },
-  openKiloTerminal: async () => {
-    const { rootPath } = _get();
-    if (rootPath) {
-      try {
-        await invoke("open_kilo_terminal", { projectPath: rootPath });
-      } catch (e) {
-        console.error("Failed to open terminal", e);
+  checkKiloInstalled: async () => {
+    try {
+      const installed = await invoke<boolean>("check_kilo_installed");
+      set({ isKiloInstalled: installed });
+    } catch {
+      set({ isKiloInstalled: false });
+    }
+  },
+  installKiloCli: async () => {
+    try {
+      set({ isKiloInstalled: null });
+      await invoke("install_kilo_cli");
+      set({ isKiloInstalled: true });
+    } catch (e) {
+      set({ isKiloInstalled: false });
+      console.error(`Lỗi cài đặt Kilo CLI: ${e}`);
+    }
+  },
+  fetchKiloModels: async () => {
+    try {
+      const rawLines = await invoke<string[]>("get_kilo_models");
+      const models: {id: string, label: string}[] = [];
+      
+      rawLines.forEach(line => {
+        const cleanLine = line.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '').trim();
+        if (!cleanLine || cleanLine.startsWith('---') || cleanLine.startsWith('===') || cleanLine.toLowerCase().includes('provider')) return;
+        
+        const parts = cleanLine.split(/\s+/);
+        if (parts.length > 0) {
+           let id = parts.length > 1 ? parts[1] : parts[0];
+           if (parts[0].includes('/')) id = parts[0];
+           models.push({ id, label: cleanLine });
+        }
+      });
+      
+      set({ kiloAvailableModels: models });
+      if (models.length > 0 && !_get().selectedKiloModel) {
+          _get().actions.setSelectedKiloModel(models[0].id);
       }
+    } catch (e) {
+      console.error("Failed to fetch Kilo models", e);
+    }
+  },
+  setSelectedKiloModel: async (model: string) => {
+    set({ selectedKiloModel: model });
+    try {
+      await invoke("set_kilo_model", { model });
+    } catch(e) {
+      console.error("Failed to set kilo model", e);
     }
   },
   toggleEditorPanelVisibility: () => {

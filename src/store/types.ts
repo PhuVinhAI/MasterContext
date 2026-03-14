@@ -167,6 +167,11 @@ export interface AIChatSession {
   totalCost?: number;
 }
 
+export interface KiloModelInfo {
+  id: string;
+  label: string;
+}
+
 export interface AiFileActions {
   attachItemToAi: (item: AttachedItem) => void;
   detachItemFromAi: (itemId: string) => void;
@@ -241,6 +246,9 @@ export interface AppState {
   isKiloPanelVisible: boolean;
   isKiloServerRunning: boolean;
   kiloLogs: string[];
+  isKiloInstalled: boolean | null;
+  selectedKiloModel: string;
+  kiloAvailableModels: KiloModelInfo[];
 
   // AI Panel
   isAiPanelVisible: boolean;
