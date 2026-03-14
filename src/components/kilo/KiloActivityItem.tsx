@@ -34,14 +34,14 @@ export function KiloActivityItem({ activity }: { activity: KiloActivity }) {
   }
 
   return (
-    <div className={cn("border rounded-lg overflow-hidden transition-all shadow-sm flex flex-col w-full min-w-0", bgClass)}>
+    <div className={cn("border rounded-lg overflow-hidden transition-all shadow-sm flex flex-col w-full max-w-full", bgClass)}>
       <div 
-        className={cn("p-3 flex items-center justify-between gap-2 w-full min-w-0", hasDetails ? "cursor-pointer hover:bg-black/5 dark:hover:bg-white/5" : "")}
+        className={cn("p-3 flex items-center justify-between gap-2 w-full", hasDetails ? "cursor-pointer hover:bg-black/5 dark:hover:bg-white/5" : "")}
         onClick={() => hasDetails && setExpanded(!expanded)}
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <Icon className={cn("h-4 w-4 shrink-0", colorClass)} />
-          <span className="font-medium text-sm truncate" title={activity.title}>{activity.title}</span>
+          <span className="font-medium text-sm truncate block" title={activity.title}>{activity.title}</span>
         </div>
         {hasDetails && (
           <div className="shrink-0 text-muted-foreground flex items-center justify-center p-1 rounded hover:bg-black/10 dark:hover:bg-white/10">
@@ -50,8 +50,8 @@ export function KiloActivityItem({ activity }: { activity: KiloActivity }) {
         )}
       </div>
       {expanded && hasDetails && (
-        <div className="bg-[#18181B] p-4 border-t border-border/50 overflow-auto max-h-[500px] shadow-inner custom-scrollbar w-full">
-          <div className="font-mono text-[12px] leading-relaxed whitespace-pre w-max min-w-full">
+        <div className="bg-[#18181B] border-t border-border/50 overflow-auto max-h-[500px] shadow-inner custom-scrollbar w-full">
+          <div className="p-4 font-mono text-[12px] leading-relaxed whitespace-pre min-w-full w-fit inline-block">
             {activity.details.map((line, i) => {
               const cleanLine = stripAnsi(line);
               let lineClass = "text-gray-300 hover:bg-white/10 px-2 py-0.5 rounded-sm transition-colors block w-full";
