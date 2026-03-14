@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Play, Square, Trash2, Terminal, Loader2, Download } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useShallow } from "zustand/react/shallow";
 import { useAppStore, useAppActions } from "@/store/appStore";
 
 interface KiloHeaderProps {
@@ -11,11 +12,13 @@ interface KiloHeaderProps {
 }
 
 export function KiloHeader({ isKiloServerRunning, onStart, onStop, onClearLogs }: KiloHeaderProps) {
-  const { isKiloInstalled, selectedKiloModel, kiloAvailableModels } = useAppStore(state => ({
-    isKiloInstalled: state.isKiloInstalled,
-    selectedKiloModel: state.selectedKiloModel,
-    kiloAvailableModels: state.kiloAvailableModels,
-  }));
+  const { isKiloInstalled, selectedKiloModel, kiloAvailableModels } = useAppStore(
+    useShallow(state => ({
+      isKiloInstalled: state.isKiloInstalled,
+      selectedKiloModel: state.selectedKiloModel,
+      kiloAvailableModels: state.kiloAvailableModels,
+    }))
+  );
   const { installKiloCli, setSelectedKiloModel } = useAppActions();
 
   return (
