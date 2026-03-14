@@ -62,7 +62,7 @@ pub async fn start_kilo_server(
 
     tokio::spawn(async move {
         if let Ok(listener) = tokio::net::TcpListener::bind("127.0.0.1:9999").await {
-            let _ = app_handle.emit("kilo_log", "🚀 Master Context: Kilo local server running at http://localhost:9999");
+            let _ = app_handle.emit("kilo_log", "[SYSTEM] Master Context: Kilo local server running at http://localhost:9999");
             let _ = app_handle.emit("kilo_status_changed", true);
             
             let server = axum::serve(listener, app).with_graceful_shutdown(async {
@@ -70,14 +70,14 @@ pub async fn start_kilo_server(
             });
             let _ = server.await;
             
-            let _ = app_handle.emit("kilo_log", "🛑 Kilo server stopped.");
+            let _ = app_handle.emit("kilo_log", "[SYSTEM] Kilo server stopped.");
             let _ = app_handle.emit("kilo_status_changed", false);
             
             // Clean up state if it exits
             // But we can't easily access server_handle here without moving it.
             // It will be cleaned up on next start.
         } else {
-            let _ = app_handle.emit("kilo_log", "⚠️ Lỗi: Không thể khởi chạy Kilo server ở port 9999 (Port có thể bị chiếm dụng).");
+            let _ = app_handle.emit("kilo_log", "[SYSTEM_ERROR] Lỗi: Không thể khởi chạy Kilo server ở port 9999 (Port có thể bị chiếm dụng).");
             let _ = app_handle.emit("kilo_status_changed", false);
         }
     });
@@ -173,7 +173,7 @@ async fn handle_kilo(
     let is_windows = cfg!(target_os = "windows");
     let cmd_name = if is_windows { "kilo.cmd" } else { "kilo" };
 
-    let _ = app_handle.emit("kilo_log", format!("🤖 Bắt đầu chạy Kilo CLI tại: {}", current_dir));
+    let _ = app_handle.emit("kilo_log", format!("[SYSTEM] Bắt đầu chạy Kilo CLI tại: {}", current_dir));
 
     let mut child = if is_windows {
         let command_string = format!("{} run --auto \"{}\"", cmd_name, short_prompt);
@@ -225,13 +225,13 @@ async fn handle_kilo(
             let _ = fs::remove_file(&temp_filepath);
 
             if status.success() {
-                let _ = app_handle.emit("kilo_log", "✅ Kilo CLI đã hoàn thành nhiệm vụ thành công.");
+                let _ = app_handle.emit("kilo_log", "[SUCCESS] Kilo CLI đã hoàn thành nhiệm vụ thành công.");
                 Ok(Json(ResultResponse {
                     success: true,
                     message: "Kilo CLI đã thực thi xong nhiệm vụ".into(),
                 }))
             } else {
-                let _ = app_handle.emit("kilo_log", format!("❌ Kilo CLI kết thúc với mã lỗi: {}", status.code().unwrap_or(-1)));
+                let _ = app_handle.emit("kilo_log", format!("[ERROR] Kilo CLI kết thúc với mã lỗi: {}", status.code().unwrap_or(-1)));
                 Err((
                     axum::http::StatusCode::INTERNAL_SERVER_ERROR,
                     Json(ErrorResponse { error: "Kilo CLI kết thúc với lỗi. Vui lòng xem log Kilo Panel.".into() }),
@@ -239,7 +239,7 @@ async fn handle_kilo(
             }
         }
         Err(e) => {
-            let _ = app_handle.emit("kilo_log", format!("❌ Lỗi khởi chạy tiến trình Kilo: {}", e));
+            let _ = app_handle.emit("kilo_log", format!("[ERROR] Lỗi khởi chạy tiến trình Kilo: {}", e));
             Err((
                 axum::http::StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ErrorResponse { error: format!("Không thể khởi chạy Kilo CLI: {}", e) }),

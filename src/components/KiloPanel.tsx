@@ -9,7 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import Ansi from "ansi-to-react";
 
-const stripAnsi = (str: string) => str.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
+const stripAnsi = (str: string) => str.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '').replace(/\uFFFD/g, '');
 
 export function KiloPanel() {
   const { startKiloServer, stopKiloServer, clearKiloLogs } = useAppActions();
@@ -42,34 +42,43 @@ export function KiloPanel() {
 
       let matched = false;
 
-      if (cleanLog.startsWith('🚀') || cleanLog.startsWith('🛑') || cleanLog.startsWith('🤖')) {
+      // 1. System Events
+      if (cleanLog.startsWith('[SYSTEM]') || cleanLog.startsWith('[SYSTEM_ERROR]')) {
         currentRawGroup = null;
-        result.push({ type: 'system', text: cleanLog });
+        result.push({ 
+          type: cleanLog.startsWith('[SYSTEM_ERROR]') ? 'error' : 'system', 
+          text: cleanLog.replace(/^\[SYSTEM(_ERROR)?\]\s*/, '') 
+        });
         matched = true;
       }
+      // 2. Summary / Success
       else if (cleanLog.startsWith('[SUCCESS]') || cleanLog.startsWith('[VERIFIED]') || cleanLog.startsWith('✅')) {
         currentRawGroup = null;
-        result.push({ type: 'summary', text: cleanLog });
+        result.push({ type: 'summary', text: cleanLog.replace(/^(\[SUCCESS\]|\[VERIFIED\]|✅)\s*/, '') });
         matched = true;
       }
+      // 3. AI Model Info
       else if (cleanLog.startsWith('> ')) {
         currentRawGroup = null;
         result.push({ type: 'model', text: cleanLog.substring(2) });
         matched = true;
       }
-      else if (cleanLog.startsWith('→') || cleanLog.startsWith('✱')) {
+      // 4. Tools Actions
+      else if (cleanLog.startsWith('→') || cleanLog.startsWith('✱') || cleanLog.match(/^[a-zA-Z]+\s+failed/)) {
         currentRawGroup = null;
         result.push({ type: 'tool', text: cleanLog });
         matched = true;
       }
+      // 5. Terminal Commands
       else if (cleanLog.startsWith('$ ')) {
         currentRawGroup = null;
         result.push({ type: 'command', text: cleanLog.substring(2) });
         matched = true;
       }
-      else if (cleanLog.startsWith('✗ ') || cleanLog.startsWith('❌ ') || cleanLog.startsWith('Error:')) {
+      // 6. Errors
+      else if (cleanLog.startsWith('[ERROR]') || cleanLog.startsWith('✗ ') || cleanLog.startsWith('❌ ') || cleanLog.startsWith('Error:')) {
         currentRawGroup = null;
-        result.push({ type: 'error', text: cleanLog });
+        result.push({ type: 'error', text: cleanLog.replace(/^(\[ERROR\]|✗ |❌ )\s*/, '') });
         matched = true;
       }
 
@@ -147,14 +156,14 @@ export function KiloPanel() {
               switch (item.type) {
                 case 'system': {
                   let Icon = Info;
-                  if (item.text.includes('🚀')) Icon = Rocket;
-                  else if (item.text.includes('🛑')) Icon = StopCircle;
-                  else if (item.text.includes('🤖')) Icon = Bot;
+                  if (item.text.includes('running')) Icon = Rocket;
+                  else if (item.text.includes('stopped')) Icon = StopCircle;
+                  else if (item.text.includes('Kilo CLI')) Icon = Bot;
 
                   return (
                     <div key={idx} className="flex items-center gap-3 p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg border border-blue-500/20 text-sm font-medium">
                       <Icon className="h-5 w-5 shrink-0" />
-                      <span>{item.text.replace(/^[🚀🛑🤖]\s*/, '')}</span>
+                      <span>{item.text}</span>
                     </div>
                   );
                 }
@@ -162,14 +171,14 @@ export function KiloPanel() {
                   return (
                     <div key={idx} className="flex items-start gap-3 p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/20 text-sm font-medium">
                       <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
-                      <span className="leading-relaxed">{item.text.replace(/^(\[SUCCESS\]|\[VERIFIED\]|✅)\s*/, '')}</span>
+                      <span className="leading-relaxed">{item.text}</span>
                     </div>
                   );
                 case 'error':
                   return (
                     <div key={idx} className="flex items-start gap-3 p-3 bg-destructive/10 text-destructive rounded-lg border border-destructive/20 text-sm font-medium">
                       <XCircle className="h-5 w-5 shrink-0 mt-0.5" />
-                      <span className="leading-relaxed">{item.text.replace(/^(✗|❌|\[ERROR\])\s*/, '')}</span>
+                      <span className="leading-relaxed">{item.text}</span>
                     </div>
                   );
                 case 'model':
