@@ -19,6 +19,7 @@ export interface UIActions {
   clearKiloLogs: () => void;
   startKiloServer: () => Promise<void>;
   stopKiloServer: () => Promise<void>;
+  openKiloTerminal: () => Promise<void>;
   openFileInEditor: (filePath: string) => Promise<void>;
   closeEditor: () => void;
   addExclusionRange: (start: number, end: number) => Promise<void>;
@@ -110,6 +111,16 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
       await invoke("stop_kilo_server");
     } catch (e) {
       console.error("Failed to stop Kilo Server", e);
+    }
+  },
+  openKiloTerminal: async () => {
+    const { rootPath } = _get();
+    if (rootPath) {
+      try {
+        await invoke("open_kilo_terminal", { projectPath: rootPath });
+      } catch (e) {
+        console.error("Failed to open terminal", e);
+      }
     }
   },
   toggleEditorPanelVisibility: () => {

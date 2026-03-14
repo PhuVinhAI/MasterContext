@@ -86,6 +86,33 @@ pub async fn start_kilo_server(
 }
 
 #[tauri::command]
+pub fn open_kilo_terminal(project_path: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("cmd")
+            .args(&["/c", "start", "cmd", "/K", "echo [Kilo CLI Ready] - Ban co the chay cac lenh 'kilo' tai day. && kilo --help"])
+            .current_dir(project_path)
+            .spawn()
+            .map_err(|e| format!("Lỗi mở CMD: {}", e))?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .args(&["-a", "Terminal", &project_path])
+            .spawn()
+            .map_err(|e| format!("Lỗi mở Terminal: {}", e))?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("gnome-terminal")
+            .arg(format!("--working-directory={}", project_path))
+            .spawn()
+            .map_err(|e| format!("Lỗi mở Terminal: {}", e))?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn stop_kilo_server(
     server_handle: tauri::State<'_, crate::KiloServerHandle>,
 ) -> Result<(), String> {

@@ -98,7 +98,8 @@ pub fn run() {
             // Kilo Server Commands
             kilo_server::start_kilo_server,
             kilo_server::stop_kilo_server,
-            kilo_server::get_kilo_server_status
+            kilo_server::get_kilo_server_status,
+            kilo_server::open_kilo_terminal
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
