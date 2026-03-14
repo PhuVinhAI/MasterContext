@@ -165,22 +165,22 @@ pub async fn init_kilo_config(app_handle: tauri::AppHandle, project_path: String
     let opencode_json_dest = path.join("opencode.json");
 
     let resource_dir = app_handle.path().resource_dir().map_err(|e| e.to_string())?;
-    let ext_dir = resource_dir.join("extension");
+    let res_dir = resource_dir.join("resources");
     
-    let apply_md_src = ext_dir.join("apply.md");
-    let opencode_src = ext_dir.join("opencode.json");
+    let apply_md_src = res_dir.join("apply.md");
+    let opencode_src = res_dir.join("opencode.json");
 
     // Đọc từ thư mục bundle (production) hoặc thư mục gốc (development)
     let apply_md_content = fs::read_to_string(&apply_md_src).unwrap_or_else(|_| {
-        fs::read_to_string("../extension/apply.md").unwrap_or_default()
+        fs::read_to_string("../resources/apply.md").unwrap_or_default()
     });
 
     let mut opencode_json_content = fs::read_to_string(&opencode_src).unwrap_or_else(|_| {
-        fs::read_to_string("../extension/opencode.json").unwrap_or_default()
+        fs::read_to_string("../resources/opencode.json").unwrap_or_default()
     });
 
     if apply_md_content.is_empty() || opencode_json_content.is_empty() {
-        return Err("Không thể đọc file apply.md hoặc opencode.json từ thư mục extension".into());
+        return Err("Không thể đọc file apply.md hoặc opencode.json từ thư mục resources".into());
     }
 
     // Tự động sửa lại đường dẫn trỏ vào .master-context
@@ -198,13 +198,13 @@ pub async fn open_extension_folder(app_handle: tauri::AppHandle) -> Result<(), S
     use tauri_plugin_opener::OpenerExt;
     
     let resource_dir = app_handle.path().resource_dir().map_err(|e| e.to_string())?;
-    let ext_dir = resource_dir.join("extension");
+    let res_dir = resource_dir.join("resources");
     
-    let path_to_open = if ext_dir.exists() {
-        ext_dir.to_string_lossy().to_string()
+    let path_to_open = if res_dir.exists() {
+        res_dir.to_string_lossy().to_string()
     } else {
         // Fallback in dev
-        "../extension".to_string()
+        "../resources".to_string()
     };
 
     app_handle.opener().open_path(path_to_open, None::<String>).map_err(|e| e.to_string())?;
