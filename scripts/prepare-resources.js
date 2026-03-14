@@ -33,12 +33,10 @@ fs.copyFileSync(path.join(extDir, 'opencode.json'), path.join(resDir, 'opencode.
 const readmeContent = `
 # Hướng dẫn cài đặt AI Studio Archiver Extension
 
-1. Giải nén file "ai-studio-archiver.zip" ra một thư mục bất kỳ trên máy của bạn.
-2. Mở trình duyệt Chrome, truy cập vào đường dẫn: chrome://extensions/
-3. Bật "Developer mode" (Chế độ dành cho nhà phát triển) ở góc trên bên phải.
-4. Nhấn nút "Load unpacked" (Tải tiện ích đã giải nén).
-5. Chọn thư mục vừa giải nén ở Bước 1.
-6. Cài đặt hoàn tất! Quay lại ứng dụng Master Context để sử dụng tính năng Auto-Watch.
+1. Mở trình duyệt Chrome, truy cập vào đường dẫn: chrome://extensions/
+2. Bật "Developer mode" (Chế độ dành cho nhà phát triển) ở góc trên bên phải.
+3. Kéo thả trực tiếp file "ai-studio-archiver.zip" này vào cửa sổ trình duyệt.
+4. Cài đặt hoàn tất! Quay lại ứng dụng Master Context để sử dụng tính năng Auto-Watch.
 `;
 fs.writeFileSync(path.join(resDir, 'HUONG_DAN_CAI_DAT.md'), readmeContent.trim());
 
