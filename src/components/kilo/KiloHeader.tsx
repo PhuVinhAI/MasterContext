@@ -64,7 +64,7 @@ export function KiloHeader({ isKiloServerRunning, onStart, onStop, onClearLogs, 
         ) : (
           <>
             {kiloAvailableModels.length > 0 && (
-              <Select value={selectedKiloModel} onValueChange={setSelectedKiloModel}>
+              <Select value={selectedKiloModel} onValueChange={setSelectedKiloModel} disabled={isKiloServerRunning}>
                 <SelectTrigger className="h-8 w-[150px] md:w-[250px] text-xs font-mono">
                   <SelectValue placeholder="Chọn AI Model..." />
                 </SelectTrigger>

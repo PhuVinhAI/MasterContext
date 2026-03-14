@@ -253,6 +253,7 @@ export const createSettingsActions: StateCreator<
       topP: newSettings.topP ?? topP,
       topK: newSettings.topK ?? topK,
       maxTokens: newSettings.maxTokens ?? maxTokens,
+      selectedKiloModel: newSettings.selectedKiloModel ?? get().selectedKiloModel,
     };
 
     try {

@@ -97,6 +97,7 @@ export interface AppSettings {
   topP?: number;
   topK?: number;
   maxTokens?: number;
+  selectedKiloModel?: string;
 }
 
 export interface GitRepositoryInfo {

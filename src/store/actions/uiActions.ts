@@ -167,6 +167,8 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
     set({ selectedKiloModel: model });
     try {
       await invoke("set_kilo_model", { model });
+      // Lưu lại model vào settings để ghi nhớ cho lần sau
+      await _get().actions.updateAppSettings({ selectedKiloModel: model });
     } catch(e) {
       console.error("Failed to set kilo model", e);
     }

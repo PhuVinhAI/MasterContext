@@ -223,6 +223,15 @@ pub async fn stop_kilo_server(
 }
 
 #[tauri::command]
+pub async fn set_kilo_model(
+    model: String,
+    model_state: tauri::State<'_, crate::KiloModelState>,
+) -> Result<(), String> {
+    *model_state.0.lock().unwrap() = model;
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn get_kilo_server_status(
     server_handle: tauri::State<'_, crate::KiloServerHandle>,
 ) -> Result<bool, String> {

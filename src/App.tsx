@@ -234,6 +234,8 @@ function App() {
           console.warn("Could not fetch OpenRouter models", e);
         }
 
+        const savedKiloModel = settings.selectedKiloModel ?? "";
+
         const savedModelIds = settings.aiModels ?? ["gemini-flash-latest"];
 
         // Tự động ép thêm các models mới vào danh sách hiển thị ngoài màn hình Chat
@@ -275,7 +277,13 @@ function App() {
             )?.id ||
             projectAiModels[0]?.id ||
             "gemini-flash-latest",
+          selectedKiloModel: savedKiloModel,
         });
+
+        // Bắn model đã lưu xuống backend để Kilo Agent biết
+        if (savedKiloModel) {
+           invoke("set_kilo_model", { model: savedKiloModel }).catch(console.error);
+        }
       } catch (e) {
         console.error("Could not load app settings:", e);
       }
