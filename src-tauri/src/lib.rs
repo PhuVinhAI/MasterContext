@@ -105,7 +105,8 @@ pub fn run() {
             kilo_server::check_kilo_installed,
             kilo_server::install_kilo_cli,
             kilo_server::get_kilo_models,
-            kilo_server::init_kilo_config
+            kilo_server::init_kilo_config,
+            kilo_server::open_extension_folder
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

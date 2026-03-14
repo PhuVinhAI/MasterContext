@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useShallow } from "zustand/react/shallow";
 import { useAppStore, useAppActions } from "@/store/appStore";
 import { cn } from "@/lib/utils";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { invoke } from "@tauri-apps/api/core";
 
 interface KiloHeaderProps {
   isKiloServerRunning: boolean;
@@ -50,7 +50,7 @@ export function KiloHeader({ isKiloServerRunning, onStart, onStop, onClearLogs, 
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={() => openUrl("https://github.com/PhuVinhAI/aiggstudioHistory/releases")} className="h-8">
+        <Button variant="outline" size="sm" onClick={() => invoke("open_extension_folder")} className="h-8">
           <Puzzle className="h-3.5 w-3.5 mr-1.5 text-orange-500" /> Cài Extension
         </Button>
         {isKiloInstalled === null ? (
