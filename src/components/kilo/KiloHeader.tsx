@@ -1,17 +1,19 @@
 import { Button } from "@/components/ui/button";
-import { Play, Square, Trash2, Terminal, Loader2, Download } from "lucide-react";
+import { Play, Square, Trash2, Terminal, Loader2, Download, CheckCircle2, XCircle, Activity } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useShallow } from "zustand/react/shallow";
 import { useAppStore, useAppActions } from "@/store/appStore";
+import { cn } from "@/lib/utils";
 
 interface KiloHeaderProps {
   isKiloServerRunning: boolean;
   onStart: () => void;
   onStop: () => void;
   onClearLogs: () => void;
+  status: 'idle' | 'running' | 'success' | 'error';
 }
 
-export function KiloHeader({ isKiloServerRunning, onStart, onStop, onClearLogs }: KiloHeaderProps) {
+export function KiloHeader({ isKiloServerRunning, onStart, onStop, onClearLogs, status }: KiloHeaderProps) {
   const { isKiloInstalled, selectedKiloModel, kiloAvailableModels } = useAppStore(
     useShallow(state => ({
       isKiloInstalled: state.isKiloInstalled,
@@ -23,9 +25,28 @@ export function KiloHeader({ isKiloServerRunning, onStart, onStop, onClearLogs }
 
   return (
     <header className="flex items-center justify-between p-3 border-b shrink-0 bg-card">
-      <div className="flex items-center gap-2">
-        <Terminal className="h-5 w-5 text-primary" />
-        <h2 className="text-sm font-bold uppercase tracking-wider hidden sm:block">Kilo Agent Dashboard</h2>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Terminal className="h-5 w-5 text-primary" />
+          <h2 className="text-sm font-bold uppercase tracking-wider hidden md:block">Kilo Agent Dashboard</h2>
+        </div>
+        
+        <div className="flex items-center gap-1.5 px-2 py-1 bg-muted/30 rounded-md border text-[11px] font-medium">
+          {status === 'running' && <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin" />}
+          {status === 'success' && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
+          {status === 'error' && <XCircle className="h-3.5 w-3.5 text-destructive" />}
+          {status === 'idle' && <Activity className="h-3.5 w-3.5 text-muted-foreground" />}
+          <span className={cn(
+            status === 'running' ? "text-blue-500" :
+            status === 'success' ? "text-emerald-500" :
+            status === 'error' ? "text-destructive" :
+            "text-muted-foreground"
+          )}>
+            {status === 'running' ? 'Đang xử lý...' : 
+             status === 'success' ? 'Hoàn thành' : 
+             status === 'error' ? 'Lỗi / Dừng' : 'Đang chờ lệnh'}
+          </span>
+        </div>
       </div>
       <div className="flex items-center gap-2">
         {isKiloInstalled === null ? (

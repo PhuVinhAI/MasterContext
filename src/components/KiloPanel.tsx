@@ -4,7 +4,6 @@ import { useShallow } from "zustand/react/shallow";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Rocket, Code } from "lucide-react";
 import { KiloHeader } from "./kilo/KiloHeader";
-import { KiloStatusCards } from "./kilo/KiloStatusCards";
 import { KiloActivityItem } from "./kilo/KiloActivityItem";
 import { type KiloActivity } from "./kilo/types";
 import { stripAnsi } from "./kilo/utils";
@@ -124,12 +123,11 @@ export function KiloPanel() {
         onStart={startKiloServer}
         onStop={stopKiloServer}
         onClearLogs={clearKiloLogs}
+        status={parsedState.status}
       />
       
       <ScrollArea className="flex-1 min-h-0" viewportRef={scrollRef}>
         <div className="p-4 space-y-6">
-          <KiloStatusCards status={parsedState.status} model={parsedState.model} />
-
           <div>
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
               <Code className="h-4 w-4" /> Luồng thực thi
