@@ -34,14 +34,14 @@ export function KiloActivityItem({ activity }: { activity: KiloActivity }) {
   }
 
   return (
-    <div className={cn("border rounded-lg overflow-hidden transition-all shadow-sm flex flex-col", bgClass)}>
+    <div className={cn("border rounded-lg overflow-hidden transition-all shadow-sm flex flex-col w-full min-w-0", bgClass)}>
       <div 
-        className={cn("p-3 flex items-center justify-between gap-2", hasDetails ? "cursor-pointer hover:bg-black/5 dark:hover:bg-white/5" : "")}
+        className={cn("p-3 flex items-center justify-between gap-2 w-full min-w-0", hasDetails ? "cursor-pointer hover:bg-black/5 dark:hover:bg-white/5" : "")}
         onClick={() => hasDetails && setExpanded(!expanded)}
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <Icon className={cn("h-4 w-4 shrink-0", colorClass)} />
-          <span className="font-medium text-sm truncate block w-full" title={activity.title}>{activity.title}</span>
+          <span className="font-medium text-sm truncate" title={activity.title}>{activity.title}</span>
         </div>
         {hasDetails && (
           <div className="shrink-0 text-muted-foreground flex items-center justify-center p-1 rounded hover:bg-black/10 dark:hover:bg-white/10">
@@ -50,29 +50,29 @@ export function KiloActivityItem({ activity }: { activity: KiloActivity }) {
         )}
       </div>
       {expanded && hasDetails && (
-        <div className="bg-[#0d1117] p-4 border-t border-border/50 overflow-auto max-h-[500px] shadow-inner custom-scrollbar">
-          <div className="font-mono text-[12px] leading-relaxed whitespace-pre w-fit min-w-full">
+        <div className="bg-[#18181B] p-4 border-t border-border/50 overflow-auto max-h-[500px] shadow-inner custom-scrollbar w-full">
+          <div className="font-mono text-[12px] leading-relaxed whitespace-pre w-max min-w-full">
             {activity.details.map((line, i) => {
               const cleanLine = stripAnsi(line);
-              let lineClass = "text-gray-300 hover:bg-white/10 px-2 py-0.5 rounded-sm transition-colors";
+              let lineClass = "text-gray-300 hover:bg-white/10 px-2 py-0.5 rounded-sm transition-colors block w-full";
               
               // Highlight Logic cho Code Diff & Error
               if (cleanLine.startsWith('+') && !cleanLine.startsWith('+++')) {
-                lineClass = "text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded-sm w-full inline-block";
+                lineClass = "text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded-sm block w-full";
               } else if (cleanLine.startsWith('-') && !cleanLine.startsWith('---')) {
-                lineClass = "text-rose-400 bg-rose-950/40 px-2 py-0.5 rounded-sm w-full inline-block";
+                lineClass = "text-rose-400 bg-rose-950/40 px-2 py-0.5 rounded-sm block w-full";
               } else if (cleanLine.startsWith('@@')) {
-                lineClass = "text-cyan-400 font-medium px-2 py-1 mt-1 w-full inline-block";
+                lineClass = "text-cyan-400 font-medium px-2 py-1 mt-1 block w-full";
               } else if (cleanLine.startsWith('+++') || cleanLine.startsWith('---')) {
-                lineClass = "text-gray-100 font-bold px-2 py-0.5 w-full inline-block";
+                lineClass = "text-gray-100 font-bold px-2 py-0.5 block w-full";
               } else if (cleanLine.startsWith('ERROR [') || cleanLine.toLowerCase().includes('error')) {
-                lineClass = "text-rose-400 bg-rose-950/40 px-2 py-1 rounded-sm border-l-2 border-rose-500 font-medium my-1 w-full inline-block";
+                lineClass = "text-rose-400 bg-rose-950/40 px-2 py-1 rounded-sm border-l-2 border-rose-500 font-medium my-1 block w-full";
               } else if (cleanLine.includes('LSP errors detected') || cleanLine.includes('Warning')) {
-                lineClass = "text-amber-400 font-bold px-2 mt-2 mb-1 w-full inline-block";
+                lineClass = "text-amber-400 font-bold px-2 mt-2 mb-1 block w-full";
               } else if (cleanLine.startsWith('<diagnostics') || cleanLine.startsWith('</diagnostics')) {
-                lineClass = "text-blue-400/60 italic px-2 text-[11px] w-full inline-block";
+                lineClass = "text-blue-400/60 italic px-2 text-[11px] block w-full";
               } else if (cleanLine.startsWith('Wrote file successfully')) {
-                lineClass = "text-emerald-400 font-medium px-2 mb-1 w-full inline-block";
+                lineClass = "text-emerald-400 font-medium px-2 mb-1 block w-full";
               }
 
               return (
