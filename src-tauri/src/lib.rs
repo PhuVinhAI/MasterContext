@@ -13,18 +13,17 @@ mod kilo_server;
 use std::sync::{Arc, Mutex};
 pub struct ActiveProjectState(pub Arc<Mutex<Option<String>>>);
 
+// State quản lý việc bật tắt server
+pub struct KiloServerHandle(pub Arc<Mutex<Option<tokio::sync::oneshot::Sender<()>>>>);
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let active_project = Arc::new(Mutex::new(None));
-    let active_project_clone = active_project.clone();
-
-    // Khởi chạy Kilo Web Server ngầm bên dưới
-    tauri::async_runtime::spawn(async move {
-        kilo_server::run_server(active_project_clone).await;
-    });
+    let kilo_handle = Arc::new(Mutex::new(None));
 
     tauri::Builder::default()
         .manage(ActiveProjectState(active_project))
+        .manage(KiloServerHandle(kilo_handle))
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -95,7 +94,11 @@ pub fn run() {
             commands::delete_chat_session,
             commands::update_chat_session_title,
             commands::create_chat_session,
-            commands::delete_all_chat_sessions
+            commands::delete_all_chat_sessions,
+            // Kilo Server Commands
+            kilo_server::start_kilo_server,
+            kilo_server::stop_kilo_server,
+            kilo_server::get_kilo_server_status
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -12,15 +12,13 @@ export interface UIActions {
   toggleGitPanelVisibility: () => void;
   toggleGroupEditorPanelVisibility: () => void;
   toggleAiPanelVisibility: () => void;
+  toggleKiloPanelVisibility: () => void;
   toggleEditorPanelVisibility: () => void;
-  setInlineEditingGroup: (
-    state: {
-      mode: "create" | "rename";
-      profileName: string;
-      groupId?: string;
-    } | null
-  ) => void;
-  _setRecentPaths: (paths: string[]) => void;
+  setKiloServerStatus: (isRunning: boolean) => void;
+  addKiloLog: (log: string) => void;
+  clearKiloLogs: () => void;
+  startKiloServer: () => Promise<void>;
+  stopKiloServer: () => Promise<void>;
   openFileInEditor: (filePath: string) => Promise<void>;
   closeEditor: () => void;
   addExclusionRange: (start: number, end: number) => Promise<void>;
@@ -78,6 +76,37 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
     set((state) => ({
       isAiPanelVisible: !state.isAiPanelVisible,
     }));
+  },
+  toggleKiloPanelVisibility: () => {
+    set((state) => ({
+      isKiloPanelVisible: !state.isKiloPanelVisible,
+    }));
+  },
+  setKiloServerStatus: (isRunning) => {
+    set({ isKiloServerRunning: isRunning });
+  },
+  addKiloLog: (log) => {
+    set((state) => {
+      // Giới hạn max 500 dòng log để tránh lag UI
+      const newLogs = [...state.kiloLogs, log];
+      if (newLogs.length > 500) return { kiloLogs: newLogs.slice(newLogs.length - 500) };
+      return { kiloLogs: newLogs };
+    });
+  },
+  clearKiloLogs: () => set({ kiloLogs: [] }),
+  startKiloServer: async () => {
+    try {
+      await invoke("start_kilo_server");
+    } catch (e) {
+      console.error("Failed to start Kilo Server", e);
+    }
+  },
+  stopKiloServer: async () => {
+    try {
+      await invoke("stop_kilo_server");
+    } catch (e) {
+      console.error("Failed to stop Kilo Server", e);
+    }
   },
   toggleEditorPanelVisibility: () => {
     set((state) => ({ isEditorPanelVisible: !state.isEditorPanelVisible }));

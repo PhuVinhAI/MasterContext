@@ -32,6 +32,7 @@ import { SettingsScene } from "./scenes/SettingsScene";
 import { SidebarPanel } from "./scenes/SidebarPanel";
 import { GitPanel } from "./components/GitPanel";
 import { AIPanel } from "./components/AIPanel"; // THÊM IMPORT
+import { KiloPanel } from "./components/KiloPanel"; // THÊM IMPORT KILO PANEL
 import { MainPanel } from "./scenes/MainPanel";
 import { StatusBar } from "./components/StatusBar";
 import { RescanIndicator } from "./components/RescanIndicator";
@@ -56,6 +57,7 @@ function App() {
     gitRepoInfo,
     isGroupEditorPanelVisible,
     isAiPanelVisible,
+    isKiloPanelVisible,
   } = useAppStore(
     // --- SỬA LỖI TẠI ĐÂY ---
     useShallow((state) => ({
@@ -70,6 +72,7 @@ function App() {
       gitRepoInfo: state.gitRepoInfo,
       isGroupEditorPanelVisible: state.isGroupEditorPanelVisible,
       isAiPanelVisible: state.isAiPanelVisible, // THÊM STATE
+      isKiloPanelVisible: state.isKiloPanelVisible,
     }))
   );
 
@@ -92,6 +95,9 @@ function App() {
     reset,
     toggleGroupEditorPanelVisibility,
     toggleAiPanelVisibility, // THÊM ACTION
+    toggleKiloPanelVisibility,
+    addKiloLog,
+    setKiloServerStatus,
   } = useAppActions();
 
   const { t } = useTranslation();
@@ -369,6 +375,12 @@ function App() {
               action: toggleAiPanelVisibility,
               checked: isAiPanelVisible,
             }),
+            await CheckMenuItem.new({
+              id: "toggle_kilo_panel",
+              text: t("appMenu.window.kiloPanel"),
+              action: toggleKiloPanelVisibility,
+              checked: isKiloPanelVisible,
+            }),
           ],
         });
 
@@ -427,6 +439,7 @@ function App() {
     toggleEditorPanelVisibility,
     toggleGroupEditorPanelVisibility,
     toggleAiPanelVisibility,
+    toggleKiloPanelVisibility,
     _setRecentPaths,
     reset,
   ]);
@@ -464,6 +477,10 @@ function App() {
   useEffect(() => {
     updateMenuCheckedState("toggle_ai_panel", isAiPanelVisible);
   }, [isAiPanelVisible]);
+
+  useEffect(() => {
+    updateMenuCheckedState("toggle_kilo_panel", isKiloPanelVisible);
+  }, [isKiloPanelVisible]);
 
   const throttledSetScanProgress = useMemo(
     () => throttle((file: string) => _setScanProgress(file), 10),
@@ -546,6 +563,18 @@ function App() {
         if (!useAppStore.getState().isScanning) {
           rescanProject();
         }
+      })
+    );
+
+    // Lắng nghe logs từ Kilo Server (Rust)
+    unlistenFuncs.push(
+      listen<string>("kilo_log", (event) => {
+        addKiloLog(event.payload);
+      })
+    );
+    unlistenFuncs.push(
+      listen<boolean>("kilo_status_changed", (event) => {
+        setKiloServerStatus(event.payload);
       })
     );
     // Listener cho sự kiện xuất dự án (để hiển thị toast)
@@ -675,6 +704,20 @@ function App() {
                 maxSize={35}
               >
                 <AIPanel />
+              </ResizablePanel>
+            </>
+          )}
+          {isKiloPanelVisible && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel
+                id="kilo-panel"
+                order={5}
+                defaultSize={25}
+                minSize={20}
+                maxSize={40}
+              >
+                <KiloPanel />
               </ResizablePanel>
             </>
           )}

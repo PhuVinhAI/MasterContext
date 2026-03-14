@@ -237,6 +237,11 @@ export interface AppState {
   hasMoreCommits: boolean;
   originalGitBranch: string | null; // <-- THÊM STATE MỚI
 
+  // Kilo Panel
+  isKiloPanelVisible: boolean;
+  isKiloServerRunning: boolean;
+  kiloLogs: string[];
+
   // AI Panel
   isAiPanelVisible: boolean;
   aiChatMode: AiChatMode;
