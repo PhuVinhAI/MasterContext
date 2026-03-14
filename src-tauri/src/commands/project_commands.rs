@@ -1,39 +1,51 @@
 // src-tauri/src/commands/project_commands.rs
-use crate::{context_generator, file_cache, models, project_scanner};
-use tauri::{command, AppHandle, Emitter, Manager, Window}; // Add models
 use super::start_file_watching;
 use super::utils::perform_auto_export;
-use std::fs;
+use crate::models::FsEntry;
+use crate::{context_generator, file_cache, models, project_scanner};
 use ignore::WalkBuilder;
 use std::collections::BTreeMap;
-use crate::models::FsEntry;
 use std::fmt::Write as FmtWrite;
+use std::fs;
 use std::path::Path;
+use tauri::{command, AppHandle, Emitter, Manager, Window}; // Add models
 
 #[command]
-pub fn scan_project(window: Window, path: String, profile_name: String) {
+pub fn scan_project(
+    window: Window,
+    path: String,
+    profile_name: String,
+    state: tauri::State<'_, crate::ActiveProjectState>,
+) {
+    // Cập nhật đường dẫn dự án hiện tại cho Kilo Web Server biết
+    *state.0.lock().unwrap() = Some(path.clone());
+
     let window_clone = window.clone();
     let path_clone = path.clone();
     let app = window.app_handle().clone();
 
     std::thread::spawn(move || {
-        let old_data = file_cache::load_project_data(&app, &path, &profile_name).unwrap_or_default();
+        let old_data =
+            file_cache::load_project_data(&app, &path, &profile_name).unwrap_or_default();
         let should_start_watching = old_data.is_watching_files.unwrap_or(false);
 
         // --- THÊM LOGIC ĐỌC CÀI ĐẶT ---
         // Lấy cài đặt ứng dụng để truyền vào scanner
-        let app_settings = super::settings_commands::get_app_settings(app.clone()).unwrap_or_default();
-        
+        let app_settings =
+            super::settings_commands::get_app_settings(app.clone()).unwrap_or_default();
+
         match project_scanner::perform_smart_scan_and_rebuild(
-            &window, 
-            &path, 
+            &window,
+            &path,
             old_data,
             project_scanner::ScanOptions {
                 user_non_analyzable_extensions: app_settings.non_analyzable_extensions,
-            }
+            },
         ) {
-            Ok((new_data, is_first_scan)) => { // <-- Nhận thêm cờ is_first_scan
-                if let Err(e) = file_cache::save_project_data(&app, &path, &profile_name, &new_data) {
+            Ok((new_data, is_first_scan)) => {
+                // <-- Nhận thêm cờ is_first_scan
+                if let Err(e) = file_cache::save_project_data(&app, &path, &profile_name, &new_data)
+                {
                     let _ = window.emit("scan_error", e);
                     return;
                 }
@@ -41,12 +53,15 @@ pub fn scan_project(window: Window, path: String, profile_name: String) {
                 if new_data.sync_enabled.unwrap_or(false) && new_data.sync_path.is_some() {
                     perform_auto_export(&path, &profile_name, &new_data);
                 }
-                
+
                 // --- GỬI PAYLOAD MỚI VỀ FRONTEND ---
-                let _ = window.emit("scan_complete", serde_json::json!({
-                    "projectData": new_data,
-                    "isFirstScan": is_first_scan
-                }));
+                let _ = window.emit(
+                    "scan_complete",
+                    serde_json::json!({
+                        "projectData": new_data,
+                        "isFirstScan": is_first_scan
+                    }),
+                );
 
                 if should_start_watching {
                     if let Err(e) = start_file_watching(window_clone, path_clone) {
@@ -107,7 +122,16 @@ pub fn start_project_export(window: Window, app: AppHandle, path: String, profil
 }
 
 #[command]
-pub fn generate_project_context(app: AppHandle, path: String, profile_name: String, export_only_tree: bool, with_line_numbers: bool, without_comments: bool, remove_debug_logs: bool, super_compressed: bool) -> Result<String, String> {
+pub fn generate_project_context(
+    app: AppHandle,
+    path: String,
+    profile_name: String,
+    export_only_tree: bool,
+    with_line_numbers: bool,
+    without_comments: bool,
+    remove_debug_logs: bool,
+    super_compressed: bool,
+) -> Result<String, String> {
     let project_data = file_cache::load_project_data(&app, &path, &profile_name)?;
     let use_full_tree = project_data.export_use_full_tree.unwrap_or(false);
     let always_apply_text = project_data.always_apply_text;
@@ -190,8 +214,7 @@ pub fn save_file_content(
     let root_path = std::path::Path::new(&root_path_str);
     let full_path = root_path.join(file_rel_path);
     if let Some(parent_dir) = full_path.parent() {
-        fs::create_dir_all(parent_dir)
-            .map_err(|e| format!("Không thể tạo thư mục cha: {}", e))?;
+        fs::create_dir_all(parent_dir).map_err(|e| format!("Không thể tạo thư mục cha: {}", e))?;
     }
     fs::write(full_path, content).map_err(|e| format!("Không thể ghi file: {}", e))
 }
@@ -210,12 +233,15 @@ pub fn generate_directory_tree(
     let mut tree_builder_root = BTreeMap::new();
 
     // Sử dụng ignore::WalkBuilder để tôn trọng các file .gitignore
-    for result in WalkBuilder::new(&full_dir_path).build().skip(1) { // bỏ qua thư mục gốc
+    for result in WalkBuilder::new(&full_dir_path).build().skip(1) {
+        // bỏ qua thư mục gốc
         let entry = result.map_err(|e| e.to_string())?;
         let path = entry.path();
-        
+
         // Lấy đường dẫn tương đối so với thư mục đang quét
-        let rel_path = path.strip_prefix(&full_dir_path).map_err(|e| e.to_string())?;
+        let rel_path = path
+            .strip_prefix(&full_dir_path)
+            .map_err(|e| e.to_string())?;
 
         let mut current_level = &mut tree_builder_root;
 
@@ -231,17 +257,19 @@ pub fn generate_directory_tree(
                 };
             }
         }
-        
+
         if let Some(file_name) = rel_path.file_name() {
-             let file_name_str = file_name.to_string_lossy().into_owned();
-             if path.is_dir() {
-                current_level.entry(file_name_str).or_insert(FsEntry::Directory(BTreeMap::new()));
-             } else {
+            let file_name_str = file_name.to_string_lossy().into_owned();
+            if path.is_dir() {
+                current_level
+                    .entry(file_name_str)
+                    .or_insert(FsEntry::Directory(BTreeMap::new()));
+            } else {
                 current_level.insert(file_name_str, FsEntry::File);
-             }
+            }
         }
     }
-    
+
     // Hàm helper để định dạng cây, có thể đã tồn tại ở nơi khác
     fn format_tree_helper(tree: &BTreeMap<String, FsEntry>, prefix: &str, output: &mut String) {
         let mut entries = tree.iter().peekable();
@@ -249,7 +277,9 @@ pub fn generate_directory_tree(
             let is_last = entries.peek().is_none();
             let connector = if is_last { "└── " } else { "├── " };
             match entry {
-                FsEntry::File => { let _ = writeln!(output, "{}{}{}", prefix, connector, name); }
+                FsEntry::File => {
+                    let _ = writeln!(output, "{}{}{}", prefix, connector, name);
+                }
                 FsEntry::Directory(children) => {
                     let _ = writeln!(output, "{}{}{}/", prefix, connector, name);
                     let new_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
@@ -258,11 +288,14 @@ pub fn generate_directory_tree(
             }
         }
     }
-    
+
     let mut directory_structure = String::new();
     format_tree_helper(&tree_builder_root, "", &mut directory_structure);
-    
-    let root_name = Path::new(&dir_rel_path).file_name().unwrap_or_default().to_string_lossy();
+
+    let root_name = Path::new(&dir_rel_path)
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy();
     Ok(format!("{}/\n{}", root_name, directory_structure))
 }
 #[command]
@@ -274,8 +307,7 @@ pub fn create_file(
     let root_path = std::path::Path::new(&root_path_str);
     let full_path = root_path.join(&file_rel_path);
     if let Some(parent_dir) = full_path.parent() {
-        fs::create_dir_all(parent_dir)
-            .map_err(|e| format!("Không thể tạo thư mục cha: {}", e))?;
+        fs::create_dir_all(parent_dir).map_err(|e| format!("Không thể tạo thư mục cha: {}", e))?;
     }
     fs::write(full_path, content).map_err(|e| format!("Không thể tạo file: {}", e))
 }
@@ -302,9 +334,12 @@ pub fn update_file_exclusions(
 
     let updated_metadata: models::FileMetadata;
 
-    if let Some(metadata) = project_data.file_metadata_cache.get_mut(&file_rel_path)
-    {
-        metadata.excluded_ranges = if ranges.is_empty() { None } else { Some(ranges) };
+    if let Some(metadata) = project_data.file_metadata_cache.get_mut(&file_rel_path) {
+        metadata.excluded_ranges = if ranges.is_empty() {
+            None
+        } else {
+            Some(ranges)
+        };
         updated_metadata = metadata.clone();
     } else {
         // This case should ideally not happen if the frontend is correct

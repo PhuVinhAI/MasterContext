@@ -8,10 +8,23 @@ mod context_generator;
 mod file_cache;
 mod models;
 mod project_scanner;
+mod kilo_server;
+
+use std::sync::{Arc, Mutex};
+pub struct ActiveProjectState(pub Arc<Mutex<Option<String>>>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let active_project = Arc::new(Mutex::new(None));
+    let active_project_clone = active_project.clone();
+
+    // Khởi chạy Kilo Web Server ngầm bên dưới
+    tauri::async_runtime::spawn(async move {
+        kilo_server::run_server(active_project_clone).await;
+    });
+
     tauri::Builder::default()
+        .manage(ActiveProjectState(active_project))
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())

@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Bỏ qua thư mục tạm của Kilo Auto-Watch
+.kilo-tasks
