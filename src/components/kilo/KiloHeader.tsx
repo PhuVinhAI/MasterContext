@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { Play, Square, Trash2, Terminal, Loader2, Download, CheckCircle2, XCircle, Activity } from "lucide-react";
+import { Play, Square, Trash2, Terminal, Loader2, Download, CheckCircle2, XCircle, Activity, Puzzle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useShallow } from "zustand/react/shallow";
 import { useAppStore, useAppActions } from "@/store/appStore";
 import { cn } from "@/lib/utils";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 interface KiloHeaderProps {
   isKiloServerRunning: boolean;
@@ -49,6 +50,9 @@ export function KiloHeader({ isKiloServerRunning, onStart, onStop, onClearLogs, 
         </div>
       </div>
       <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={() => openUrl("https://github.com/PhuVinhAI/aiggstudioHistory/releases")} className="h-8">
+          <Puzzle className="h-3.5 w-3.5 mr-1.5 text-orange-500" /> Cài Extension
+        </Button>
         {isKiloInstalled === null ? (
           <Button variant="outline" size="sm" disabled className="h-8">
             <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> Kiểm tra...

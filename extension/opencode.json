@@ -1,7 +1,7 @@
 {
   "$schema": "https://kilo.ai/config.json",
   "permission": "allow",
-  "instructions": [
-    "C:\\Users\\tomis\\Docs\\aiggstudioHistory\\apply.md"
+"instructions": [
+    "./apply.md"
   ]
 }
