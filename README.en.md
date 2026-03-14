@@ -1,6 +1,6 @@
 # Master Context: An Intelligent Context-Building Assistant for Developers
 
-[![Version](https://img.shields.io/badge/version-0.1.4-blue.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-0.1.7-blue.svg)](package.json)
 [![GitHub issues](https://img.shields.io/github/issues/NguyenHuynhPhuVinh/MasterContext)](https://github.com/NguyenHuynhPhuVinh/MasterContext/issues)
 [![GitHub stars](https://img.shields.io/github/stars/NguyenHuynhPhuVinh/MasterContext)](https://github.com/NguyenHuynhPhuVinh/MasterContext/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/NguyenHuynhPhuVinh/MasterContext)](https://github.com/NguyenHuynhPhuVinh/MasterContext/network/members)

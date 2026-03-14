@@ -1,10 +1,10 @@
 // src-tauri/src/commands/settings_commands.rs
+use super::utils::perform_auto_export;
 use crate::{file_cache, models};
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::PathBuf;
 use tauri::{command, AppHandle, Manager};
-use super::utils::perform_auto_export;
 
 fn get_app_settings_path(app: &AppHandle) -> Result<PathBuf, String> {
     let config_dir = app
@@ -25,7 +25,9 @@ pub fn get_app_settings(app: AppHandle) -> Result<models::AppSettings, String> {
         return Ok(models::AppSettings::default());
     }
     let contents = fs::read_to_string(path).map_err(|e| e.to_string())?;
-    if contents.is_empty() { return Ok(models::AppSettings::default()); }
+    if contents.is_empty() {
+        return Ok(models::AppSettings::default());
+    }
     serde_json::from_str(&contents).map_err(|e| e.to_string())
 }
 
@@ -168,7 +170,6 @@ pub fn set_export_exclude_extensions_setting(
     file_cache::save_project_data(&app, &path, &profile_name, &project_data)
 }
 
-
 #[command]
 pub fn set_always_apply_text_setting(
     app: AppHandle,
@@ -202,6 +203,15 @@ pub fn set_git_export_mode_setting(
     let mut project_data = file_cache::load_project_data(&app, &path, &profile_name)?;
     project_data.git_export_mode_is_context = Some(enabled);
     file_cache::save_project_data(&app, &path, &profile_name, &project_data)
+}
+
+#[command]
+pub fn get_resource_file_content(app: AppHandle, filename: String) -> Result<String, String> {
+    let resource_dir = app.path().resource_dir().map_err(|e| e.to_string())?;
+    let file_path = resource_dir.join("resources").join(&filename);
+    std::fs::read_to_string(&file_path)
+        .or_else(|_| std::fs::read_to_string(format!("../resources/{}", filename)))
+        .map_err(|e| format!("Không thể đọc file {}: {}", filename, e))
 }
 
 #[command]

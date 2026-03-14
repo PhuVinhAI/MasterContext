@@ -11,6 +11,7 @@ mod project_scanner;
 mod kilo_server;
 
 use std::sync::{Arc, Mutex};
+use tauri::Manager;
 pub struct ActiveProjectState(pub Arc<Mutex<Option<String>>>);
 
 // State quản lý việc bật tắt server
@@ -81,6 +82,7 @@ pub fn run() {
             commands::get_app_settings,
             commands::set_recent_paths,
             commands::update_app_settings, // <-- COMMAND MỚI
+            commands::get_resource_file_content,
             commands::check_git_repository,
             commands::get_git_commits, // SỬA LỖI: Thiếu dấu phẩy
             commands::get_commit_diff,
@@ -109,6 +111,15 @@ pub fn run() {
             kilo_server::open_extension_folder,
             kilo_server::set_kilo_model
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| match event {
+            tauri::RunEvent::ExitRequested { .. } => {
+                let state = app_handle.state::<KiloServerHandle>();
+                if let Some(tx) = state.0.lock().unwrap().take() {
+                    let _ = tx.send(());
+                };
+            }
+            _ => {}
+        });
 }

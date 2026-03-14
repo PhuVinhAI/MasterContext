@@ -1,6 +1,6 @@
 # Master Context: Trợ lý Xây dựng Ngữ cảnh Thông minh cho Lập trình viên
 
-[![Phiên bản](https://img.shields.io/badge/version-0.1.4-blue.svg)](package.json)
+[![Phiên bản](https://img.shields.io/badge/version-0.1.7-blue.svg)](package.json)
 [![Vấn đề GitHub](https://img.shields.io/github/issues/NguyenHuynhPhuVinh/MasterContext)](https://github.com/NguyenHuynhPhuVinh/MasterContext/issues)
 [![Ngôi sao GitHub](https://img.shields.io/github/stars/NguyenHuynhPhuVinh/MasterContext)](https://github.com/NguyenHuynhPhuVinh/MasterContext/stargazers)
 [![Fork GitHub](https://img.shields.io/github/forks/NguyenHuynhPhuVinh/MasterContext)](https://github.com/NguyenHuynhPhuVinh/MasterContext/network/members)

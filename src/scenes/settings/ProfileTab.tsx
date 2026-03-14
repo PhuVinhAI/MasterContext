@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { FolderUp, Save, Loader2, GitBranch } from "lucide-react";
+import { FolderUp, Save, Loader2, GitBranch, FileCode2 } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 
 interface ProfileTabProps {
   syncEnabled: boolean;
@@ -108,9 +109,28 @@ export function ProfileTab({
           {t("settings.profile.alwaysApply.title")}
         </h3>
         <div className="space-y-2 flex-grow flex flex-col">
-          <Label htmlFor="always-apply-text">
-            {t("settings.profile.alwaysApply.description")}
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="always-apply-text">
+              {t("settings.profile.alwaysApply.description")}
+            </Label>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              disabled={isSavingText}
+              onClick={async () => {
+                try {
+                  const content = await invoke<string>("get_resource_file_content", { filename: "code.md" });
+                  setLocalText((prev) => prev ? prev + "\n\n" + content : content);
+                } catch (e) {
+                  console.error("Lỗi khi tải mẫu prompt IDE:", e);
+                }
+              }}
+            >
+              <FileCode2 className="h-3.5 w-3.5 mr-1.5" />
+              Chèn Prompt IDE (Chuẩn)
+            </Button>
+          </div>
           <Textarea
             id="always-apply-text"
             placeholder={t("settings.profile.alwaysApply.placeholder")}

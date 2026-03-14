@@ -39,9 +39,9 @@ export function KiloActivityItem({ activity }: { activity: KiloActivity }) {
         className={cn("p-3 flex items-center justify-between gap-2 w-full", hasDetails ? "cursor-pointer hover:bg-black/5 dark:hover:bg-white/5" : "")}
         onClick={() => hasDetails && setExpanded(!expanded)}
       >
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
           <Icon className={cn("h-4 w-4 shrink-0", colorClass)} />
-          <span className="font-medium text-sm truncate block" title={activity.title}>{activity.title}</span>
+          <span className="font-medium text-sm truncate block flex-1" title={activity.title}>{activity.title}</span>
         </div>
         {hasDetails && (
           <div className="shrink-0 text-muted-foreground flex items-center justify-center p-1 rounded hover:bg-black/10 dark:hover:bg-white/10">
