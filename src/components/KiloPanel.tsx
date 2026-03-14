@@ -1,15 +1,84 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import { useAppStore, useAppActions } from "@/store/appStore";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Play, Square, Trash2, Terminal, CheckCircle2, 
-  XCircle, Wrench, Cpu, Info, Rocket, Bot, StopCircle
+  XCircle, Wrench, Cpu, Rocket, Loader2, ChevronDown, 
+  ChevronUp, Code, Activity, SearchCode
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import Ansi from "ansi-to-react";
+import { cn } from "@/lib/utils";
 
 const stripAnsi = (str: string) => str.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '').replace(/\uFFFD/g, '');
+
+interface KiloActivity {
+  id: number;
+  type: 'tool' | 'command' | 'info' | 'error' | 'success';
+  title: string;
+  details: string[];
+  status: 'pending' | 'success' | 'error';
+}
+
+function ActivityItem({ activity }: { activity: KiloActivity }) {
+  const [expanded, setExpanded] = useState(activity.status === 'error' || activity.type === 'command');
+  const hasDetails = activity.details.length > 1;
+
+  let Icon = Activity;
+  let colorClass = "text-muted-foreground";
+  let bgClass = "bg-muted/50";
+
+  if (activity.status === 'error' || activity.type === 'error') {
+    Icon = XCircle;
+    colorClass = "text-destructive";
+    bgClass = "bg-destructive/10 border-destructive/20";
+  } else if (activity.status === 'success' && activity.type === 'success') {
+    Icon = CheckCircle2;
+    colorClass = "text-emerald-500";
+    bgClass = "bg-emerald-500/10 border-emerald-500/20";
+  } else if (activity.status === 'pending') {
+    Icon = Loader2;
+    colorClass = "text-blue-500 animate-spin";
+    bgClass = "bg-blue-500/10 border-blue-500/20";
+  } else if (activity.type === 'tool') {
+    Icon = activity.title.includes('Read') ? SearchCode : Wrench;
+    colorClass = "text-amber-500";
+  } else if (activity.type === 'command') {
+    Icon = Terminal;
+    colorClass = "text-purple-500";
+  }
+
+  return (
+    <div className={cn("border rounded-lg overflow-hidden transition-all shadow-sm", bgClass)}>
+      <div 
+        className={cn("p-3 flex items-center justify-between", hasDetails ? "cursor-pointer hover:bg-black/5 dark:hover:bg-white/5" : "")}
+        onClick={() => hasDetails && setExpanded(!expanded)}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <Icon className={cn("h-4 w-4 shrink-0", colorClass)} />
+          <span className="font-medium text-sm truncate">{activity.title}</span>
+        </div>
+        {hasDetails && (
+          <div className="shrink-0 ml-2 text-muted-foreground">
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+        )}
+      </div>
+      {expanded && hasDetails && (
+        <div className="bg-[#0d1117] p-3 border-t border-border/50 overflow-x-auto shadow-inner">
+          <div className="font-mono text-[12px] leading-relaxed whitespace-pre text-gray-300 min-w-max">
+            {activity.details.map((line, i) => (
+              <div key={i} className="hover:bg-white/5 px-1 rounded-sm"><Ansi>{line}</Ansi></div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function KiloPanel() {
   const { startKiloServer, stopKiloServer, clearKiloLogs } = useAppActions();
@@ -24,204 +93,176 @@ export function KiloPanel() {
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      const element = scrollRef.current;
+      setTimeout(() => {
+        element.scrollTop = element.scrollHeight;
+      }, 50);
     }
   }, [kiloLogs]);
 
-  const parsedLogs = useMemo(() => {
-    const result: any[] = [];
-    let currentRawGroup: { type: 'raw_group', lines: string[] } | null = null;
+  const parsedState = useMemo((): { status: 'idle' | 'running' | 'success' | 'error'; model: string | null; activities: KiloActivity[] } => {
+    let status: 'idle' | 'running' | 'success' | 'error' = isKiloServerRunning ? 'idle' : 'error';
+    let currentModel: string | null = null;
+    const activities: KiloActivity[] = [];
+    
+    const state: { current: KiloActivity | null } = { current: null };
+    let idCounter = 0;
+
+    const pushActivity = (act: Omit<KiloActivity, 'id'>) => {
+      const ref = state.current;
+      if (ref && ref.status === 'pending' && act.type !== 'error') {
+        ref.status = 'success';
+      }
+      const newActivity: KiloActivity = { ...act, id: idCounter++ };
+      activities.push(newActivity);
+      state.current = newActivity;
+    };
+
+    if (!isKiloServerRunning) {
+      status = 'error';
+    }
 
     for (const rawLog of kiloLogs) {
       const cleanLog = stripAnsi(rawLog).trim();
-      
       if (!cleanLog) {
-        if (currentRawGroup) currentRawGroup.lines.push(rawLog);
-        continue;
+         const ref = state.current;
+         if (ref) ref.details.push(rawLog);
+         continue;
       }
 
-      let matched = false;
-
-      // 1. System Events
-      if (cleanLog.startsWith('[SYSTEM]') || cleanLog.startsWith('[SYSTEM_ERROR]')) {
-        currentRawGroup = null;
-        result.push({ 
-          type: cleanLog.startsWith('[SYSTEM_ERROR]') ? 'error' : 'system', 
-          text: cleanLog.replace(/^\[SYSTEM(_ERROR)?\]\s*/, '') 
-        });
-        matched = true;
+      if (cleanLog.startsWith('[SYSTEM] Bắt đầu') || cleanLog.includes('Bắt đầu chạy Kilo CLI')) {
+         status = 'running';
+         pushActivity({ type: 'info', title: 'Khởi chạy Kilo Agent', details: [rawLog], status: 'success' });
       }
-      // 2. Summary / Success
-      else if (cleanLog.startsWith('[SUCCESS]') || cleanLog.startsWith('[VERIFIED]') || cleanLog.startsWith('✅')) {
-        currentRawGroup = null;
-        result.push({ type: 'summary', text: cleanLog.replace(/^(\[SUCCESS\]|\[VERIFIED\]|✅)\s*/, '') });
-        matched = true;
-      }
-      // 3. AI Model Info
       else if (cleanLog.startsWith('> ')) {
-        currentRawGroup = null;
-        result.push({ type: 'model', text: cleanLog.substring(2) });
-        matched = true;
+         currentModel = cleanLog.substring(2);
       }
-      // 4. Tools Actions
-      else if (cleanLog.startsWith('→') || cleanLog.startsWith('✱') || cleanLog.match(/^[a-zA-Z]+\s+failed/)) {
-        currentRawGroup = null;
-        result.push({ type: 'tool', text: cleanLog });
-        matched = true;
+      else if (cleanLog.startsWith('→') || cleanLog.startsWith('✱') || cleanLog.startsWith('←')) {
+         pushActivity({ type: 'tool', title: cleanLog.replace(/^[→✱←]\s*/, ''), details: [rawLog], status: 'pending' });
       }
-      // 5. Terminal Commands
       else if (cleanLog.startsWith('$ ')) {
-        currentRawGroup = null;
-        result.push({ type: 'command', text: cleanLog.substring(2) });
-        matched = true;
+         pushActivity({ type: 'command', title: cleanLog, details: [rawLog], status: 'pending' });
       }
-      // 6. Errors
-      else if (cleanLog.startsWith('[ERROR]') || cleanLog.startsWith('✗ ') || cleanLog.startsWith('❌ ') || cleanLog.startsWith('Error:')) {
-        currentRawGroup = null;
-        result.push({ type: 'error', text: cleanLog.replace(/^(\[ERROR\]|✗ |❌ )\s*/, '') });
-        matched = true;
+      else if (cleanLog.startsWith('[SUCCESS]') || cleanLog.startsWith('✅') || cleanLog.includes('hoàn thành nhiệm vụ')) {
+         status = 'success';
+         pushActivity({ type: 'success', title: cleanLog.replace(/^(\[SUCCESS\]|✅)\s*/, ''), details: [rawLog], status: 'success' });
       }
-
-      if (!matched) {
-        if (currentRawGroup) {
-          currentRawGroup.lines.push(rawLog);
-        } else {
-          currentRawGroup = { type: 'raw_group', lines: [rawLog] };
-          result.push(currentRawGroup);
-        }
+      else if (cleanLog.startsWith('[ERROR]') || cleanLog.startsWith('✗') || cleanLog.startsWith('Error:')) {
+         status = 'error';
+         const ref = state.current;
+         if (ref && ref.status === 'pending') {
+            ref.status = 'error';
+            ref.details.push(rawLog);
+         } else {
+            pushActivity({ type: 'error', title: cleanLog.replace(/^(\[ERROR\]|✗)\s*/, ''), details: [rawLog], status: 'error' });
+         }
+      }
+      else if (cleanLog.startsWith('[SYSTEM]')) {
+         pushActivity({ type: 'info', title: cleanLog.replace(/^\[SYSTEM\]\s*/, ''), details: [rawLog], status: 'success' });
+      }
+      else {
+         const ref = state.current;
+         if (ref) {
+            ref.details.push(rawLog);
+            if (cleanLog.includes('built in') || cleanLog.includes('success')) {
+              ref.status = 'success';
+            }
+         } else {
+            pushActivity({ type: 'info', title: 'System Output', details: [rawLog], status: 'success' });
+         }
       }
     }
-    return result;
-  }, [kiloLogs]);
+
+    const lastRef = state.current;
+    if (lastRef && lastRef.status === 'pending' && (status === 'success' || status === 'error')) {
+      lastRef.status = status;
+    }
+
+    return { status, model: currentModel, activities };
+  }, [kiloLogs, isKiloServerRunning]);
 
   return (
-    <div className="flex flex-col h-full bg-card">
-      <header className="flex items-center justify-between p-3 pl-4 border-b shrink-0 gap-4">
+    <div className="flex flex-col h-full bg-background">
+      <header className="flex items-center justify-between p-3 border-b shrink-0 bg-card">
         <div className="flex items-center gap-2">
-          <Terminal className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-bold truncate">Kilo Local Server</h2>
-          <Badge
-            variant={isKiloServerRunning ? "default" : "secondary"}
-            className={isKiloServerRunning ? "bg-green-500 hover:bg-green-600" : ""}
-          >
-            {isKiloServerRunning ? "Đang chạy" : "Đã dừng"}
-          </Badge>
+          <Terminal className="h-5 w-5 text-primary" />
+          <h2 className="text-sm font-bold uppercase tracking-wider">Kilo Agent Dashboard</h2>
         </div>
         <div className="flex items-center gap-2">
           {isKiloServerRunning ? (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={stopKiloServer}
-              title="Tắt Server"
-            >
-              <Square className="h-4 w-4 mr-2" />
-              Dừng
+            <Button variant="destructive" size="sm" onClick={stopKiloServer} className="h-8">
+              <Square className="h-3.5 w-3.5 mr-1.5" /> Dừng
             </Button>
           ) : (
-            <Button
-              variant="default"
-              size="sm"
-              onClick={startKiloServer}
-              title="Bật Server (Port 9999)"
-            >
-              <Play className="h-4 w-4 mr-2" />
-              Khởi động
+            <Button variant="default" size="sm" onClick={startKiloServer} className="h-8">
+              <Play className="h-3.5 w-3.5 mr-1.5" /> Khởi động (9999)
             </Button>
           )}
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={clearKiloLogs}
-            title="Xóa Logs"
-            className="h-9 w-9"
-          >
-            <Trash2 className="h-4 w-4" />
+          <Button variant="outline" size="icon" onClick={clearKiloLogs} className="h-8 w-8">
+            <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
         </div>
       </header>
       
-      <div className="flex-1 bg-muted/20 overflow-hidden p-3 relative">
-        <div 
-          ref={scrollRef}
-          className="h-full w-full overflow-y-auto custom-scrollbar pr-3 pb-4 space-y-2"
-        >
-          {parsedLogs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50 italic space-y-3">
-              <Terminal className="h-10 w-10 opacity-50" />
-              <span>Chưa có tác vụ nào. Hãy bấm Khởi động để Kilo CLI bắt đầu làm việc...</span>
-            </div>
-          ) : (
-            parsedLogs.map((item, idx) => {
-              switch (item.type) {
-                case 'system': {
-                  let Icon = Info;
-                  if (item.text.includes('running')) Icon = Rocket;
-                  else if (item.text.includes('stopped')) Icon = StopCircle;
-                  else if (item.text.includes('Kilo CLI')) Icon = Bot;
+      <ScrollArea className="flex-1" viewportRef={scrollRef}>
+        <div className="p-4 space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="bg-card shadow-xs">
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Trạng thái Agent</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 flex items-center gap-2">
+                {parsedState.status === 'running' && <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />}
+                {parsedState.status === 'success' && <CheckCircle2 className="h-5 w-5 text-emerald-500" />}
+                {parsedState.status === 'error' && <XCircle className="h-5 w-5 text-destructive" />}
+                {parsedState.status === 'idle' && <Activity className="h-5 w-5 text-muted-foreground" />}
+                <span className="font-bold text-sm">
+                  {parsedState.status === 'running' ? 'Đang xử lý...' : 
+                   parsedState.status === 'success' ? 'Hoàn thành' : 
+                   parsedState.status === 'error' ? 'Lỗi / Dừng' : 'Đang chờ lệnh'}
+                </span>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-card shadow-xs">
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Mô hình AI (Model)</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                {parsedState.model ? (
+                  <Badge variant="secondary" className="font-mono text-xs">
+                    <Cpu className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                    {parsedState.model}
+                  </Badge>
+                ) : (
+                  <span className="text-sm text-muted-foreground italic">Chưa xác định</span>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-                  return (
-                    <div key={idx} className="flex items-center gap-3 p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg border border-blue-500/20 text-sm font-medium">
-                      <Icon className="h-5 w-5 shrink-0" />
-                      <span>{item.text}</span>
-                    </div>
-                  );
-                }
-                case 'summary':
-                  return (
-                    <div key={idx} className="flex items-start gap-3 p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/20 text-sm font-medium">
-                      <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
-                      <span className="leading-relaxed">{item.text}</span>
-                    </div>
-                  );
-                case 'error':
-                  return (
-                    <div key={idx} className="flex items-start gap-3 p-3 bg-destructive/10 text-destructive rounded-lg border border-destructive/20 text-sm font-medium">
-                      <XCircle className="h-5 w-5 shrink-0 mt-0.5" />
-                      <span className="leading-relaxed">{item.text}</span>
-                    </div>
-                  );
-                case 'model':
-                  return (
-                    <div key={idx} className="flex items-center gap-2 pt-2">
-                      <Badge variant="outline" className="gap-1.5 py-1 bg-background text-muted-foreground shadow-sm">
-                        <Cpu className="h-3.5 w-3.5" />
-                        {item.text}
-                      </Badge>
-                    </div>
-                  );
-                case 'tool':
-                  return (
-                    <div key={idx} className="flex items-center gap-2 text-sm text-muted-foreground py-0.5 px-2">
-                      <Wrench className="h-3.5 w-3.5 shrink-0" />
-                      <span className="font-mono text-[13px]">{item.text}</span>
-                    </div>
-                  );
-                case 'command':
-                  return (
-                    <div key={idx} className="flex items-center gap-3 p-3 bg-[#0d1117] rounded-md border border-border/50 text-[13px] font-mono text-gray-300 shadow-sm mt-2">
-                      <span className="text-emerald-500 shrink-0 select-none">$</span>
-                      <span className="break-all">{item.text}</span>
-                    </div>
-                  );
-                case 'raw_group':
-                  return (
-                    <div key={idx} className="bg-[#0d1117] text-[#c9d1d9] p-3 rounded-md border border-border/50 overflow-x-auto shadow-inner">
-                      <div className="font-mono text-[13px] leading-relaxed whitespace-pre min-w-max">
-                        {item.lines.map((line: string, lIdx: number) => (
-                          <div key={lIdx} className="min-h-[1.25rem] hover:bg-white/5 px-1 rounded-sm transition-colors">
-                            <Ansi>{line}</Ansi>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                default: return null;
-              }
-            })
-          )}
+          <div>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
+              <Code className="h-4 w-4" /> Luồng thực thi
+            </h3>
+            
+            {parsedState.activities.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-muted-foreground/50 space-y-3 border-2 border-dashed rounded-xl">
+                <Rocket className="h-8 w-8 opacity-50" />
+                <span className="text-sm">Hệ thống đang chờ yêu cầu từ Kilo CLI...</span>
+              </div>
+            ) : (
+              <div className="space-y-3 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
+                {parsedState.activities.map((act) => (
+                  <div key={act.id} className="relative z-10">
+                    <ActivityItem activity={act} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 }
