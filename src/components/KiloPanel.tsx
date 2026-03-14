@@ -4,6 +4,7 @@ import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Play, Square, Trash2, Terminal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import Ansi from "ansi-to-react";
 
 export function KiloPanel() {
   const { startKiloServer, stopKiloServer, clearKiloLogs } = useAppActions();
@@ -69,17 +70,20 @@ export function KiloPanel() {
         </div>
       </header>
       
-      <div className="flex-1 bg-[#0d1117] text-[#c9d1d9] overflow-hidden p-2">
+      <div className="flex-1 bg-[#0d1117] text-[#c9d1d9] overflow-hidden p-3 relative shadow-inner">
         <div 
           ref={scrollRef}
-          className="h-full w-full overflow-y-auto custom-scrollbar font-mono text-xs whitespace-pre-wrap break-all px-2"
+          className="h-full w-full overflow-y-auto custom-scrollbar font-mono text-[13px] whitespace-pre-wrap break-words pl-2 pr-4 leading-relaxed"
         >
           {kiloLogs.length === 0 ? (
-            <span className="text-muted-foreground italic">Không có log nào. Hãy bấm Khởi động để bắt đầu lắng nghe Kilo CLI...</span>
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50 italic space-y-3">
+              <Terminal className="h-10 w-10 opacity-50" />
+              <span>Không có log nào. Hãy bấm Khởi động để bắt đầu lắng nghe Kilo CLI...</span>
+            </div>
           ) : (
             kiloLogs.map((log: string, i: number) => (
-              <div key={i} className="mb-1 leading-relaxed">
-                {log}
+              <div key={i} className="min-h-[1.25rem] hover:bg-white/5 px-1 rounded-sm transition-colors">
+                <Ansi>{log}</Ansi>
               </div>
             ))
           )}

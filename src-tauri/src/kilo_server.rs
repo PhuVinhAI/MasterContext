@@ -209,7 +209,7 @@ async fn handle_kilo(
             tokio::spawn(async move {
                 let mut reader = BufReader::new(stderr).lines();
                 while let Ok(Some(line)) = reader.next_line().await {
-                    let _ = handle_err.emit("kilo_log", format!("[ERROR] {}", line));
+                    let _ = handle_err.emit("kilo_log", line);
                 }
             });
 
