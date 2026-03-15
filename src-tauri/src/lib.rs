@@ -79,6 +79,7 @@ pub fn run() {
             commands::update_group_paths_from_ai,
             commands::set_export_exclude_extensions_setting, // <-- COMMAND MỚI
             commands::set_always_apply_text_setting,
+            commands::set_append_ide_prompt_setting,
             commands::get_app_settings,
             commands::set_recent_paths,
             commands::update_app_settings, // <-- COMMAND MỚI

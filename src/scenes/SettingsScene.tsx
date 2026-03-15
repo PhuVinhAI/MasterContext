@@ -44,6 +44,7 @@ export function SettingsScene() {
     exportSuperCompressed,
     exportClaudeMode,
     alwaysApplyText,
+    appendIdePrompt,
     exportExcludeExtensions,
     gitExportModeIsContext,
     googleApiKey,
@@ -69,6 +70,7 @@ export function SettingsScene() {
     setExportSuperCompressed,
     setExportClaudeMode,
     setAlwaysApplyText,
+    setAppendIdePrompt,
     setExportExcludeExtensions,
     handleToggleSync,
     handleChooseSyncPath,
@@ -122,6 +124,8 @@ export function SettingsScene() {
             handleChooseSyncPath={handleChooseSyncPath}
             alwaysApplyText={alwaysApplyText}
             setAlwaysApplyText={setAlwaysApplyText}
+            appendIdePrompt={appendIdePrompt}
+            setAppendIdePrompt={setAppendIdePrompt}
             gitExportModeIsContext={gitExportModeIsContext}
             setGitExportMode={setGitExportMode}
           />

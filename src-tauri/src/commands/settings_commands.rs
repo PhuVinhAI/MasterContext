@@ -44,7 +44,7 @@ pub fn update_sync_settings(
     project_data.sync_path = sync_path;
 
     if enabled && project_data.sync_path.is_some() {
-        perform_auto_export(&path, &profile_name, &project_data);
+        perform_auto_export(&app, &path, &profile_name, &project_data);
     }
 
     file_cache::save_project_data(&app, &path, &profile_name, &project_data)
@@ -167,6 +167,18 @@ pub fn set_export_exclude_extensions_setting(
 ) -> Result<(), String> {
     let mut project_data = file_cache::load_project_data(&app, &path, &profile_name)?;
     project_data.export_exclude_extensions = Some(extensions);
+    file_cache::save_project_data(&app, &path, &profile_name, &project_data)
+}
+
+#[command]
+pub fn set_append_ide_prompt_setting(
+    app: AppHandle,
+    path: String,
+    profile_name: String,
+    enabled: bool,
+) -> Result<(), String> {
+    let mut project_data = file_cache::load_project_data(&app, &path, &profile_name)?;
+    project_data.append_ide_prompt = Some(enabled);
     file_cache::save_project_data(&app, &path, &profile_name, &project_data)
 }
 

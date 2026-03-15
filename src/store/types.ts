@@ -18,6 +18,7 @@ export interface CachedProjectData {
   export_super_compressed?: boolean | null;
   export_claude_mode?: boolean | null;
   always_apply_text?: string | null;
+  append_ide_prompt?: boolean | null;
   export_exclude_extensions?: string[];
   git_export_mode_is_context?: boolean | null;
 }
@@ -224,6 +225,7 @@ export interface AppState {
   exportSuperCompressed: boolean;
   exportClaudeMode: boolean;
   alwaysApplyText: string | null;
+  appendIdePrompt: boolean;
   exportExcludeExtensions: string[];
   gitExportModeIsContext: boolean;
 

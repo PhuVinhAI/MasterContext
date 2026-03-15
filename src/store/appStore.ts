@@ -93,6 +93,7 @@ export interface AppState {
   exportSuperCompressed: boolean;
   exportClaudeMode: boolean;
   alwaysApplyText: string | null;
+  appendIdePrompt: boolean;
   exportExcludeExtensions: string[];
   gitExportModeIsContext: boolean;
 

@@ -175,6 +175,7 @@ export const createProjectActions: StateCreator<
         exportSuperCompressed: payload.export_super_compressed ?? false,
         exportClaudeMode: payload.export_claude_mode ?? false,
         alwaysApplyText: payload.always_apply_text ?? null,
+        appendIdePrompt: payload.append_ide_prompt ?? false,
         exportExcludeExtensions: payload.export_exclude_extensions ?? [],
         gitExportModeIsContext: payload.git_export_mode_is_context ?? false,
       };

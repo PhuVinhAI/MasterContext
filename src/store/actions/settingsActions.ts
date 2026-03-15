@@ -39,6 +39,7 @@ export interface SettingsActions {
   setExportSuperCompressed: (enabled: boolean) => Promise<void>;
   setExportClaudeMode: (enabled: boolean) => Promise<void>;
   setAlwaysApplyText: (text: string) => Promise<void>;
+  setAppendIdePrompt: (enabled: boolean) => Promise<void>;
   setExportExcludeExtensions: (extensions: string[]) => Promise<void>;
   setGitExportMode: (enabled: boolean) => Promise<void>;
   updateAppSettings: (settings: Partial<Omit<AppSettings, 'nvidiaApiKey'>>) => Promise<void>;
@@ -198,6 +199,14 @@ export const createSettingsActions: StateCreator<
         kind: "error",
       });
     }
+  },
+  setAppendIdePrompt: async (enabled: boolean) => {
+    const { rootPath, activeProfile } = get();
+    if (!rootPath) return;
+    set({ appendIdePrompt: enabled });
+    await _persistExportToggle(rootPath, activeProfile, "set_append_ide_prompt_setting", enabled,
+      () => set((s) => ({ appendIdePrompt: !s.appendIdePrompt })),
+      "Không thể lưu cài đặt Prompt IDE");
   },
   setExportExcludeExtensions: async (extensions: string[]) => {
     const { rootPath, activeProfile } = get();

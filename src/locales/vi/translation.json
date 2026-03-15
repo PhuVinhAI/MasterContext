@@ -305,9 +305,13 @@
       },
       "alwaysApply": {
         "title": "Văn bản Luôn Áp dụng",
-        "description": "Nội dung này sẽ được thêm vào cuối mỗi file ngữ cảnh được xuất ra.",
+        "description": "Nội dung tùy chỉnh dưới đây sẽ được thêm vào cuối mỗi file ngữ cảnh.",
         "placeholder": "Ví dụ: Luôn trả lời bằng tiếng Việt.",
-        "saveButton": "Lưu văn bản"
+        "saveButton": "Lưu văn bản",
+        "appendIde": {
+          "label": "Đính kèm Prompt IDE (Chuẩn)",
+          "description": "Tự động chèn ẩn Prompt IDE chuẩn vào cuối ngữ cảnh để tối ưu cho AI Agent (không hiển thị trong khung nhập)."
+        }
       }
     },
     "export": {

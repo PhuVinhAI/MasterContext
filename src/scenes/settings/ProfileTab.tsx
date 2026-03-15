@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { FolderUp, Save, Loader2, GitBranch, FileCode2 } from "lucide-react";
-import { invoke } from "@tauri-apps/api/core";
+import { FolderUp, Save, Loader2, GitBranch } from "lucide-react";
 
 interface ProfileTabProps {
   syncEnabled: boolean;
@@ -15,6 +14,8 @@ interface ProfileTabProps {
   handleChooseSyncPath: () => void;
   alwaysApplyText: string | null;
   setAlwaysApplyText: (text: string) => Promise<void>;
+  appendIdePrompt: boolean;
+  setAppendIdePrompt: (enabled: boolean) => void;
   gitExportModeIsContext: boolean;
   setGitExportMode: (enabled: boolean) => Promise<void>;
 }
@@ -26,6 +27,8 @@ export function ProfileTab({
   handleChooseSyncPath,
   alwaysApplyText,
   setAlwaysApplyText,
+  appendIdePrompt,
+  setAppendIdePrompt,
   gitExportModeIsContext,
   setGitExportMode,
 }: ProfileTabProps) {
@@ -108,29 +111,23 @@ export function ProfileTab({
         <h3 className="font-semibold">
           {t("settings.profile.alwaysApply.title")}
         </h3>
+        <div className="flex items-center justify-between mb-4">
+          <Label htmlFor="append-ide-prompt" className="flex flex-col items-start gap-1">
+            <span>{t("settings.profile.alwaysApply.appendIde.label")}</span>
+            <span className="text-xs text-muted-foreground">
+              {t("settings.profile.alwaysApply.appendIde.description")}
+            </span>
+          </Label>
+          <Switch
+            id="append-ide-prompt"
+            checked={appendIdePrompt}
+            onCheckedChange={setAppendIdePrompt}
+          />
+        </div>
         <div className="space-y-2 flex-grow flex flex-col">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="always-apply-text">
-              {t("settings.profile.alwaysApply.description")}
-            </Label>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
-              disabled={isSavingText}
-              onClick={async () => {
-                try {
-                  const content = await invoke<string>("get_resource_file_content", { filename: "code.md" });
-                  setLocalText((prev) => prev ? prev + "\n\n" + content : content);
-                } catch (e) {
-                  console.error("Lỗi khi tải mẫu prompt IDE:", e);
-                }
-              }}
-            >
-              <FileCode2 className="h-3.5 w-3.5 mr-1.5" />
-              Chèn Prompt IDE (Chuẩn)
-            </Button>
-          </div>
+          <Label htmlFor="always-apply-text">
+            {t("settings.profile.alwaysApply.description")}
+          </Label>
           <Textarea
             id="always-apply-text"
             placeholder={t("settings.profile.alwaysApply.placeholder")}

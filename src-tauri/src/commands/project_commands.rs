@@ -51,7 +51,7 @@ pub fn scan_project(
                 }
 
                 if new_data.sync_enabled.unwrap_or(false) && new_data.sync_path.is_some() {
-                    perform_auto_export(&path, &profile_name, &new_data);
+                    perform_auto_export(&app, &path, &profile_name, &new_data);
                 }
 
                 // --- GỬI PAYLOAD MỚI VỀ FRONTEND ---
@@ -88,7 +88,11 @@ pub fn start_project_export(window: Window, app: AppHandle, path: String, profil
             let remove_debug_logs = project_data.export_remove_debug_logs.unwrap_or(false);
             let super_compressed = project_data.export_super_compressed.unwrap_or(false);
             let export_claude_mode = project_data.export_claude_mode.unwrap_or(false);
-            let always_apply_text = project_data.always_apply_text;
+            let final_always_apply_text = crate::commands::utils::build_always_apply_text(
+                &app,
+                &project_data.always_apply_text,
+                project_data.append_ide_prompt.unwrap_or(false),
+            );
             let exclude_extensions = project_data.export_exclude_extensions;
             let all_files: Vec<String> = project_data.file_metadata_cache.keys().cloned().collect();
             if all_files.is_empty() {
@@ -104,7 +108,7 @@ pub fn start_project_export(window: Window, app: AppHandle, path: String, profil
                 without_comments,
                 remove_debug_logs,
                 super_compressed,
-                &always_apply_text,
+                &final_always_apply_text,
                 &exclude_extensions,
                 &project_data.file_metadata_cache,
                 export_claude_mode,
@@ -134,9 +138,13 @@ pub fn generate_project_context(
 ) -> Result<String, String> {
     let project_data = file_cache::load_project_data(&app, &path, &profile_name)?;
     let use_full_tree = project_data.export_use_full_tree.unwrap_or(false);
-    let always_apply_text = project_data.always_apply_text;
-    let exclude_extensions = project_data.export_exclude_extensions;
     let export_claude_mode = project_data.export_claude_mode.unwrap_or(false);
+    let final_always_apply_text = crate::commands::utils::build_always_apply_text(
+        &app,
+        &project_data.always_apply_text,
+        project_data.append_ide_prompt.unwrap_or(false),
+    );
+    let exclude_extensions = project_data.export_exclude_extensions;
     let all_files: Vec<String> = project_data.file_metadata_cache.keys().cloned().collect();
     if all_files.is_empty() {
         return Err("project.generate_context_no_files".to_string());
@@ -151,7 +159,7 @@ pub fn generate_project_context(
         without_comments,
         remove_debug_logs,
         super_compressed,
-        &always_apply_text,
+        &final_always_apply_text,
         &exclude_extensions,
         &project_data.file_metadata_cache,
         export_claude_mode,

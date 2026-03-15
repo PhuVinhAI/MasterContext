@@ -42,6 +42,7 @@ export const initialState = {
   exportSuperCompressed: false,
   exportClaudeMode: false,
   alwaysApplyText: null,
+  appendIdePrompt: false,
   exportExcludeExtensions: [],
   gitExportModeIsContext: false,
   profiles: ["default"],

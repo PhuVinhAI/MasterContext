@@ -6,7 +6,8 @@ use tauri::{command, AppHandle, Manager};
 
 #[command]
 pub fn list_profiles(app: AppHandle, project_path: String) -> Result<Vec<String>, String> {
-    let app_config_dir = app.path()
+    let app_config_dir = app
+        .path()
         .app_config_dir()
         .map_err(|e| format!("Không thể xác định thư mục cấu hình ứng dụng: {}", e))?;
 
@@ -39,13 +40,21 @@ pub fn list_profiles(app: AppHandle, project_path: String) -> Result<Vec<String>
 }
 
 #[command]
-pub fn create_profile(app: AppHandle, project_path: String, profile_name: String) -> Result<(), String> {
+pub fn create_profile(
+    app: AppHandle,
+    project_path: String,
+    profile_name: String,
+) -> Result<(), String> {
     let data = models::CachedProjectData::default();
     file_cache::save_project_data(&app, &project_path, &profile_name, &data)
 }
 
 #[command]
-pub fn delete_profile(app: AppHandle, project_path: String, profile_name: String) -> Result<(), String> {
+pub fn delete_profile(
+    app: AppHandle,
+    project_path: String,
+    profile_name: String,
+) -> Result<(), String> {
     if profile_name == "default" {
         return Err("profile.cannot_delete_default".to_string());
     }
@@ -116,6 +125,7 @@ pub fn clone_profile(
         export_super_compressed: Some(false),
         export_claude_mode: Some(false),
         always_apply_text: Some("".to_string()),
+        append_ide_prompt: source_data.append_ide_prompt,
         export_exclude_extensions: Some(vec![]),
         git_export_mode_is_context: Some(false),
     };

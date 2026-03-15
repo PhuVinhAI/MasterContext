@@ -1,26 +1,24 @@
 // src-tauri/src/project_scanner.rs
 use crate::group_updater;
-use crate::models::{
-    CachedProjectData, FileMetadata, FileNode, ProjectStats,
-};
+use crate::models::{CachedProjectData, FileMetadata, FileNode, ProjectStats};
+use ignore::{overrides::OverrideBuilder, WalkBuilder};
+use lazy_static::lazy_static;
+use num_cpus;
+use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{mpsc, Arc};
 use std::thread;
 use std::time::UNIX_EPOCH;
-use ignore::{overrides::OverrideBuilder, WalkBuilder};
-use sha2::{Digest, Sha256};
-use tiktoken_rs::cl100k_base;
 use tauri::{Emitter, Window};
-use lazy_static::lazy_static;
-use num_cpus;
+use tiktoken_rs::cl100k_base;
 
 lazy_static! {
     // Define sets for files/extensions to skip during content analysis.
     // These files will still be listed, but we won't read their content,
     // count tokens, or analyze dependencies, saving significant time.
-    
+
     static ref NON_ANALYZABLE_FILENAMES: HashSet<String> = [
         "Cargo.lock", "yarn.lock", "pnpm-lock.yaml",
     ].iter().map(|s| s.to_string()).collect();
@@ -55,7 +53,7 @@ pub fn perform_smart_scan_and_rebuild(
         .into_iter()
         .collect();
     // --- KẾT THÚC THAY ĐỔI ---
-    
+
     // --- CẬP NHẬT: Xây dựng bộ lọc loại trừ ---
     let override_builder = {
         let mut builder = OverrideBuilder::new(root_path);
@@ -66,7 +64,7 @@ pub fn perform_smart_scan_and_rebuild(
         builder.add("!Cargo.lock").map_err(|e| e.to_string())?;
         builder.add("!yarn.lock").map_err(|e| e.to_string())?;
         builder.add("!pnpm-lock.yaml").map_err(|e| e.to_string())?;
-        
+
         // Thêm các mẫu loại trừ tùy chỉnh từ người dùng
         if let Some(patterns) = &old_data.custom_ignore_patterns {
             for pattern in patterns {
@@ -95,7 +93,10 @@ pub fn perform_smart_scan_and_rebuild(
 
             if metadata.is_file() {
                 if let Ok(relative_path) = entry_path.strip_prefix(root_path) {
-                    let relative_path_str = relative_path.to_string_lossy().to_string().replace("\\", "/");
+                    let relative_path_str = relative_path
+                        .to_string_lossy()
+                        .to_string()
+                        .replace("\\", "/");
                     let _ = window.emit("scan_progress", &relative_path_str);
                     files_to_process.push((entry_path, metadata));
                     Arc::get_mut(&mut all_valid_files)
@@ -105,7 +106,7 @@ pub fn perform_smart_scan_and_rebuild(
             }
         }
     }
-    
+
     new_project_stats.total_files = files_to_process.len() as u64;
     new_project_stats.total_dirs = path_map.values().filter(|&&is_dir| is_dir).count() as u64;
 
@@ -131,15 +132,24 @@ pub fn perform_smart_scan_and_rebuild(
 
         let handle = thread::spawn(move || {
             while let Ok((absolute_path, metadata)) = rx.lock().unwrap().recv() {
-                let relative_path = absolute_path.strip_prefix(&root_path).unwrap().to_path_buf();
+                let relative_path = absolute_path
+                    .strip_prefix(&root_path)
+                    .unwrap()
+                    .to_path_buf();
                 let _ = window.emit("analysis_progress", relative_path.to_string_lossy());
 
                 let relative_path_str = relative_path.to_string_lossy().replace("\\", "/");
 
-                let filename = relative_path.file_name().and_then(|s| s.to_str()).unwrap_or("");
-                let extension = relative_path.extension().and_then(|s| s.to_str()).unwrap_or("");
+                let filename = relative_path
+                    .file_name()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("");
+                let extension = relative_path
+                    .extension()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("");
 
-                let should_skip_analysis = NON_ANALYZABLE_FILENAMES.contains(filename) 
+                let should_skip_analysis = NON_ANALYZABLE_FILENAMES.contains(filename)
                     || final_non_analyzable_extensions.contains(extension);
 
                 let current_mtime = metadata
@@ -272,15 +282,16 @@ pub fn perform_smart_scan_and_rebuild(
         sync_path: old_data.sync_path,       // Giữ lại cài đặt cũ
         data_hash: Some(data_hash),
         custom_ignore_patterns: old_data.custom_ignore_patterns, // Giữ lại cài đặt cũ
-        is_watching_files: old_data.is_watching_files, // Giữ lại cài đặt cũ
-        export_use_full_tree: old_data.export_use_full_tree, // Giữ lại cài đặt cũ
+        is_watching_files: old_data.is_watching_files,           // Giữ lại cài đặt cũ
+        export_use_full_tree: old_data.export_use_full_tree,     // Giữ lại cài đặt cũ
         export_only_tree: old_data.export_only_tree,
         export_with_line_numbers: old_data.export_with_line_numbers, // Giữ lại cài đặt cũ
-        export_without_comments: old_data.export_without_comments, // Giữ lại cài đặt cũ
+        export_without_comments: old_data.export_without_comments,   // Giữ lại cài đặt cũ
         export_remove_debug_logs: old_data.export_remove_debug_logs, // Giữ lại cài đặt cũ
         export_super_compressed: old_data.export_super_compressed,
         export_claude_mode: old_data.export_claude_mode,
         always_apply_text: old_data.always_apply_text,
+        append_ide_prompt: old_data.append_ide_prompt,
         export_exclude_extensions: old_data.export_exclude_extensions,
         git_export_mode_is_context: old_data.git_export_mode_is_context,
     };

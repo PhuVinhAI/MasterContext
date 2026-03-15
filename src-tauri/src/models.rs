@@ -185,6 +185,7 @@ pub struct CachedProjectData {
     pub export_remove_debug_logs: Option<bool>, // <-- THÊM TRƯỜNG MỚI
     pub export_super_compressed: Option<bool>,
     pub always_apply_text: Option<String>,
+    pub append_ide_prompt: Option<bool>,
     pub export_exclude_extensions: Option<Vec<String>>,
     pub git_export_mode_is_context: Option<bool>,
     pub export_claude_mode: Option<bool>,

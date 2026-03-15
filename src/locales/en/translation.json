@@ -305,9 +305,13 @@
       },
       "alwaysApply": {
         "title": "Always Apply Text",
-        "description": "This content will be appended to every exported context file.",
+        "description": "The custom content below will be appended to every exported context file.",
         "placeholder": "Example: Always reply in English.",
-        "saveButton": "Save Text"
+        "saveButton": "Save Text",
+        "appendIde": {
+          "label": "Append Standard IDE Prompt",
+          "description": "Automatically append the standard IDE Prompt optimized for AI Agents behind the scenes."
+        }
       }
     },
     "export": {

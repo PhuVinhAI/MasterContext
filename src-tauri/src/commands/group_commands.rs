@@ -1,11 +1,11 @@
 // src-tauri/src/commands/group_commands.rs
+use super::utils::{perform_auto_export, sanitize_group_name};
+use crate::models::AIGroupUpdateResult;
 use crate::{context_generator, file_cache, group_updater, models};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use tauri::{command, AppHandle, Emitter, Window};
-use super::utils::{perform_auto_export, sanitize_group_name};
-use crate::models::AIGroupUpdateResult;
 
 #[command]
 pub fn update_groups_in_project_data(
@@ -21,7 +21,8 @@ pub fn update_groups_in_project_data(
         if let Some(sync_path_str) = &project_data.sync_path {
             let sync_path = PathBuf::from(sync_path_str);
             let new_groups_map: HashMap<_, _> = groups.iter().map(|g| (g.id.clone(), g)).collect();
-            let old_groups_map: HashMap<_, _> = old_groups.iter().map(|g| (g.id.clone(), g)).collect();
+            let old_groups_map: HashMap<_, _> =
+                old_groups.iter().map(|g| (g.id.clone(), g)).collect();
 
             // Xử lý xóa nhóm
             for old_group in &old_groups {
@@ -54,7 +55,7 @@ pub fn update_groups_in_project_data(
     project_data.groups = groups;
 
     if project_data.sync_enabled.unwrap_or(false) && project_data.sync_path.is_some() {
-        perform_auto_export(&path, &profile_name, &project_data);
+        perform_auto_export(&app, &path, &profile_name, &project_data);
     }
 
     file_cache::save_project_data(&app, &path, &profile_name, &project_data)
@@ -87,8 +88,12 @@ pub fn start_group_update(
 ) {
     let app_clone = app.clone();
     std::thread::spawn(move || {
-        let result =
-            calculate_group_stats_from_cache(app_clone, root_path_str.clone(), profile_name.clone(), paths.clone());
+        let result = calculate_group_stats_from_cache(
+            app_clone,
+            root_path_str.clone(),
+            profile_name.clone(),
+            paths.clone(),
+        );
         match result {
             Ok(new_stats) => {
                 if let Ok(mut project_data) =
@@ -98,11 +103,18 @@ pub fn start_group_update(
                         group.paths = paths.clone();
                         group.stats = new_stats;
 
-                        if project_data.sync_enabled.unwrap_or(false) && project_data.sync_path.is_some() {
-                            perform_auto_export(&root_path_str, &profile_name, &project_data);
+                        if project_data.sync_enabled.unwrap_or(false)
+                            && project_data.sync_path.is_some()
+                        {
+                            perform_auto_export(&app, &root_path_str, &profile_name, &project_data);
                         }
                     }
-                    let _ = file_cache::save_project_data(&app, &root_path_str, &profile_name, &project_data);
+                    let _ = file_cache::save_project_data(
+                        &app,
+                        &root_path_str,
+                        &profile_name,
+                        &project_data,
+                    );
                 }
                 let _ = window.emit(
                     "group_update_complete",
@@ -134,7 +146,11 @@ pub fn start_group_export(
             let remove_debug_logs = project_data.export_remove_debug_logs.unwrap_or(false);
             let super_compressed = project_data.export_super_compressed.unwrap_or(false);
             let export_claude_mode = project_data.export_claude_mode.unwrap_or(false);
-            let always_apply_text = project_data.always_apply_text;
+            let final_always_apply_text = crate::commands::utils::build_always_apply_text(
+                &app,
+                &project_data.always_apply_text,
+                project_data.append_ide_prompt.unwrap_or(false),
+            );
             let exclude_extensions = project_data.export_exclude_extensions;
             let root_path = Path::new(&root_path_str);
             let group = project_data
@@ -160,7 +176,7 @@ pub fn start_group_export(
                 without_comments,
                 remove_debug_logs,
                 super_compressed,
-                &always_apply_text,
+                &final_always_apply_text,
                 &exclude_extensions,
                 &project_data.file_metadata_cache,
                 export_claude_mode,
@@ -194,9 +210,13 @@ pub fn generate_group_context(
     super_compressed: bool,
 ) -> Result<String, String> {
     let project_data = file_cache::load_project_data(&app, &root_path_str, &profile_name)?;
-    let always_apply_text = project_data.always_apply_text;
-    let exclude_extensions = project_data.export_exclude_extensions;
     let export_claude_mode = project_data.export_claude_mode.unwrap_or(false);
+    let final_always_apply_text = crate::commands::utils::build_always_apply_text(
+        &app,
+        &project_data.always_apply_text,
+        project_data.append_ide_prompt.unwrap_or(false),
+    );
+    let exclude_extensions = project_data.export_exclude_extensions;
     let root_path = Path::new(&root_path_str);
     let group = project_data
         .groups
@@ -221,7 +241,7 @@ pub fn generate_group_context(
         without_comments,
         remove_debug_logs,
         super_compressed,
-        &always_apply_text,
+        &final_always_apply_text,
         &exclude_extensions,
         &project_data.file_metadata_cache,
         export_claude_mode,
@@ -258,12 +278,12 @@ pub fn generate_group_context_for_ai(
         &expanded_files,
         false, // use_full_tree: false (minimal tree)
         &project_data.file_tree,
-        false, // export_only_tree: false
-        false, // with_line_numbers: false
-        false, // without_comments: false
-        false, // remove_debug_logs: false
-        false, // super_compressed: false
-        &None, // always_apply_text: None
+        false,                                   // export_only_tree: false
+        false,                                   // with_line_numbers: false
+        false,                                   // without_comments: false
+        false,                                   // remove_debug_logs: false
+        false,                                   // super_compressed: false
+        &None,                                   // always_apply_text: None
         &project_data.export_exclude_extensions, // Keep user's exclude extensions
         &project_data.file_metadata_cache,
         false, // export_claude_mode: false (giữ cấu trúc chuẩn cho internal AI)
