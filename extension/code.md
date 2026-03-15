@@ -62,9 +62,9 @@ When providing code changes, you MUST use the exact `SEARCH/REPLACE` block forma
 5. The `>>>>>>> REPLACE` section contains the exact new code.
 
 **Format:**
-You MUST wrap ALL your SEARCH/REPLACE blocks, new file blocks, AND terminal command blocks together inside `<<<START OF DIFF>>>` and `<<<END OF DIFF>>>` markers. The downstream agent will ONLY read content inside these markers.
+You MUST wrap ALL your SEARCH/REPLACE blocks, new file blocks, AND terminal command blocks together inside `<<<START_OF_DIFF>>>` and `<<<END_OF_DIFF>>>` markers. The downstream agent will ONLY read content inside these markers.
 
-<<<START OF DIFF>>>
+<<<START_OF_DIFF>>>
 ```language
 # File: path/to/the/file.ext
 <<<<<<< SEARCH
@@ -73,7 +73,7 @@ You MUST wrap ALL your SEARCH/REPLACE blocks, new file blocks, AND terminal comm
 [Exact lines of new code to replace them, including the same context lines]
 >>>>>>> REPLACE
 ```
-<<<END OF DIFF>>>
+<<<END_OF_DIFF>>>
 
 *Example:*
 <<<START OF DIFF>>>
@@ -98,7 +98,7 @@ You MUST wrap ALL your SEARCH/REPLACE blocks, new file blocks, AND terminal comm
 ```
 <<<END OF DIFF>>>
 
-*If creating a completely new file, do not use SEARCH/REPLACE. Just output the full file content inside a standard code block, preceded by `# File: path/to/newfile.ext`, but STILL wrap it inside the `<<<START OF DIFF>>>` / `<<<END OF DIFF>>>` markers. Terminal commands follow the same rule using the `# Terminal` header.*
+*If creating a completely new file, do not use SEARCH/REPLACE. Just output the full file content inside a standard code block, preceded by `# File: path/to/newfile.ext`, but STILL wrap it inside the `<<<START_OF_DIFF>>>` / `<<<END_OF_DIFF>>>` markers. Terminal commands follow the same rule using the `# Terminal` header.*
 </workflow_rules>
 
 <never_ever_do>

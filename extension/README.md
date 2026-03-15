@@ -56,7 +56,7 @@ ai-kilo-server
 
 **Các bước còn lại:**
 1. Mở Popup của Extension trên trình duyệt và bật tính năng **"Auto-Watch Kilo"**.
-2. Yêu cầu AI (trong Google AI Studio) sinh code theo chuẩn block `<<<START OF DIFF>>>`.
+2. Yêu cầu AI (trong Google AI Studio) sinh code theo chuẩn block `<<<START_OF_DIFF>>>`.
 3. Ngay khi AI trả lời xong, Extension sẽ tự báo cho Server cập nhật mã nguồn trực tiếp vào máy bạn.
 
 ## Dành cho nhà phát triển (Development)

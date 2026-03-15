@@ -186,7 +186,7 @@ async function executeKiloWorkflow(url: string, tabId?: number, isManual: boolea
     let prompt = lastTurn.content;
     if (!prompt) return;
 
-    const diffRegex = /<<<START OF DIFF>>>([\s\S]*?)<<<END OF DIFF>>>/g;
+    const diffRegex = /<<<START_OF_DIFF>>>([\s\S]*?)<<<END_OF_DIFF>>>/g;
     const matches = [...prompt.matchAll(diffRegex)];
     if (matches.length > 0) {
       prompt = matches.map(m => m[1].trim()).join('\n\n');

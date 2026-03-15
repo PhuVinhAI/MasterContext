@@ -67,7 +67,7 @@ If and ONLY if all verification commands pass successfully, you MUST automatical
 </directive>
 
 <directive name="terminal_command_handling" priority="absolute">
-When processing `<<<START OF DIFF>>>` / `<<<END OF DIFF>>>` blocks, you MUST:
+When processing `<<<START_OF_DIFF>>>` / `<<<END_OF_DIFF>>>` blocks, you MUST:
 1. FIRST, scan for any `# Terminal` code blocks inside the diff markers.
 2. If found, execute each terminal command using the `bash` tool BEFORE applying any file changes.
 3. Terminal commands are identified by a `bash` code block with `# Terminal` header inside the diff markers.
@@ -79,7 +79,7 @@ When processing `<<<START OF DIFF>>>` / `<<<END OF DIFF>>>` blocks, you MUST:
 When you receive one or more `SEARCH/REPLACE` blocks or file creation requests:
 
 **PHASE 0: TERMINAL COMMAND EXECUTION (CRITICAL)**
-0. Scan the entire `<<<START OF DIFF>>>` / `<<<END OF DIFF>>>` block for any `# Terminal` sections.
+0. Scan the entire `<<<START_OF_DIFF>>>` / `<<<END_OF_DIFF>>>` block for any `# Terminal` sections.
 1. If terminal commands are found:
    - Extract ALL `bash` code blocks that start with `# Terminal` header.
    - Execute each terminal command in order using the `bash` tool.
