@@ -15,6 +15,7 @@ export interface UIActions {
   toggleKiloPanelVisibility: () => void;
   toggleEditorPanelVisibility: () => void;
   setKiloServerStatus: (isRunning: boolean) => void;
+  setKiloTaskStatus: (status: "idle" | "running" | "success" | "error") => void;
   addKiloLog: (log: string) => void;
   clearKiloLogs: () => void;
   startKiloServer: () => Promise<void>;
@@ -93,6 +94,9 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
   setKiloServerStatus: (isRunning) => {
     set({ isKiloServerRunning: isRunning });
   },
+  setKiloTaskStatus: (status) => {
+    set({ kiloTaskStatus: status });
+  },
   addKiloLog: (log) => {
     set((state) => {
       // Giới hạn max 500 dòng log để tránh lag UI
@@ -116,7 +120,7 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
   stopKiloServer: async () => {
     try {
       await invoke("stop_kilo_server");
-      set({ isKiloServerRunning: false });
+      set({ isKiloServerRunning: false, kiloTaskStatus: "idle" });
     } catch (e) {
       console.error("Failed to stop Kilo Server", e);
     }

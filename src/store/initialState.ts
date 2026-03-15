@@ -65,6 +65,7 @@ export const initialState = {
   isKiloInstalled: null,
   selectedKiloModel: "kilo/minimax/minimax-m2.5:free",
   kiloAvailableModels: [],
+  kiloTaskStatus: "idle" as const,
   isAiPanelVisible: false,
   aiChatMode: "ask" as "ask" | "context" | "agent",
   openRouterApiKey: "",

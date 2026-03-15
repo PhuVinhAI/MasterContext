@@ -122,6 +122,7 @@ export interface AppState {
   isKiloInstalled: boolean | null;
   selectedKiloModel: string;
   kiloAvailableModels: KiloModelInfo[];
+  kiloTaskStatus: "idle" | "running" | "success" | "error";
   kiloPort: number;
 
   // AI Panel

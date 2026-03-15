@@ -31,6 +31,7 @@ struct AppStateExt {
     project_state: Arc<Mutex<Option<String>>>,
     app_handle: AppHandle,
     model_state: Arc<Mutex<String>>,
+    abort_tx: Arc<std::sync::Mutex<Option<tokio::sync::oneshot::Sender<()>>>>,
 }
 
 #[tauri::command]
@@ -39,6 +40,7 @@ pub async fn start_kilo_server(
     project_state: tauri::State<'_, crate::ActiveProjectState>,
     server_handle: tauri::State<'_, crate::KiloServerHandle>,
     model_state: tauri::State<'_, crate::KiloModelState>,
+    abort_handle: tauri::State<'_, crate::KiloAbortSignal>,
     port: u16,
 ) -> Result<(), String> {
     let mut handle_lock = server_handle.0.lock().unwrap();
@@ -53,6 +55,7 @@ pub async fn start_kilo_server(
         project_state: project_state.0.clone(),
         app_handle: app_handle.clone(),
         model_state: model_state.0.clone(),
+        abort_tx: abort_handle.0.clone(),
     };
 
     let cors = CorsLayer::new()
@@ -228,7 +231,13 @@ pub async fn open_extension_folder(app_handle: tauri::AppHandle) -> Result<(), S
 #[tauri::command]
 pub async fn stop_kilo_server(
     server_handle: tauri::State<'_, crate::KiloServerHandle>,
+    abort_handle: tauri::State<'_, crate::KiloAbortSignal>,
 ) -> Result<(), String> {
+    // Ép buộc dừng tiến trình Kilo đang chạy (nếu có)
+    if let Some(tx) = abort_handle.0.lock().unwrap().take() {
+        let _ = tx.send(());
+    }
+    // Dừng HTTP server
     let mut handle_lock = server_handle.0.lock().unwrap();
     if let Some(tx) = handle_lock.take() {
         let _ = tx.send(());
@@ -352,6 +361,14 @@ async fn handle_kilo(
         let _ = app_handle.emit("kilo_log", format!("[SYSTEM] Sử dụng AI Model: {}", selected_model));
     }
 
+    let (abort_tx_oneshot, abort_rx) = tokio::sync::oneshot::channel::<()>();
+    {
+        let mut lock = state.abort_tx.lock().unwrap();
+        *lock = Some(abort_tx_oneshot);
+    }
+
+    let _ = app_handle.emit("kilo_task_start", ());
+
     match child_cmd.spawn() {
         Ok(mut process) => {
             let stdout = process.stdout.take().expect("Failed to open stdout");
@@ -373,45 +390,61 @@ async fn handle_kilo(
                 }
             });
 
-            // Đợi Kilo xử lý xong (Async)
-            let status = process.wait().await.map_err(|e| {
-                (
-                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ErrorResponse { error: format!("Lỗi chờ tiến trình: {}", e) }),
-                )
-            })?;
+            tokio::select! {
+                status_res = process.wait() => {
+                    let _ = state.abort_tx.lock().unwrap().take();
+                    
+                    let status = status_res.map_err(|e| {
+                        let _ = app_handle.emit("kilo_task_error", ());
+                        (
+                            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(ErrorResponse { error: format!("Lỗi chờ tiến trình: {}", e) }),
+                        )
+                    })?;
 
-            // Dọn dẹp file tạm
-            let _ = fs::remove_file(&temp_filepath);
+                    let _ = fs::remove_file(&temp_filepath);
 
-            if status.success() {
-                let _ = app_handle.emit("kilo_log", "[SUCCESS] Kilo CLI đã hoàn thành nhiệm vụ thành công.");
-                
-                // Hiển thị thông báo Notification ra hệ điều hành
-                let _ = app_handle.notification()
-                    .builder()
-                    .title("Kilo Agent (Master Context)")
-                    .body("Đã hoàn thành phân tích và cập nhật mã nguồn!")
-                    .show();
+                    if status.success() {
+                        let _ = app_handle.emit("kilo_log", "[SUCCESS] Kilo CLI đã hoàn thành nhiệm vụ thành công.");
+                        let _ = app_handle.emit("kilo_task_success", ());
+                        
+                        let _ = app_handle.notification()
+                            .builder()
+                            .title("Kilo Agent (Master Context)")
+                            .body("Đã hoàn thành phân tích và cập nhật mã nguồn!")
+                            .show();
 
-                Ok(Json(ResultResponse {
-                    success: true,
-                    message: "Kilo CLI đã thực thi xong nhiệm vụ".into(),
-                }))
-            } else {
-                let _ = app_handle.emit("kilo_log", format!("[ERROR] Kilo CLI kết thúc với mã lỗi: {}", status.code().unwrap_or(-1)));
-                
-                // Thông báo lỗi ra hệ điều hành
-                let _ = app_handle.notification()
-                    .builder()
-                    .title("Kilo Agent (Lỗi)")
-                    .body("Thực thi thất bại, vui lòng kiểm tra Kilo Panel.")
-                    .show();
+                        Ok(Json(ResultResponse {
+                            success: true,
+                            message: "Kilo CLI đã thực thi xong nhiệm vụ".into(),
+                        }))
+                    } else {
+                        let _ = app_handle.emit("kilo_log", format!("[ERROR] Kilo CLI kết thúc với mã lỗi: {}", status.code().unwrap_or(-1)));
+                        let _ = app_handle.emit("kilo_task_error", ());
+                        
+                        let _ = app_handle.notification()
+                            .builder()
+                            .title("Kilo Agent (Lỗi)")
+                            .body("Thực thi thất bại, vui lòng kiểm tra Kilo Panel.")
+                            .show();
 
-                Err((
-                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ErrorResponse { error: "Kilo CLI kết thúc với lỗi. Vui lòng xem log Kilo Panel.".into() }),
-                ))
+                        Err((
+                            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(ErrorResponse { error: "Kilo CLI kết thúc với lỗi. Vui lòng xem log Kilo Panel.".into() }),
+                        ))
+                    }
+                }
+                _ = abort_rx => {
+                    let _ = process.kill().await;
+                    let _ = fs::remove_file(&temp_filepath);
+                    let _ = app_handle.emit("kilo_log", "[ERROR] Kilo CLI đã bị buộc dừng (Killed) bởi người dùng.");
+                    let _ = app_handle.emit("kilo_task_error", ());
+
+                    Err((
+                        axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ErrorResponse { error: "Tiến trình đã bị hủy".into() }),
+                    ))
+                }
             }
         }
         Err(e) => {

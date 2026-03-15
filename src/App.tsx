@@ -578,26 +578,39 @@ function App() {
     // Lắng nghe logs từ Kilo Server (Rust)
     unlistenFuncs.push(
       listen<string>("kilo_log", async (event) => {
-        const log = event.payload;
-        addKiloLog(log);
+        addKiloLog(event.payload);
+      })
+    );
 
-        // Hiện popup thông báo trong App và Auto-Rescan khi Kilo chạy xong
-        if (log.includes("[SUCCESS] Kilo CLI đã hoàn thành")) {
-          await message(t("Trợ lý Kilo đã hoàn thành nhiệm vụ và cập nhật mã nguồn thành công!"), {
-            title: "Kilo Agent",
-            kind: "info",
-          });
-          if (!useAppStore.getState().isScanning) {
-            rescanProject();
-          }
-        } else if (log.includes("[ERROR] Kilo CLI kết thúc với mã lỗi")) {
-          await message(t("Kilo Agent gặp lỗi trong quá trình thực thi. Vui lòng xem log ở Kilo Panel."), {
-            title: "Lỗi Kilo Agent",
-            kind: "error",
-          });
+    unlistenFuncs.push(
+      listen("kilo_task_start", () => {
+        useAppStore.getState().actions.setKiloTaskStatus("running");
+      })
+    );
+
+    unlistenFuncs.push(
+      listen("kilo_task_success", async () => {
+        useAppStore.getState().actions.setKiloTaskStatus("success");
+        await message(t("Trợ lý Kilo đã hoàn thành nhiệm vụ và cập nhật mã nguồn thành công!"), {
+          title: "Kilo Agent",
+          kind: "info",
+        });
+        if (!useAppStore.getState().isScanning) {
+          useAppStore.getState().actions.rescanProject();
         }
       })
     );
+
+    unlistenFuncs.push(
+      listen("kilo_task_error", async () => {
+        useAppStore.getState().actions.setKiloTaskStatus("error");
+        await message(t("Kilo Agent gặp lỗi hoặc đã bị dừng. Vui lòng xem log ở Kilo Panel."), {
+          title: "Lỗi Kilo Agent",
+          kind: "error",
+        });
+      })
+    );
+
     unlistenFuncs.push(
       listen<boolean>("kilo_status_changed", (event) => {
         setKiloServerStatus(event.payload);

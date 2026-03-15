@@ -255,6 +255,7 @@ export interface AppState {
   isKiloInstalled: boolean | null;
   selectedKiloModel: string;
   kiloAvailableModels: KiloModelInfo[];
+  kiloTaskStatus: "idle" | "running" | "success" | "error";
 
   // AI Panel
   isAiPanelVisible: boolean;

@@ -10,10 +10,11 @@ import { stripAnsi } from "./kilo/utils";
 
 export function KiloPanel() {
   const { startKiloServer, stopKiloServer, clearKiloLogs, checkKiloInstalled, fetchKiloModels } = useAppActions();
-  const { isKiloServerRunning, kiloLogs } = useAppStore(
+  const { isKiloServerRunning, kiloLogs, kiloTaskStatus } = useAppStore(
     useShallow((state) => ({
       isKiloServerRunning: state.isKiloServerRunning,
       kiloLogs: state.kiloLogs,
+      kiloTaskStatus: state.kiloTaskStatus,
     }))
   );
 
@@ -35,7 +36,7 @@ export function KiloPanel() {
   }, [kiloLogs]);
 
   const parsedState = useMemo((): { status: 'idle' | 'running' | 'success' | 'error'; model: string | null; activities: KiloActivity[] } => {
-    let status: 'idle' | 'running' | 'success' | 'error' = isKiloServerRunning ? 'idle' : 'error';
+    const finalStatus = isKiloServerRunning ? kiloTaskStatus : 'error';
     let currentModel: string | null = null;
     const activities: KiloActivity[] = [];
     
@@ -52,10 +53,6 @@ export function KiloPanel() {
       state.current = newActivity;
     };
 
-    if (!isKiloServerRunning) {
-      status = 'error';
-    }
-
     for (const rawLog of kiloLogs) {
       const cleanLog = stripAnsi(rawLog).trim();
       if (!cleanLog) {
@@ -65,7 +62,6 @@ export function KiloPanel() {
       }
 
       if (cleanLog.startsWith('[SYSTEM] Bắt đầu') || cleanLog.includes('Bắt đầu chạy Kilo CLI')) {
-         status = 'running';
          pushActivity({ type: 'info', title: 'Khởi chạy Kilo Agent', details: [rawLog], status: 'success' });
       }
       else if (cleanLog.startsWith('> ')) {
@@ -78,11 +74,9 @@ export function KiloPanel() {
          pushActivity({ type: 'command', title: cleanLog, details: [rawLog], status: 'pending' });
       }
       else if (cleanLog.startsWith('[SUCCESS]') || cleanLog.startsWith('✅') || cleanLog.includes('hoàn thành nhiệm vụ')) {
-         status = 'success';
          pushActivity({ type: 'success', title: cleanLog.replace(/^(\[SUCCESS\]|✅)\s*/, ''), details: [rawLog], status: 'success' });
       }
       else if (cleanLog.startsWith('[ERROR]') || cleanLog.startsWith('✗') || cleanLog.startsWith('Error:')) {
-         status = 'error';
          const ref = state.current;
          if (ref && ref.status === 'pending') {
             ref.status = 'error';
@@ -98,7 +92,6 @@ export function KiloPanel() {
           const ref = state.current;
           if (ref) {
              ref.details.push(rawLog);
-             // Ngăn chặn việc báo success sai khi đang bị lỗi
              if (ref.status !== 'error' && (cleanLog.includes('built in') || cleanLog.includes('success'))) {
                ref.status = 'success';
              }
@@ -109,12 +102,12 @@ export function KiloPanel() {
     }
 
     const lastRef = state.current;
-    if (lastRef && lastRef.status === 'pending' && (status === 'success' || status === 'error')) {
-      lastRef.status = status;
+    if (lastRef && lastRef.status === 'pending' && (finalStatus === 'success' || finalStatus === 'error')) {
+      lastRef.status = finalStatus;
     }
 
-    return { status, model: currentModel, activities };
-  }, [kiloLogs, isKiloServerRunning]);
+    return { status: finalStatus, model: currentModel, activities };
+  }, [kiloLogs, isKiloServerRunning, kiloTaskStatus]);
 
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
