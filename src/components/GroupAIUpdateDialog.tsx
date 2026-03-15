@@ -46,7 +46,7 @@ export function GroupAIUpdateDialog({
         <div className="py-4">
           <Textarea
             placeholder={t("groupItem.aiUpdateDialog.placeholder")}
-            className="min-h-[150px] font-mono text-xs"
+            className="min-h-[150px] max-h-[50vh] overflow-y-auto font-mono text-xs"
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
