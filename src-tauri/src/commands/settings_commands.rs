@@ -208,9 +208,14 @@ pub fn set_git_export_mode_setting(
 #[command]
 pub fn get_resource_file_content(app: AppHandle, filename: String) -> Result<String, String> {
     let resource_dir = app.path().resource_dir().map_err(|e| e.to_string())?;
-    let file_path = resource_dir.join("resources").join(&filename);
-    std::fs::read_to_string(&file_path)
-        .or_else(|_| std::fs::read_to_string(format!("../resources/{}", filename)))
+
+    let path1 = resource_dir.join("resources").join(&filename);
+    let path2 = resource_dir.join(&filename); // Khi build, có thể file nằm ngay gốc resource
+    let path3 = std::path::PathBuf::from("../resources").join(&filename); // Môi trường Dev
+
+    std::fs::read_to_string(&path1)
+        .or_else(|_| std::fs::read_to_string(&path2))
+        .or_else(|_| std::fs::read_to_string(&path3))
         .map_err(|e| format!("Không thể đọc file {}: {}", filename, e))
 }
 

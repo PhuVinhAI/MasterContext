@@ -89,12 +89,13 @@ pub async fn start_kilo_server(
 }
 
 #[tauri::command]
-pub fn check_kilo_installed() -> Result<bool, String> {
+pub async fn check_kilo_installed() -> Result<bool, String> {
     let is_windows = cfg!(target_os = "windows");
     let cmd_name = if is_windows { "kilo.cmd" } else { "kilo" };
-    let output = std::process::Command::new(cmd_name)
+    let output = tokio::process::Command::new(cmd_name)
         .arg("--version")
-        .output();
+        .output()
+        .await;
     
     match output {
         Ok(out) => Ok(out.status.success()),
@@ -171,13 +172,15 @@ pub async fn init_kilo_config(app_handle: tauri::AppHandle, project_path: String
     let opencode_src = res_dir.join("opencode.json");
 
     // Đọc từ thư mục bundle (production) hoặc thư mục gốc (development)
-    let apply_md_content = fs::read_to_string(&apply_md_src).unwrap_or_else(|_| {
-        fs::read_to_string("../resources/apply.md").unwrap_or_default()
-    });
+    let apply_md_content = fs::read_to_string(&apply_md_src)
+        .or_else(|_| fs::read_to_string(resource_dir.join("apply.md"))) // Fallback nếu Tauri gộp phẳng file
+        .or_else(|_| fs::read_to_string("../resources/apply.md")) // Fallback môi trường Dev
+        .unwrap_or_default();
 
-    let mut opencode_json_content = fs::read_to_string(&opencode_src).unwrap_or_else(|_| {
-        fs::read_to_string("../resources/opencode.json").unwrap_or_default()
-    });
+    let mut opencode_json_content = fs::read_to_string(&opencode_src)
+        .or_else(|_| fs::read_to_string(resource_dir.join("opencode.json")))
+        .or_else(|_| fs::read_to_string("../resources/opencode.json"))
+        .unwrap_or_default();
 
     if apply_md_content.is_empty() || opencode_json_content.is_empty() {
         return Err("Không thể đọc file apply.md hoặc opencode.json từ thư mục resources".into());
@@ -202,9 +205,11 @@ pub async fn open_extension_folder(app_handle: tauri::AppHandle) -> Result<(), S
     
     let path_to_open = if res_dir.exists() {
         res_dir.to_string_lossy().to_string()
-    } else {
-        // Fallback in dev
+    } else if std::path::Path::new("../resources").exists() {
         "../resources".to_string()
+    } else {
+        // Nếu không tìm thấy thư mục con, mở luôn thư mục gốc của App Resources
+        resource_dir.to_string_lossy().to_string()
     };
 
     app_handle.opener().open_path(path_to_open, None::<String>).map_err(|e| e.to_string())?;
