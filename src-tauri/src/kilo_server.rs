@@ -338,16 +338,18 @@ async fn handle_kilo(
 
     let _ = app_handle.emit("kilo_log", format!("[SYSTEM] Bắt đầu chạy Kilo CLI tại: {}", current_dir));
 
-    let mut child_cmd = if is_windows {
-        let command_string = format!("{} run --auto \"{}\"", cmd_name, short_prompt);
-        let mut c = Command::new("cmd.exe");
-        c.args(&["/c", &command_string])
-         .current_dir(&current_dir)
-         .stdout(Stdio::piped())
-         .stderr(Stdio::piped())
-         .kill_on_drop(true);
-        c
-    } else {
+        let mut child_cmd = if is_windows {
+            let command_string = format!("{} run --auto \"{}\"", cmd_name, short_prompt);
+            let mut c = Command::new("cmd.exe");
+            c.args(&["/c", &command_string])
+             .current_dir(&current_dir)
+             .stdout(Stdio::piped())
+             .stderr(Stdio::piped())
+             .kill_on_drop(true);
+            #[cfg(target_os = "windows")]
+            c.creation_flags(0x08000000); // Ngăn việc popup cửa sổ cmd đen
+            c
+        } else {
         let mut c = Command::new(cmd_name);
         c.args(&["run", "--auto", &short_prompt])
          .current_dir(&current_dir)
@@ -363,27 +365,35 @@ async fn handle_kilo(
         let _ = app_handle.emit("kilo_log", format!("[SYSTEM] Sử dụng AI Model: {}", selected_model));
     }
 
-    let (abort_tx_oneshot, abort_rx) = tokio::sync::oneshot::channel::<()>();
-    {
-        let mut lock = state.abort_tx.lock().unwrap();
-        *lock = Some(abort_tx_oneshot);
-    }
+        let (abort_tx_oneshot, abort_rx) = tokio::sync::oneshot::channel::<()>();
+        {
+            let mut lock = state.abort_tx.lock().unwrap();
+            *lock = Some(abort_tx_oneshot);
+        }
 
-    let _ = app_handle.emit("kilo_task_start", ());
+        // Kênh nội bộ để lắng nghe tín hiệu hoàn thành từ stdout
+        let (done_tx, mut done_rx) = tokio::sync::mpsc::channel::<()>(1);
 
-    match child_cmd.spawn() {
-        Ok(mut process) => {
-            let pid = process.id();
-            let stdout = process.stdout.take().expect("Failed to open stdout");
-            let stderr = process.stderr.take().expect("Failed to open stderr");
+        let _ = app_handle.emit("kilo_task_start", ());
 
-            let handle_out = app_handle.clone();
-            tokio::spawn(async move {
-                let mut reader = BufReader::new(stdout).lines();
-                while let Ok(Some(line)) = reader.next_line().await {
-                    let _ = handle_out.emit("kilo_log", line);
-                }
-            });
+        match child_cmd.spawn() {
+            Ok(mut process) => {
+                let pid = process.id();
+                let stdout = process.stdout.take().expect("Failed to open stdout");
+                let stderr = process.stderr.take().expect("Failed to open stderr");
+
+                let handle_out = app_handle.clone();
+                let done_tx_clone = done_tx.clone();
+                tokio::spawn(async move {
+                    let mut reader = BufReader::new(stdout).lines();
+                    while let Ok(Some(line)) = reader.next_line().await {
+                        let _ = handle_out.emit("kilo_log", line.clone());
+                        // Nếu AI in ra tín hiệu kết thúc, gửi trigger để kill process
+                        if line.contains("[TASK_COMPLETED]") {
+                            let _ = done_tx_clone.send(()).await;
+                        }
+                    }
+                });
 
             let handle_err = app_handle.clone();
             tokio::spawn(async move {
@@ -394,6 +404,34 @@ async fn handle_kilo(
             });
 
             tokio::select! {
+                _ = done_rx.recv() => {
+                    // AI tự báo cáo đã xong -> Kill ngầm và báo Success
+                    let _ = state.abort_tx.lock().unwrap().take();
+                    
+                    #[cfg(target_os = "windows")]
+                    if let Some(p) = pid {
+                        let mut kill_cmd = tokio::process::Command::new("taskkill");
+                        kill_cmd.args(&["/F", "/T", "/PID", &p.to_string()]);
+                        kill_cmd.creation_flags(0x08000000); // Ẩn cửa sổ cmd taskkill
+                        let _ = kill_cmd.output().await;
+                    }
+                    let _ = process.kill().await;
+                    let _ = fs::remove_file(&temp_filepath);
+
+                    let _ = app_handle.emit("kilo_log", "[SUCCESS] Kilo CLI đã hoàn thành nhiệm vụ thành công.");
+                    let _ = app_handle.emit("kilo_task_success", ());
+                    
+                    let _ = app_handle.notification()
+                        .builder()
+                        .title("Kilo Agent (Master Context)")
+                        .body("Đã hoàn thành phân tích và cập nhật mã nguồn!")
+                        .show();
+
+                    Ok(Json(ResultResponse {
+                        success: true,
+                        message: "Kilo CLI đã thực thi xong nhiệm vụ".into(),
+                    }))
+                }
                 status_res = process.wait() => {
                     let _ = state.abort_tx.lock().unwrap().take();
                     
@@ -408,7 +446,7 @@ async fn handle_kilo(
                     let _ = fs::remove_file(&temp_filepath);
 
                     if status.success() {
-                        let _ = app_handle.emit("kilo_log", "[SUCCESS] Kilo CLI đã hoàn thành nhiệm vụ thành công.");
+                        let _ = app_handle.emit("kilo_log", "[SUCCESS] Kilo CLI đã hoàn thành nhiệm vụ thành công (Tự thoát).");
                         let _ = app_handle.emit("kilo_task_success", ());
                         
                         let _ = app_handle.notification()
@@ -440,10 +478,10 @@ async fn handle_kilo(
                 _ = abort_rx => {
                     #[cfg(target_os = "windows")]
                     if let Some(p) = pid {
-                        let _ = tokio::process::Command::new("taskkill")
-                            .args(&["/F", "/T", "/PID", &p.to_string()])
-                            .output()
-                            .await;
+                        let mut kill_cmd = tokio::process::Command::new("taskkill");
+                        kill_cmd.args(&["/F", "/T", "/PID", &p.to_string()]);
+                        kill_cmd.creation_flags(0x08000000); // Ẩn cửa sổ cmd taskkill
+                        let _ = kill_cmd.output().await;
                     }
                     let _ = process.kill().await;
                     let _ = fs::remove_file(&temp_filepath);

@@ -73,8 +73,8 @@ export function KiloPanel() {
       else if (cleanLog.startsWith('$ ')) {
          pushActivity({ type: 'command', title: cleanLog, details: [rawLog], status: 'pending' });
       }
-      else if (cleanLog.startsWith('[SUCCESS]') || cleanLog.startsWith('✅') || cleanLog.includes('hoàn thành nhiệm vụ')) {
-         pushActivity({ type: 'success', title: cleanLog.replace(/^(\[SUCCESS\]|✅)\s*/, ''), details: [rawLog], status: 'success' });
+      else if (cleanLog.startsWith('[SUCCESS]') || cleanLog.startsWith('✅') || cleanLog.includes('hoàn thành nhiệm vụ') || cleanLog.includes('[TASK_COMPLETED]')) {
+         pushActivity({ type: 'success', title: cleanLog.replace(/^(\[SUCCESS\]|✅)\s*/, '').replace('[TASK_COMPLETED]', 'Task Completed'), details: [rawLog], status: 'success' });
       }
       else if (cleanLog.startsWith('[ERROR]') || cleanLog.startsWith('✗') || cleanLog.startsWith('Error:')) {
          const ref = state.current;
