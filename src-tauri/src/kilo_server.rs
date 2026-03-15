@@ -350,15 +350,14 @@ async fn handle_kilo(
     let _ = app_handle.emit("kilo_log", format!("[SYSTEM] Bắt đầu chạy Kilo CLI tại: {}", current_dir));
 
         let mut child_cmd = if is_windows {
-            let command_string = format!("{} run --auto \"{}\"", cmd_name, short_prompt);
-            let mut c = Command::new("cmd.exe");
-            c.args(&["/c", &command_string])
+            let mut c = Command::new("kilo.cmd");
+            c.args(&["run", "--auto", &short_prompt])
              .current_dir(&current_dir)
              .stdout(Stdio::piped())
              .stderr(Stdio::piped())
              .kill_on_drop(true);
             #[cfg(target_os = "windows")]
-            c.creation_flags(0x08000000); // Ngăn việc popup cửa sổ cmd đen
+            c.creation_flags(0x08000000); // Ngăn popup cửa sổ cmd đen
             c
         } else {
         let mut c = Command::new(cmd_name);
@@ -399,8 +398,8 @@ async fn handle_kilo(
                     let mut reader = BufReader::new(stdout).lines();
                     while let Ok(Some(line)) = reader.next_line().await {
                         let _ = handle_out.emit("kilo_log", line.clone());
-                        // Nếu AI in ra tín hiệu kết thúc, gửi trigger để kill process
-                        if line.contains("[TASK_COMPLETED]") {
+                        // Bắt tín hiệu hoàn thành tuyệt đối từ AI
+                        if line.contains("<<<TASK_COMPLETED>>>") || line.contains("[TASK_COMPLETED]") {
                             let _ = done_tx_clone.send(()).await;
                         }
                     }
@@ -416,7 +415,7 @@ async fn handle_kilo(
 
             tokio::select! {
                 _ = done_rx.recv() => {
-                    // AI tự báo cáo đã xong -> Kill ngầm và báo Success
+                    // AI báo cáo xong -> Dùng spawn để giải phóng lập tức, không chờ taskkill bị treo
                     let _ = state.abort_tx.lock().unwrap().take();
                     
                     #[cfg(target_os = "windows")]
@@ -424,23 +423,23 @@ async fn handle_kilo(
                         let mut kill_cmd = tokio::process::Command::new("taskkill");
                         kill_cmd.args(&["/F", "/T", "/PID", &p.to_string()]);
                         kill_cmd.creation_flags(0x08000000); // Ẩn cửa sổ cmd taskkill
-                        let _ = kill_cmd.output().await;
+                        let _ = kill_cmd.spawn(); 
                     }
                     let _ = process.kill().await;
                     let _ = fs::remove_file(&temp_filepath);
 
-                    let _ = app_handle.emit("kilo_log", "[SUCCESS] Kilo CLI đã hoàn thành nhiệm vụ thành công.");
+                    let _ = app_handle.emit("kilo_log", "[SUCCESS] Kilo Agent đã hoàn thành toàn bộ chu trình!");
                     let _ = app_handle.emit("kilo_task_success", ());
                     
                     let _ = app_handle.notification()
                         .builder()
-                        .title("Kilo Agent (Master Context)")
+                        .title("Kilo Agent")
                         .body("Đã hoàn thành phân tích và cập nhật mã nguồn!")
                         .show();
 
                     Ok(Json(ResultResponse {
                         success: true,
-                        message: "Kilo CLI đã thực thi xong nhiệm vụ".into(),
+                        message: "Kilo Agent đã thực thi xong nhiệm vụ".into(),
                     }))
                 }
                 status_res = process.wait() => {

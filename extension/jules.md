@@ -40,6 +40,7 @@ When you receive one or more `SEARCH/REPLACE` blocks or file creation requests:
    `[SUCCESS] Applied and verified changes to: [List of all modified files]`
    or
    `[ERROR] Failed to apply/verify changes. Reason: [Brief explanation]`
-7. Stop generating text immediately after the status report.
+7. Output EXACTLY: `<<<TASK_COMPLETED>>>`
+8. Stop generating text immediately after the status report.
 </execution_workflow>
 </system_prompt>

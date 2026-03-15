@@ -119,7 +119,7 @@ When you receive one or more `SEARCH/REPLACE` blocks or file creation requests:
 11. Execute `git commit -m "Auto-commit: [Brief description of changes]"`.
 12. Execute `git push`.
 13. Output: `[SUCCESS] Changes verified, committed, and pushed to remote.`
-14. Output EXACTLY: `[TASK_COMPLETED]`
+14. Output EXACTLY: `<<<TASK_COMPLETED>>>`
 15. Stop generating text.
 </execution_workflow>
 </system_prompt>
