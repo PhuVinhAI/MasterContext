@@ -168,17 +168,20 @@ pub async fn init_kilo_config(app_handle: tauri::AppHandle, project_path: String
 
     let resource_dir = app_handle.path().resource_dir().map_err(|e| e.to_string())?;
     let res_dir = resource_dir.join("resources");
+    let up_res_dir = resource_dir.join("_up_").join("resources");
     
     let apply_md_src = res_dir.join("apply.md");
     let opencode_src = res_dir.join("opencode.json");
 
     // Đọc từ thư mục bundle (production) hoặc thư mục gốc (development)
     let apply_md_content = fs::read_to_string(&apply_md_src)
+        .or_else(|_| fs::read_to_string(up_res_dir.join("apply.md"))) // Fallback cho thư mục _up_ khi build exe
         .or_else(|_| fs::read_to_string(resource_dir.join("apply.md"))) // Fallback nếu Tauri gộp phẳng file
         .or_else(|_| fs::read_to_string("../resources/apply.md")) // Fallback môi trường Dev
         .unwrap_or_default();
 
     let mut opencode_json_content = fs::read_to_string(&opencode_src)
+        .or_else(|_| fs::read_to_string(up_res_dir.join("opencode.json"))) // Fallback cho thư mục _up_ khi build exe
         .or_else(|_| fs::read_to_string(resource_dir.join("opencode.json")))
         .or_else(|_| fs::read_to_string("../resources/opencode.json"))
         .unwrap_or_default();
@@ -203,9 +206,12 @@ pub async fn open_extension_folder(app_handle: tauri::AppHandle) -> Result<(), S
     
     let resource_dir = app_handle.path().resource_dir().map_err(|e| e.to_string())?;
     let res_dir = resource_dir.join("resources");
+    let up_res_dir = resource_dir.join("_up_").join("resources");
     
     let path_to_open = if res_dir.exists() {
         res_dir.to_string_lossy().to_string()
+    } else if up_res_dir.exists() {
+        up_res_dir.to_string_lossy().to_string()
     } else if std::path::Path::new("../resources").exists() {
         "../resources".to_string()
     } else {

@@ -210,12 +210,14 @@ pub fn get_resource_file_content(app: AppHandle, filename: String) -> Result<Str
     let resource_dir = app.path().resource_dir().map_err(|e| e.to_string())?;
 
     let path1 = resource_dir.join("resources").join(&filename);
-    let path2 = resource_dir.join(&filename); // Khi build, có thể file nằm ngay gốc resource
-    let path3 = std::path::PathBuf::from("../resources").join(&filename); // Môi trường Dev
+    let path2 = resource_dir.join("_up_").join("resources").join(&filename); // Fallback khi build do relative path
+    let path3 = resource_dir.join(&filename); // Khi build, có thể file nằm ngay gốc resource
+    let path4 = std::path::PathBuf::from("../resources").join(&filename); // Môi trường Dev
 
     std::fs::read_to_string(&path1)
         .or_else(|_| std::fs::read_to_string(&path2))
         .or_else(|_| std::fs::read_to_string(&path3))
+        .or_else(|_| std::fs::read_to_string(&path4))
         .map_err(|e| format!("Không thể đọc file {}: {}", filename, e))
 }
 

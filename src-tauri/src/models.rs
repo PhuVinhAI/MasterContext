@@ -3,7 +3,6 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct GitRepositoryInfo {
@@ -59,7 +58,11 @@ pub struct GenerationInfo {
 pub struct ChatMessage {
     pub role: String, // "user" | "assistant" | "system"
     pub content: Option<String>,
-    #[serde(rename = "hiddenContent", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hiddenContent",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub hidden_content: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attached_files: Option<Vec<AttachedItem>>,
@@ -118,6 +121,7 @@ pub struct AppSettings {
     pub top_p: Option<f64>,
     pub top_k: Option<u32>,
     pub max_tokens: Option<u32>,
+    pub selected_kilo_model: Option<String>,
 }
 // --- KẾT THÚC PHẦN THÊM MỚI ---
 
@@ -172,11 +176,11 @@ pub struct CachedProjectData {
     pub sync_path: Option<String>,
     pub data_hash: Option<String>,
     pub custom_ignore_patterns: Option<Vec<String>>, // <-- THÊM TRƯỜNG NÀY
-    pub is_watching_files: Option<bool>, // <-- THÊM TRƯỜNG MỚI
-    pub export_use_full_tree: Option<bool>, // <-- THÊM TRƯỜNG MỚI NÀY
+    pub is_watching_files: Option<bool>,             // <-- THÊM TRƯỜNG MỚI
+    pub export_use_full_tree: Option<bool>,          // <-- THÊM TRƯỜNG MỚI NÀY
     pub export_only_tree: Option<bool>,
     pub export_with_line_numbers: Option<bool>, // <-- THÊM TRƯỜNG MỚI
-    pub export_without_comments: Option<bool>, // <-- THÊM TRƯỜNG MỚI
+    pub export_without_comments: Option<bool>,  // <-- THÊM TRƯỜNG MỚI
     pub export_remove_debug_logs: Option<bool>, // <-- THÊM TRƯỜNG MỚI
     pub export_super_compressed: Option<bool>,
     pub always_apply_text: Option<String>,
