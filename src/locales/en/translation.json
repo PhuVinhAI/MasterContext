@@ -336,6 +336,10 @@
         "label": "Claude / AI Agent Mode",
         "description": "Format the exported file with a JSON manifest and meta tags, optimized for AI Agents to read."
       },
+      "dummyLogic": {
+        "label": "Dummy DLLs Mode (Hide Logic)",
+        "description": "Extract only the structure (Classes, Methods, Variables) and hide the internal logic to save tokens."
+      },
       "removeComments": {
         "label": "Remove comments",
         "description": "Automatically remove comment blocks from the source code to reduce tokens."

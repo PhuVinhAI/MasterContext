@@ -7,6 +7,81 @@ use std::fmt::Write as FmtWrite;
 use std::fs;
 use std::path::Path;
 
+fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
+    let extension = std::path::Path::new(file_rel_path)
+        .extension()
+        .and_then(std::ffi::OsStr::to_str)
+        .unwrap_or("");
+
+    let c_style = [
+        "cs", "java", "ts", "tsx", "js", "jsx", "cpp", "c", "h", "hpp", "rs", "go", "php", "swift",
+        "kt",
+    ];
+    if !c_style.contains(&extension) {
+        return content.to_string(); // Trả về nguyên gốc nếu không phải ngôn ngữ C-style
+    }
+
+    let mut result = String::with_capacity(content.len());
+    let mut brace_depth = 0;
+    let mut in_string = false;
+    let mut string_char = ' ';
+    let mut escape = false;
+
+    for c in content.chars() {
+        if escape {
+            if brace_depth <= 2 {
+                result.push(c);
+            }
+            escape = false;
+            continue;
+        }
+
+        if c == '\\' && in_string {
+            escape = true;
+            if brace_depth <= 2 {
+                result.push(c);
+            }
+            continue;
+        }
+
+        if (c == '"' || c == '\'' || c == '`') && !in_string {
+            in_string = true;
+            string_char = c;
+        } else if c == string_char && in_string {
+            in_string = false;
+        }
+
+        if !in_string {
+            if c == '{' {
+                brace_depth += 1;
+                if brace_depth <= 3 {
+                    result.push(c);
+                }
+                if brace_depth == 3 {
+                    result.push_str(" /* logic omitted */ ");
+                }
+                continue;
+            } else if c == '}' {
+                let old_depth = brace_depth;
+                if brace_depth > 0 {
+                    brace_depth -= 1;
+                }
+                if old_depth <= 3 {
+                    result.push(c);
+                }
+                continue;
+            }
+        }
+
+        // Giữ lại cấu trúc namespace (độ sâu 1) và class (độ sâu 2)
+        // Bỏ qua phần "ruột" của các method/function (độ sâu >= 3)
+        if brace_depth <= 2 {
+            result.push(c);
+        }
+    }
+    result
+}
+
 lazy_static! {
     static ref C_STYLE_SINGLE_LINE_COMMENT: Regex = Regex::new(r"//.*").unwrap();
     static ref C_STYLE_MULTI_LINE_COMMENT: Regex = Regex::new(r"(?s)/\*.*?\*/").unwrap();
@@ -41,44 +116,38 @@ fn remove_comments_from_content(content: &str, file_rel_path: &str) -> String {
 
     let processed_content = match extension {
         // Chú thích kiểu C (// và /* */)
-        "js" | "jsx" | "ts" | "tsx" | "rs" | "go" | "c" | "cpp" | "h" | "java" | "cs" | "swift" | "kt" | "css" | "scss" | "less" | "jsonc" | "glsl" | "dart" | "gd" => {
+        "js" | "jsx" | "ts" | "tsx" | "rs" | "go" | "c" | "cpp" | "h" | "java" | "cs" | "swift"
+        | "kt" | "css" | "scss" | "less" | "jsonc" | "glsl" | "dart" | "gd" => {
             let temp = C_STYLE_SINGLE_LINE_COMMENT.replace_all(content, "");
-            C_STYLE_MULTI_LINE_COMMENT.replace_all(&temp, "").to_string()
-        },
+            C_STYLE_MULTI_LINE_COMMENT
+                .replace_all(&temp, "")
+                .to_string()
+        }
         // Chú thích bằng dấu thăng (#)
-        "py" | "rb" | "sh" | "yml" | "yaml" | "toml" | "dockerfile" | "gitignore" | "r" | "pl" | "pm" | "ps1" | "el" => {
-            HASH_COMMENT.replace_all(content, "").to_string()
-        },
+        "py" | "rb" | "sh" | "yml" | "yaml" | "toml" | "dockerfile" | "gitignore" | "r" | "pl"
+        | "pm" | "ps1" | "el" => HASH_COMMENT.replace_all(content, "").to_string(),
         // Chú thích kiểu HTML/XML (<!-- -->)
-        "html" | "xml" | "svg" | "md" => {
-            HTML_XML_COMMENT.replace_all(content, "").to_string()
-        },
+        "html" | "xml" | "svg" | "md" => HTML_XML_COMMENT.replace_all(content, "").to_string(),
         // Chú thích kiểu SQL/Lua (--)
-        "sql" | "lua" | "hs" | "ada" => {
-             SQL_LUA_COMMENT.replace_all(content, "").to_string()
-        },
+        "sql" | "lua" | "hs" | "ada" => SQL_LUA_COMMENT.replace_all(content, "").to_string(),
         // Chú thích kiểu Lisp (;)
-        "lisp" | "cl" | "scm" => {
-            LISP_COMMENT.replace_all(content, "").to_string()
-        },
+        "lisp" | "cl" | "scm" => LISP_COMMENT.replace_all(content, "").to_string(),
         // Chú thích kiểu Erlang (%)
-        "erl" | "hrl" => {
-            ERLANG_COMMENT.replace_all(content, "").to_string()
-        },
+        "erl" | "hrl" => ERLANG_COMMENT.replace_all(content, "").to_string(),
         // Chú thích kiểu VB (')
-        "vb" | "vbs" => {
-            VBNET_COMMENT.replace_all(content, "").to_string()
-        },
+        "vb" | "vbs" => VBNET_COMMENT.replace_all(content, "").to_string(),
         // Ngôn ngữ hỗn hợp
         "php" => {
             let temp1 = C_STYLE_MULTI_LINE_COMMENT.replace_all(content, "");
             let temp2 = C_STYLE_SINGLE_LINE_COMMENT.replace_all(&temp1, "");
             HASH_COMMENT.replace_all(&temp2, "").to_string()
-        },
+        }
         "vue" | "astro" => {
             let temp = HTML_XML_COMMENT.replace_all(content, "");
             let temp2 = C_STYLE_MULTI_LINE_COMMENT.replace_all(&temp, "");
-            C_STYLE_SINGLE_LINE_COMMENT.replace_all(&temp2, "").to_string()
+            C_STYLE_SINGLE_LINE_COMMENT
+                .replace_all(&temp2, "")
+                .to_string()
         }
         _ => content.to_string(),
     };
@@ -99,7 +168,10 @@ fn remove_debug_logs_from_content(content: &str) -> String {
 fn compress_content_for_tree(content: &str) -> String {
     // Replace newlines and tabs with a single space, then collapse multiple spaces.
     let no_newlines = content.replace(['\n', '\r', '\t'], " ");
-    WHITESPACE_REGEX.replace_all(&no_newlines, " ").trim().to_string()
+    WHITESPACE_REGEX
+        .replace_all(&no_newlines, " ")
+        .trim()
+        .to_string()
 }
 
 fn format_tree(tree: &BTreeMap<String, FsEntry>, prefix: &str, output: &mut String) {
@@ -138,7 +210,10 @@ fn format_tree_super_compressed(
 
         match entry {
             FsEntry::File => {
-                let extension = new_path.extension().and_then(std::ffi::OsStr::to_str).unwrap_or("");
+                let extension = new_path
+                    .extension()
+                    .and_then(std::ffi::OsStr::to_str)
+                    .unwrap_or("");
                 if !exclude_extensions_set.contains(extension) {
                     let full_path = root_path.join(&new_path);
                     let content_str = if let Ok(mut content) = fs::read_to_string(&full_path) {
@@ -161,7 +236,16 @@ fn format_tree_super_compressed(
             FsEntry::Directory(children) => {
                 let _ = writeln!(output, "{}{}{}/", prefix, connector, name);
                 let new_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
-                format_tree_super_compressed(children, &new_prefix, &new_path, root_path, output, without_comments, remove_debug_logs, exclude_extensions_set);
+                format_tree_super_compressed(
+                    children,
+                    &new_prefix,
+                    &new_path,
+                    root_path,
+                    output,
+                    without_comments,
+                    remove_debug_logs,
+                    exclude_extensions_set,
+                );
             }
         }
     }
@@ -232,6 +316,7 @@ pub fn generate_context_from_files(
     exclude_extensions: &Option<Vec<String>>,
     metadata_cache: &BTreeMap<String, crate::models::FileMetadata>,
     export_claude_mode: bool,
+    export_dummy_logic: bool,
 ) -> Result<String, String> {
     let root_path = Path::new(root_path_str);
     let mut tree_builder_root = BTreeMap::new();
@@ -279,13 +364,19 @@ pub fn generate_context_from_files(
     if export_only_tree {
         format_tree(&tree_builder_root, "", &mut directory_structure);
         let final_context_with_suffix = format!("Directory structure:\n{}", directory_structure);
-        
+
         let mut final_context = final_context_with_suffix;
         if let Some(text) = always_apply_text {
             if !text.trim().is_empty() {
-                let _ = writeln!(final_context, "\n================================================");
+                let _ = writeln!(
+                    final_context,
+                    "\n================================================"
+                );
                 let _ = writeln!(final_context, "**ALWAYS APPLY**");
-                let _ = writeln!(final_context, "================================================");
+                let _ = writeln!(
+                    final_context,
+                    "================================================"
+                );
                 let _ = writeln!(final_context, "{}", text);
             }
         }
@@ -332,6 +423,10 @@ pub fn generate_context_from_files(
                         }
                     }
                 }
+
+                if export_dummy_logic {
+                    content = generate_dummy_logic(&content, &file_rel_path);
+                }
                 if without_comments {
                     content = remove_comments_from_content(&content, &file_rel_path);
                 }
@@ -339,11 +434,22 @@ pub fn generate_context_from_files(
                     content = remove_debug_logs_from_content(&content);
                 }
 
-                let parent_dir = Path::new(&file_rel_path).parent().unwrap_or(Path::new("")).to_string_lossy().to_string();
-                let section_name = if parent_dir.is_empty() { "root".to_string() } else { parent_dir };
+                let parent_dir = Path::new(&file_rel_path)
+                    .parent()
+                    .unwrap_or(Path::new(""))
+                    .to_string_lossy()
+                    .to_string();
+                let section_name = if parent_dir.is_empty() {
+                    "root".to_string()
+                } else {
+                    parent_dir
+                };
 
                 files_content_map.insert(file_rel_path.clone(), content);
-                sections.entry(section_name).or_default().push(file_rel_path.clone());
+                sections
+                    .entry(section_name)
+                    .or_default()
+                    .push(file_rel_path.clone());
                 total_files += 1;
             }
         }
@@ -360,7 +466,10 @@ pub fn generate_context_from_files(
 
             for file_rel_path in files {
                 let content = &files_content_map[file_rel_path];
-                let ext = Path::new(file_rel_path).extension().and_then(|s| s.to_str()).unwrap_or("");
+                let ext = Path::new(file_rel_path)
+                    .extension()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("");
                 let lines = content.lines().count();
                 let size_kb = content.len() as f64 / 1024.0;
                 let size_kb_rounded = (size_kb * 100.0).round() / 100.0;
@@ -368,7 +477,10 @@ pub fn generate_context_from_files(
                 // Ghi nhận vị trí bắt đầu của file này
                 file_start_lines.insert(file_rel_path.clone(), current_relative_line);
 
-                let file_header = format!("#FILE {} {} {} {}kb\n", file_rel_path, ext, lines, size_kb_rounded);
+                let file_header = format!(
+                    "#FILE {} {} {} {}kb\n",
+                    file_rel_path, ext, lines, size_kb_rounded
+                );
                 sections_out.push_str(&file_header);
                 current_relative_line += 1;
 
@@ -388,7 +500,7 @@ pub fn generate_context_from_files(
                         }
                     }
                 }
-                
+
                 let file_footer = "#ENDFILE\n\n";
                 sections_out.push_str(file_footer);
                 current_relative_line += 2;
@@ -403,7 +515,10 @@ pub fn generate_context_from_files(
         for files in sections.values() {
             for file_rel_path in files {
                 let content = &files_content_map[file_rel_path];
-                let ext = Path::new(file_rel_path).extension().and_then(|s| s.to_str()).unwrap_or("");
+                let ext = Path::new(file_rel_path)
+                    .extension()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("");
                 let lines = content.lines().count();
                 let size_kb = content.len() as f64 / 1024.0;
                 dummy_entries.push(serde_json::json!({
@@ -424,7 +539,10 @@ pub fn generate_context_from_files(
         });
 
         let dummy_json = serde_json::to_string_pretty(&dummy_manifest).unwrap_or_default();
-        let dummy_prefix = format!("===MANIFEST_START===\n{}\n===MANIFEST_END===\n\n", dummy_json);
+        let dummy_prefix = format!(
+            "===MANIFEST_START===\n{}\n===MANIFEST_END===\n\n",
+            dummy_json
+        );
         let prefix_line_count = dummy_prefix.matches('\n').count();
 
         // Bước 3: Build real manifest với line_start đã được map chuẩn xác
@@ -432,11 +550,14 @@ pub fn generate_context_from_files(
         for files in sections.values() {
             for file_rel_path in files {
                 let content = &files_content_map[file_rel_path];
-                let ext = Path::new(file_rel_path).extension().and_then(|s| s.to_str()).unwrap_or("");
+                let ext = Path::new(file_rel_path)
+                    .extension()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("");
                 let lines = content.lines().count();
                 let size_kb = content.len() as f64 / 1024.0;
                 let relative_start = file_start_lines.get(file_rel_path).unwrap_or(&0);
-                    
+
                 real_entries.push(serde_json::json!({
                     "file": file_rel_path,
                     "lang": ext,
@@ -455,7 +576,10 @@ pub fn generate_context_from_files(
         });
 
         let final_json = serde_json::to_string_pretty(&final_manifest).unwrap_or_default();
-        let mut final_out = format!("===MANIFEST_START===\n{}\n===MANIFEST_END===\n\n", final_json);
+        let mut final_out = format!(
+            "===MANIFEST_START===\n{}\n===MANIFEST_END===\n\n",
+            final_json
+        );
         final_out.push_str(&sections_out);
         final_out
     } else if super_compressed {
@@ -478,20 +602,19 @@ pub fn generate_context_from_files(
         sorted_files.sort();
 
         let final_files: Vec<_> = sorted_files
-                .into_iter()
-                .filter(|file_rel_path| {
-                    let extension = Path::new(file_rel_path)
-                        .extension()
-                        .and_then(std::ffi::OsStr::to_str)
-                        .unwrap_or("");
-                    !exclude_set.contains(extension)
-                })
-                .collect();
+            .into_iter()
+            .filter(|file_rel_path| {
+                let extension = Path::new(file_rel_path)
+                    .extension()
+                    .and_then(std::ffi::OsStr::to_str)
+                    .unwrap_or("");
+                !exclude_set.contains(extension)
+            })
+            .collect();
 
         for file_rel_path in final_files {
             let file_path = root_path.join(&file_rel_path);
             if let Ok(mut content) = fs::read_to_string(&file_path) {
-                
                 // --- NEW LOGIC: APPLY EXCLUSIONS FIRST ---
                 if let Some(metadata) = metadata_cache.get(&file_rel_path) {
                     if let Some(ranges) = &metadata.excluded_ranges {
@@ -511,11 +634,16 @@ pub fn generate_context_from_files(
                         }
                     }
                 }
-                
+
                 let mut processed_content = content;
-                
+
+                if export_dummy_logic {
+                    processed_content = generate_dummy_logic(&processed_content, &file_rel_path);
+                }
+
                 if without_comments {
-                    processed_content = remove_comments_from_content(&processed_content, &file_rel_path);
+                    processed_content =
+                        remove_comments_from_content(&processed_content, &file_rel_path);
                 }
 
                 if remove_debug_logs {
@@ -544,9 +672,15 @@ pub fn generate_context_from_files(
 
     if let Some(text) = always_apply_text {
         if !text.trim().is_empty() {
-            let _ = writeln!(final_context_with_suffix, "\n================================================");
+            let _ = writeln!(
+                final_context_with_suffix,
+                "\n================================================"
+            );
             let _ = writeln!(final_context_with_suffix, "**ALWAYS APPLY**");
-            let _ = writeln!(final_context_with_suffix, "================================================");
+            let _ = writeln!(
+                final_context_with_suffix,
+                "================================================"
+            );
             let _ = writeln!(final_context_with_suffix, "{}", text);
         }
     }

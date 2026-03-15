@@ -88,6 +88,7 @@ pub fn start_project_export(window: Window, app: AppHandle, path: String, profil
             let remove_debug_logs = project_data.export_remove_debug_logs.unwrap_or(false);
             let super_compressed = project_data.export_super_compressed.unwrap_or(false);
             let export_claude_mode = project_data.export_claude_mode.unwrap_or(false);
+            let export_dummy_logic = project_data.export_dummy_logic.unwrap_or(false);
             let final_always_apply_text = crate::commands::utils::build_always_apply_text(
                 &app,
                 &project_data.always_apply_text,
@@ -112,6 +113,7 @@ pub fn start_project_export(window: Window, app: AppHandle, path: String, profil
                 &exclude_extensions,
                 &project_data.file_metadata_cache,
                 export_claude_mode,
+                export_dummy_logic,
             )
         })();
         match result {
@@ -139,6 +141,7 @@ pub fn generate_project_context(
     let project_data = file_cache::load_project_data(&app, &path, &profile_name)?;
     let use_full_tree = project_data.export_use_full_tree.unwrap_or(false);
     let export_claude_mode = project_data.export_claude_mode.unwrap_or(false);
+    let export_dummy_logic = project_data.export_dummy_logic.unwrap_or(false);
     let final_always_apply_text = crate::commands::utils::build_always_apply_text(
         &app,
         &project_data.always_apply_text,
@@ -163,6 +166,7 @@ pub fn generate_project_context(
         &exclude_extensions,
         &project_data.file_metadata_cache,
         export_claude_mode,
+        export_dummy_logic,
     )
 }
 

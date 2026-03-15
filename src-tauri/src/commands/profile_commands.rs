@@ -124,6 +124,7 @@ pub fn clone_profile(
         export_remove_debug_logs: Some(false),
         export_super_compressed: Some(false),
         export_claude_mode: Some(false),
+        export_dummy_logic: Some(false),
         always_apply_text: Some("".to_string()),
         append_ide_prompt: source_data.append_ide_prompt,
         export_exclude_extensions: Some(vec![]),

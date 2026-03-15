@@ -38,6 +38,7 @@ export interface SettingsActions {
   setExportRemoveDebugLogs: (enabled: boolean) => Promise<void>;
   setExportSuperCompressed: (enabled: boolean) => Promise<void>;
   setExportClaudeMode: (enabled: boolean) => Promise<void>;
+  setExportDummyLogic: (enabled: boolean) => Promise<void>;
   setAlwaysApplyText: (text: string) => Promise<void>;
   setAppendIdePrompt: (enabled: boolean) => Promise<void>;
   setExportExcludeExtensions: (extensions: string[]) => Promise<void>;
@@ -182,6 +183,14 @@ export const createSettingsActions: StateCreator<
     await _persistExportToggle(rootPath, activeProfile, "set_export_claude_mode_setting", enabled,
       () => set((s) => ({ exportClaudeMode: !s.exportClaudeMode })),
       "Không thể lưu cài đặt Claude Mode");
+  },
+  setExportDummyLogic: async (enabled: boolean) => {
+    const { rootPath, activeProfile } = get();
+    if (!rootPath) return;
+    set({ exportDummyLogic: enabled });
+    await _persistExportToggle(rootPath, activeProfile, "set_export_dummy_logic_setting", enabled,
+      () => set((s) => ({ exportDummyLogic: !s.exportDummyLogic })),
+      "Không thể lưu cài đặt Dummy Logic");
   },
   setAlwaysApplyText: async (text: string) => {
     const { rootPath, activeProfile } = get();

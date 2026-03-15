@@ -336,6 +336,10 @@
         "label": "Chế độ Claude / AI Agent",
         "description": "Định dạng file xuất kèm JSON manifest và thẻ meta để tối ưu cho AI Agent dễ dàng đọc hiểu."
       },
+      "dummyLogic": {
+        "label": "Chế độ Dummy DLLs (Ẩn Logic)",
+        "description": "Chỉ trích xuất cấu trúc (Class, Hàm, Biến) và ẩn đi phần logic bên trong để tiết kiệm token."
+      },
       "removeComments": {
         "label": "Loại bỏ chú thích (comment)",
         "description": "Tự động xóa các dòng chú thích khỏi mã nguồn để giảm token."

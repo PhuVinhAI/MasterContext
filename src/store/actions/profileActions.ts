@@ -54,6 +54,7 @@ export const createProfileActions: StateCreator<
           exportRemoveDebugLogs: profileData.export_remove_debug_logs ?? false,
           exportSuperCompressed: profileData.export_super_compressed ?? false,
           exportClaudeMode: profileData.export_claude_mode ?? false,
+          exportDummyLogic: profileData.export_dummy_logic ?? false,
           alwaysApplyText: profileData.always_apply_text ?? null,
           appendIdePrompt: profileData.append_ide_prompt ?? false,
           exportExcludeExtensions: profileData.export_exclude_extensions ?? [],

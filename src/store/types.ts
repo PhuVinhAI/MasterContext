@@ -17,6 +17,7 @@ export interface CachedProjectData {
   export_remove_debug_logs?: boolean | null; // <-- THÊM TRƯỜNG MỚI
   export_super_compressed?: boolean | null;
   export_claude_mode?: boolean | null;
+  export_dummy_logic?: boolean | null;
   always_apply_text?: string | null;
   append_ide_prompt?: boolean | null;
   export_exclude_extensions?: string[];
@@ -224,6 +225,7 @@ export interface AppState {
   exportRemoveDebugLogs: boolean;
   exportSuperCompressed: boolean;
   exportClaudeMode: boolean;
+  exportDummyLogic: boolean;
   alwaysApplyText: string | null;
   appendIdePrompt: boolean;
   exportExcludeExtensions: string[];

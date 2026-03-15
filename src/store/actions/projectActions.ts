@@ -174,6 +174,7 @@ export const createProjectActions: StateCreator<
         exportRemoveDebugLogs: payload.export_remove_debug_logs ?? false,
         exportSuperCompressed: payload.export_super_compressed ?? false,
         exportClaudeMode: payload.export_claude_mode ?? false,
+        exportDummyLogic: payload.export_dummy_logic ?? false,
         alwaysApplyText: payload.always_apply_text ?? null,
         appendIdePrompt: payload.append_ide_prompt ?? false,
         exportExcludeExtensions: payload.export_exclude_extensions ?? [],
@@ -251,6 +252,7 @@ export const createProjectActions: StateCreator<
       exportWithoutComments,
       exportRemoveDebugLogs,
       exportClaudeMode,
+      exportDummyLogic,
     } = get();
     if (!rootPath || !activeProfile) return;
     try {
@@ -263,6 +265,7 @@ export const createProjectActions: StateCreator<
         removeDebugLogs: exportRemoveDebugLogs,
         superCompressed: false, // Copy should not be compressed
         exportClaudeMode: exportClaudeMode,
+        exportDummyLogic: exportDummyLogic,
       });
       await writeText(context);
       await message("Đã sao chép ngữ cảnh dự án vào clipboard!", {

@@ -43,6 +43,7 @@ export function SettingsScene() {
     exportRemoveDebugLogs,
     exportSuperCompressed,
     exportClaudeMode,
+    exportDummyLogic,
     alwaysApplyText,
     appendIdePrompt,
     exportExcludeExtensions,
@@ -69,6 +70,7 @@ export function SettingsScene() {
     setExportRemoveDebugLogs,
     setExportSuperCompressed,
     setExportClaudeMode,
+    setExportDummyLogic,
     setAlwaysApplyText,
     setAppendIdePrompt,
     setExportExcludeExtensions,
@@ -145,6 +147,8 @@ export function SettingsScene() {
             setExportSuperCompressed={setExportSuperCompressed}
             exportClaudeMode={exportClaudeMode}
             setExportClaudeMode={setExportClaudeMode}
+            exportDummyLogic={exportDummyLogic}
+            setExportDummyLogic={setExportDummyLogic}
             exportRemoveDebugLogs={exportRemoveDebugLogs}
             setExportRemoveDebugLogs={setExportRemoveDebugLogs}
             exportExcludeExtensions={exportExcludeExtensions}

@@ -92,6 +92,7 @@ export interface AppState {
   exportRemoveDebugLogs: boolean;
   exportSuperCompressed: boolean;
   exportClaudeMode: boolean;
+  exportDummyLogic: boolean;
   alwaysApplyText: string | null;
   appendIdePrompt: boolean;
   exportExcludeExtensions: string[];

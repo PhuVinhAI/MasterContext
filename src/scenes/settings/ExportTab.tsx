@@ -21,6 +21,8 @@ interface ExportTabProps {
   setExportSuperCompressed: (enabled: boolean) => void;
   exportClaudeMode: boolean;
   setExportClaudeMode: (enabled: boolean) => void;
+  exportDummyLogic: boolean;
+  setExportDummyLogic: (enabled: boolean) => void;
   exportRemoveDebugLogs: boolean;
   setExportRemoveDebugLogs: (enabled: boolean) => void;
   exportExcludeExtensions: string[];
@@ -40,6 +42,8 @@ export function ExportTab({
   setExportSuperCompressed,
   exportClaudeMode,
   setExportClaudeMode,
+  exportDummyLogic,
+  setExportDummyLogic,
   exportRemoveDebugLogs,
   setExportRemoveDebugLogs,
   exportExcludeExtensions,
@@ -156,6 +160,26 @@ export function ExportTab({
             checked={exportClaudeMode}
             onCheckedChange={setExportClaudeMode}
             disabled={exportSuperCompressed || exportOnlyTree}
+          />
+        </div>
+        <div className="flex items-center justify-between pt-4 border-t">
+          <Label
+            htmlFor="export-dummy-logic-toggle"
+            className={cn(
+              "flex flex-col items-start gap-1",
+              exportOnlyTree && "opacity-50"
+            )}
+          >
+            <span>{t("settings.export.dummyLogic.label")}</span>
+            <span className="text-xs text-muted-foreground">
+              {t("settings.export.dummyLogic.description")}
+            </span>
+          </Label>
+          <Switch
+            id="export-dummy-logic-toggle"
+            checked={exportDummyLogic}
+            onCheckedChange={setExportDummyLogic}
+            disabled={exportOnlyTree}
           />
         </div>
         <div className="flex items-center justify-between pt-4 border-t">

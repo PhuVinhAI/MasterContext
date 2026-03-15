@@ -290,6 +290,7 @@ pub fn perform_smart_scan_and_rebuild(
         export_remove_debug_logs: old_data.export_remove_debug_logs, // Giữ lại cài đặt cũ
         export_super_compressed: old_data.export_super_compressed,
         export_claude_mode: old_data.export_claude_mode,
+        export_dummy_logic: old_data.export_dummy_logic,
         always_apply_text: old_data.always_apply_text,
         append_ide_prompt: old_data.append_ide_prompt,
         export_exclude_extensions: old_data.export_exclude_extensions,

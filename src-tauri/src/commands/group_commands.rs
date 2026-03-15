@@ -146,6 +146,7 @@ pub fn start_group_export(
             let remove_debug_logs = project_data.export_remove_debug_logs.unwrap_or(false);
             let super_compressed = project_data.export_super_compressed.unwrap_or(false);
             let export_claude_mode = project_data.export_claude_mode.unwrap_or(false);
+            let export_dummy_logic = project_data.export_dummy_logic.unwrap_or(false);
             let final_always_apply_text = crate::commands::utils::build_always_apply_text(
                 &app,
                 &project_data.always_apply_text,
@@ -180,6 +181,7 @@ pub fn start_group_export(
                 &exclude_extensions,
                 &project_data.file_metadata_cache,
                 export_claude_mode,
+                export_dummy_logic,
             )
         })();
         match result {
@@ -211,6 +213,7 @@ pub fn generate_group_context(
 ) -> Result<String, String> {
     let project_data = file_cache::load_project_data(&app, &root_path_str, &profile_name)?;
     let export_claude_mode = project_data.export_claude_mode.unwrap_or(false);
+    let export_dummy_logic = project_data.export_dummy_logic.unwrap_or(false);
     let final_always_apply_text = crate::commands::utils::build_always_apply_text(
         &app,
         &project_data.always_apply_text,
@@ -245,6 +248,7 @@ pub fn generate_group_context(
         &exclude_extensions,
         &project_data.file_metadata_cache,
         export_claude_mode,
+        export_dummy_logic,
     )
 }
 
@@ -287,6 +291,7 @@ pub fn generate_group_context_for_ai(
         &project_data.export_exclude_extensions, // Keep user's exclude extensions
         &project_data.file_metadata_cache,
         false, // export_claude_mode: false (giữ cấu trúc chuẩn cho internal AI)
+        false, // export_dummy_logic: false (AI agent cần đọc logic)
     )
 }
 

@@ -41,6 +41,7 @@ export const initialState = {
   exportRemoveDebugLogs: false,
   exportSuperCompressed: false,
   exportClaudeMode: false,
+  exportDummyLogic: false,
   alwaysApplyText: null,
   appendIdePrompt: false,
   exportExcludeExtensions: [],

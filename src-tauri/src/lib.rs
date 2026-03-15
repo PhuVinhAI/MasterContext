@@ -75,6 +75,7 @@ pub fn run() {
             commands::set_export_remove_debug_logs_setting, // <-- COMMAND MỚI
             commands::set_export_super_compressed_setting,
             commands::set_export_claude_mode_setting, // <-- COMMAND MỚI
+            commands::set_export_dummy_logic_setting,
             commands::get_expanded_files_for_group,
             commands::update_group_paths_from_ai,
             commands::set_export_exclude_extensions_setting, // <-- COMMAND MỚI
