@@ -98,10 +98,12 @@ pub async fn start_kilo_server(
 pub async fn check_kilo_installed() -> Result<bool, String> {
     let is_windows = cfg!(target_os = "windows");
     let cmd_name = if is_windows { "kilo.cmd" } else { "kilo" };
-    let output = tokio::process::Command::new(cmd_name)
-        .arg("--version")
-        .output()
-        .await;
+    
+    let mut cmd = tokio::process::Command::new(cmd_name);
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000); // Ngăn cửa sổ cmd đen
+    
+    let output = cmd.arg("--version").output().await;
     
     match output {
         Ok(out) => Ok(out.status.success()),
@@ -116,7 +118,11 @@ pub async fn install_kilo_cli(app_handle: tauri::AppHandle) -> Result<(), String
     
     let _ = app_handle.emit("kilo_log", "[SYSTEM] Đang cài đặt Kilo CLI (@kilocode/cli)...");
     
-    let output = tokio::process::Command::new(cmd_name)
+    let mut cmd = tokio::process::Command::new(cmd_name);
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000); // Ngăn cửa sổ cmd đen
+
+    let output = cmd
         .args(&["install", "-g", "@kilocode/cli"])
         .output()
         .await
@@ -136,7 +142,12 @@ pub async fn install_kilo_cli(app_handle: tauri::AppHandle) -> Result<(), String
 pub async fn get_kilo_models() -> Result<Vec<String>, String> {
     let is_windows = cfg!(target_os = "windows");
     let cmd_name = if is_windows { "kilo.cmd" } else { "kilo" };
-    let output = tokio::process::Command::new(cmd_name)
+    
+    let mut cmd = tokio::process::Command::new(cmd_name);
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000); // Ngăn cửa sổ cmd đen
+
+    let output = cmd
         .arg("models")
         .output()
         .await
