@@ -372,6 +372,12 @@
         "topP": "Top-P",
         "topK": "Top-K",
         "maxTokens": "Số Token Tối đa"
+      },
+      "kilo": {
+        "title": "Cài đặt Kilo Agent",
+        "port": "Cổng (Port) Kilo Server",
+        "model": "Kilo Model Mặc định",
+        "description": "Port này phải khớp với cấu hình Port trong AI Studio Archiver Extension. Mặc định là 9999."
       }
     }
   },

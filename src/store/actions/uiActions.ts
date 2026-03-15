@@ -104,11 +104,11 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
   clearKiloLogs: () => set({ kiloLogs: [] }),
   startKiloServer: async () => {
     try {
-      const { rootPath } = _get();
+      const { rootPath, kiloPort } = _get();
       if (rootPath) {
         await invoke("init_kilo_config", { projectPath: rootPath });
       }
-      await invoke("start_kilo_server");
+      await invoke("start_kilo_server", { port: kiloPort });
     } catch (e) {
       console.error("Failed to start Kilo Server", e);
     }

@@ -50,6 +50,8 @@ export function SettingsScene() {
     topK,
     maxTokens,
     streamResponse,
+    kiloPort,
+    selectedKiloModel,
     updateAppSettings,
     setGitExportMode,
     showDashboard,
@@ -151,6 +153,8 @@ export function SettingsScene() {
             topP={topP}
             topK={topK}
             maxTokens={maxTokens}
+            kiloPort={kiloPort}
+            selectedKiloModel={selectedKiloModel}
             onSave={async (newSettings) => {
               await updateAppSettings({
                 openRouterApiKey: newSettings.apiKey,
@@ -162,6 +166,8 @@ export function SettingsScene() {
                 topP: newSettings.topP,
                 topK: newSettings.topK,
                 maxTokens: newSettings.maxTokens,
+                kiloPort: newSettings.kiloPort,
+                selectedKiloModel: newSettings.selectedKiloModel,
               });
             }}
           />

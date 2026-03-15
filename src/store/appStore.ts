@@ -120,6 +120,7 @@ export interface AppState {
   isKiloInstalled: boolean | null;
   selectedKiloModel: string;
   kiloAvailableModels: KiloModelInfo[];
+  kiloPort: number;
 
   // AI Panel
   isAiPanelVisible: boolean;

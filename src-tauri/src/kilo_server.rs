@@ -39,6 +39,7 @@ pub async fn start_kilo_server(
     project_state: tauri::State<'_, crate::ActiveProjectState>,
     server_handle: tauri::State<'_, crate::KiloServerHandle>,
     model_state: tauri::State<'_, crate::KiloModelState>,
+    port: u16,
 ) -> Result<(), String> {
     let mut handle_lock = server_handle.0.lock().unwrap();
     if handle_lock.is_some() {
@@ -65,8 +66,9 @@ pub async fn start_kilo_server(
         .with_state(state);
 
     tokio::spawn(async move {
-        if let Ok(listener) = tokio::net::TcpListener::bind("127.0.0.1:9999").await {
-            let _ = app_handle.emit("kilo_log", "[SYSTEM] Master Context: Kilo local server running at http://localhost:9999");
+        let bind_addr = format!("127.0.0.1:{}", port);
+        if let Ok(listener) = tokio::net::TcpListener::bind(&bind_addr).await {
+            let _ = app_handle.emit("kilo_log", format!("[SYSTEM] Master Context: Kilo local server running at http://localhost:{}", port));
             let _ = app_handle.emit("kilo_status_changed", true);
             
             let server = axum::serve(listener, app).with_graceful_shutdown(async {
@@ -81,7 +83,7 @@ pub async fn start_kilo_server(
             // But we can't easily access server_handle here without moving it.
             // It will be cleaned up on next start.
         } else {
-            let _ = app_handle.emit("kilo_log", "[SYSTEM_ERROR] Lỗi: Không thể khởi chạy Kilo server ở port 9999 (Port có thể bị chiếm dụng).");
+            let _ = app_handle.emit("kilo_log", format!("[SYSTEM_ERROR] Lỗi: Không thể khởi chạy Kilo server ở port {} (Port có thể bị chiếm dụng).", port));
             let _ = app_handle.emit("kilo_status_changed", false);
         }
     });

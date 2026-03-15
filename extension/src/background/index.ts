@@ -160,8 +160,9 @@ async function executeKiloWorkflow(url: string, tabId?: number, isManual: boolea
     return;
   }
 
-  const result = await chrome.storage.local.get(['driveToken']) as { driveToken?: string };
+  const result = await chrome.storage.local.get(['driveToken', 'kiloPort']) as { driveToken?: string, kiloPort?: string };
   const driveToken = result.driveToken;
+  const kiloPort = result.kiloPort || '9999';
   if (!driveToken) {
     showNotification(`Lỗi ${prefix}`, 'Chưa cấu hình Drive Token. Hãy mở Popup extension.', 'error', tabId);
     return;
@@ -198,7 +199,7 @@ async function executeKiloWorkflow(url: string, tabId?: number, isManual: boolea
     showNotification(`${prefix} Đang Chạy`, 'Đang gửi mã nguồn xuống cho Kilo CLI xử lý...', 'info', tabId);
 
     // Đợi Kilo process kết thúc (Local server trả về HTTP 200 hoặc HTTP 500)
-    const response = await fetch('http://127.0.0.1:9999/api/kilo', {
+    const response = await fetch(`http://127.0.0.1:${kiloPort}/api/kilo`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt })
@@ -214,6 +215,6 @@ async function executeKiloWorkflow(url: string, tabId?: number, isManual: boolea
     }
   } catch (error) {
     console.error(`Lỗi khi execute Kilo (${prefix}):`, error);
-    showNotification(`${prefix} Lỗi Kết Nối`, 'Không kết nối được Cổng 9999. Hãy chắc chắn bạn đã Bật Server trong Kilo Panel của Master Context.', 'error', tabId);
+    showNotification(`${prefix} Lỗi Kết Nối`, `Không kết nối được Cổng ${kiloPort}. Hãy chắc chắn bạn đã Bật Server trong Kilo Panel của Master Context.`, 'error', tabId);
   }
 }

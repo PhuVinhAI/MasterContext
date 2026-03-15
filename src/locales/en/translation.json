@@ -372,6 +372,12 @@
         "topP": "Top-P",
         "topK": "Top-K",
         "maxTokens": "Max Output Tokens"
+      },
+      "kilo": {
+        "title": "Kilo Agent Settings",
+        "port": "Kilo Server Port",
+        "model": "Default Kilo Model",
+        "description": "This port must match the Port configured in the AI Studio Archiver Extension. Default is 9999."
       }
     }
   },

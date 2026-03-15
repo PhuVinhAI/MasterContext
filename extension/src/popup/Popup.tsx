@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 
 export default function Popup() {
   const [driveToken, setDriveToken] = useState('');
+  const [kiloPort, setKiloPort] = useState('9999');
   const [showTokenInput, setShowTokenInput] = useState(false);
   const [currentUrl, setCurrentUrl] = useState('');
   const [saved, setSaved] = useState(false);
@@ -34,9 +35,10 @@ export default function Popup() {
   }, []);
 
   const loadData = async () => {
-    const result = await chrome.storage.local.get(['driveToken', 'autoWatchKilo']);
+    const result = await chrome.storage.local.get(['driveToken', 'autoWatchKilo', 'kiloPort']);
     setDriveToken((result.driveToken as string) || '');
     setAutoWatch(!!result.autoWatchKilo);
+    setKiloPort((result.kiloPort as string) || '9999');
   };
 
   const getCurrentTabUrl = async () => {
@@ -45,7 +47,7 @@ export default function Popup() {
   };
 
   const handleSaveToken = async () => {
-    await chrome.storage.local.set({ driveToken });
+    await chrome.storage.local.set({ driveToken, kiloPort });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -123,6 +125,17 @@ export default function Popup() {
                   value={driveToken}
                   onChange={(e) => setDriveToken(e.target.value)}
                   placeholder="Nhập mã Drive API token..."
+                  className="text-sm font-mono"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="kilo-port" className="text-[10px] uppercase font-bold tracking-widest">CỔNG KILO SERVER</Label>
+                <Input
+                  id="kilo-port"
+                  type="number"
+                  value={kiloPort}
+                  onChange={(e) => setKiloPort(e.target.value)}
+                  placeholder="9999"
                   className="text-sm font-mono"
                 />
               </div>

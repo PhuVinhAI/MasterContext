@@ -38,6 +38,8 @@ interface AITabProps {
   topP: number;
   topK: number;
   maxTokens: number;
+  kiloPort: number;
+  selectedKiloModel: string;
   onSave: (settings: {
     apiKey: string;
     googleApiKey: string;
@@ -48,6 +50,8 @@ interface AITabProps {
     topP: number;
     topK: number;
     maxTokens: number;
+    kiloPort: number;
+    selectedKiloModel: string;
   }) => Promise<void>;
 }
 
@@ -61,6 +65,8 @@ export function AITab({
   topP,
   topK,
   maxTokens,
+  kiloPort,
+  selectedKiloModel,
   onSave,
 }: AITabProps) {
   const { t } = useTranslation();
@@ -79,6 +85,8 @@ export function AITab({
   const [localTopP, setLocalTopP] = useState(topP);
   const [localTopK, setLocalTopK] = useState(topK);
   const [localMaxTokens, setLocalMaxTokens] = useState(maxTokens);
+  const [localKiloPort, setLocalKiloPort] = useState(kiloPort);
+  const [localKiloModel, setLocalKiloModel] = useState(selectedKiloModel);
   const [isSaving, setIsSaving] = useState(false);
   const [isModelPickerOpen, setIsModelPickerOpen] = useState(false);
 
@@ -92,6 +100,8 @@ export function AITab({
     setLocalTopP(topP);
     setLocalTopK(topK);
     setLocalMaxTokens(maxTokens);
+    setLocalKiloPort(kiloPort);
+    setLocalKiloModel(selectedKiloModel);
   }, [
     apiKey,
     googleApiKey,
@@ -102,6 +112,8 @@ export function AITab({
     topP,
     topK,
     maxTokens,
+    kiloPort,
+    selectedKiloModel,
   ]);
 
   const handleSave = async () => {
@@ -116,6 +128,8 @@ export function AITab({
       topP: localTopP,
       topK: localTopK,
       maxTokens: localMaxTokens,
+      kiloPort: localKiloPort,
+      selectedKiloModel: localKiloModel,
     });
     setIsSaving(false);
   };
@@ -141,7 +155,9 @@ export function AITab({
     localTemperature !== temperature ||
     localTopP !== topP ||
     localTopK !== topK ||
-    localMaxTokens !== maxTokens;
+    localMaxTokens !== maxTokens ||
+    localKiloPort !== kiloPort ||
+    localKiloModel !== selectedKiloModel;
 
   return (
     <div className="space-y-6">
@@ -399,6 +415,34 @@ export function AITab({
             </div>
           </div>
         </div>
+
+        {/* Kilo Server Settings Section */}
+        <div className="space-y-4 rounded-lg border p-4">
+          <h3 className="font-semibold text-emerald-600 dark:text-emerald-500">{t("settings.ai.kilo.title")}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="kilo-port-input">{t("settings.ai.kilo.port")}</Label>
+              <Input
+                id="kilo-port-input"
+                type="number"
+                value={localKiloPort}
+                onChange={(e) => setLocalKiloPort(parseInt(e.target.value, 10) || 9999)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="kilo-model-input">{t("settings.ai.kilo.model")}</Label>
+              <Input
+                id="kilo-model-input"
+                type="text"
+                placeholder="kilo/minimax/minimax-m2.5:free"
+                value={localKiloModel}
+                onChange={(e) => setLocalKiloModel(e.target.value)}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">{t("settings.ai.kilo.description")}</p>
+        </div>
+
         <div className="pt-2">
           <Button
             onClick={handleSave}

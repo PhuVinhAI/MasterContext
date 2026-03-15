@@ -61,7 +61,7 @@ export const initialState = {
   isKiloServerRunning: false,
   kiloLogs: [],
   isKiloInstalled: null,
-  selectedKiloModel: "",
+  selectedKiloModel: "kilo/minimax/minimax-m2.5:free",
   kiloAvailableModels: [],
   isAiPanelVisible: false,
   aiChatMode: "ask" as "ask" | "context" | "agent",
@@ -84,6 +84,7 @@ export const initialState = {
   selectedAiModel: "openai/gpt-3.5-turbo",
   editingMessageIndex: null,
   aiAttachedFiles: [] as AttachedItem[],
+  kiloPort: 9999,
 };
 
 export type InitialState = typeof initialState;

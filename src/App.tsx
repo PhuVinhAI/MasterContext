@@ -234,7 +234,7 @@ function App() {
           console.warn("Could not fetch OpenRouter models", e);
         }
 
-        const savedKiloModel = settings.selectedKiloModel ?? "";
+        const savedKiloModel = settings.selectedKiloModel ?? "kilo/minimax/minimax-m2.5:free";
 
         const savedModelIds = settings.aiModels ?? ["gemini-flash-latest"];
 
@@ -266,6 +266,7 @@ function App() {
           topP: settings.topP ?? 1.0,
           topK: settings.topK ?? 0,
           maxTokens: settings.maxTokens ?? 0,
+          kiloPort: settings.kiloPort ?? 9999,
           aiModels: projectAiModels.length
             ? projectAiModels
             : [

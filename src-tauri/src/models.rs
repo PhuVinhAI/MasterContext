@@ -122,6 +122,7 @@ pub struct AppSettings {
     pub top_k: Option<u32>,
     pub max_tokens: Option<u32>,
     pub selected_kilo_model: Option<String>,
+    pub kilo_port: Option<u16>,
 }
 // --- KẾT THÚC PHẦN THÊM MỚI ---
 
