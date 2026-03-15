@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { FolderUp, Save, Loader2, GitBranch } from "lucide-react";
+import { FolderUp, Save, Loader2, GitBranch, Copy, Check } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { message } from "@tauri-apps/plugin-dialog";
 
 interface ProfileTabProps {
   syncEnabled: boolean;
@@ -35,6 +38,21 @@ export function ProfileTab({
   const { t } = useTranslation();
   const [localText, setLocalText] = useState("");
   const [isSavingText, setIsSavingText] = useState(false);
+  const [isCopiedPrompt, setIsCopiedPrompt] = useState(false);
+
+  const handleCopyIdePrompt = async () => {
+    try {
+      const content = await invoke<string>("get_resource_file_content", { filename: "code.md" });
+      if (content) {
+        await writeText(content);
+        setIsCopiedPrompt(true);
+        setTimeout(() => setIsCopiedPrompt(false), 2000);
+      }
+    } catch (error) {
+      console.error("Failed to copy IDE prompt:", error);
+      await message(t("errors.copyFailed", { error }), { title: t("common.error"), kind: "error" });
+    }
+  };
 
   useEffect(() => {
     setLocalText(alwaysApplyText || "");
@@ -111,18 +129,29 @@ export function ProfileTab({
         <h3 className="font-semibold">
           {t("settings.profile.alwaysApply.title")}
         </h3>
-        <div className="flex items-center justify-between mb-4">
-          <Label htmlFor="append-ide-prompt" className="flex flex-col items-start gap-1">
+        <div className="flex items-center justify-between mb-4 gap-4">
+          <Label htmlFor="append-ide-prompt" className="flex flex-col items-start gap-1 flex-1">
             <span>{t("settings.profile.alwaysApply.appendIde.label")}</span>
             <span className="text-xs text-muted-foreground">
               {t("settings.profile.alwaysApply.appendIde.description")}
             </span>
           </Label>
-          <Switch
-            id="append-ide-prompt"
-            checked={appendIdePrompt}
-            onCheckedChange={setAppendIdePrompt}
-          />
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleCopyIdePrompt}
+              title="Sao chép Prompt IDE chuẩn"
+              className="h-8 w-8"
+            >
+              {isCopiedPrompt ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            </Button>
+            <Switch
+              id="append-ide-prompt"
+              checked={appendIdePrompt}
+              onCheckedChange={setAppendIdePrompt}
+            />
+          </div>
         </div>
         <div className="space-y-2 flex-grow flex flex-col">
           <Label htmlFor="always-apply-text">
