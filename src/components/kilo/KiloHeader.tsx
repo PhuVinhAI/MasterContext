@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Play, Square, Trash2, Terminal, Loader2, Download, CheckCircle2, XCircle, Activity, Puzzle } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useShallow } from "zustand/react/shallow";
 import { useAppStore, useAppActions } from "@/store/appStore";
 import { cn } from "@/lib/utils";
@@ -15,14 +14,12 @@ interface KiloHeaderProps {
 }
 
 export function KiloHeader({ isKiloServerRunning, onStart, onStop, onClearLogs, status }: KiloHeaderProps) {
-  const { isKiloInstalled, selectedKiloModel, kiloAvailableModels } = useAppStore(
+  const { isKiloInstalled } = useAppStore(
     useShallow(state => ({
       isKiloInstalled: state.isKiloInstalled,
-      selectedKiloModel: state.selectedKiloModel,
-      kiloAvailableModels: state.kiloAvailableModels,
     }))
   );
-  const { installKiloCli, setSelectedKiloModel } = useAppActions();
+  const { installKiloCli } = useAppActions();
 
   return (
     <header className="flex items-center justify-between p-3 border-b shrink-0 bg-card">
@@ -63,20 +60,6 @@ export function KiloHeader({ isKiloServerRunning, onStart, onStop, onClearLogs, 
           </Button>
         ) : (
           <>
-            {kiloAvailableModels.length > 0 && (
-              <Select value={selectedKiloModel} onValueChange={setSelectedKiloModel} disabled={isKiloServerRunning}>
-                <SelectTrigger className="h-8 w-[150px] md:w-[250px] text-xs font-mono">
-                  <SelectValue placeholder="Chọn AI Model..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {kiloAvailableModels.map(m => (
-                    <SelectItem key={m.id} value={m.id} className="text-xs font-mono">
-                      {m.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
             {isKiloServerRunning ? (
               <Button variant="destructive" size="sm" onClick={onStop} className="h-8">
                 <Square className="h-3.5 w-3.5 mr-1.5" /> Dừng

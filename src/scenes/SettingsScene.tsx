@@ -19,9 +19,14 @@ import { ProjectTab } from "./settings/ProjectTab";
 import { ProfileTab } from "./settings/ProfileTab";
 import { ExportTab } from "./settings/ExportTab";
 import { AITab } from "./settings/AITab"; // THÊM IMPORT
+import { KiloTab } from "./settings/KiloTab";
 import { type SettingsTab } from "@/hooks/useSettingsScene";
+import { Terminal } from "lucide-react";
+import { useAppStore, useAppActions } from "@/store/appStore";
 
 export function SettingsScene() {
+  const { fetchKiloModels } = useAppActions();
+  const kiloAvailableModels = useAppStore(state => state.kiloAvailableModels);
   const { t } = useTranslation();
   const {
     activeTab,
@@ -86,6 +91,7 @@ export function SettingsScene() {
     { id: "profile", label: t("settings.tabs.profile"), icon: User },
     { id: "export", label: t("settings.tabs.export"), icon: FileOutput },
     { id: "ai", label: t("settings.tabs.ai"), icon: Bot }, // THÊM TAB
+    { id: "kilo", label: t("settings.tabs.kilo"), icon: Terminal },
   ];
 
   const renderContent = () => {
@@ -153,8 +159,6 @@ export function SettingsScene() {
             topP={topP}
             topK={topK}
             maxTokens={maxTokens}
-            kiloPort={kiloPort}
-            selectedKiloModel={selectedKiloModel}
             onSave={async (newSettings) => {
               await updateAppSettings({
                 openRouterApiKey: newSettings.apiKey,
@@ -166,6 +170,19 @@ export function SettingsScene() {
                 topP: newSettings.topP,
                 topK: newSettings.topK,
                 maxTokens: newSettings.maxTokens,
+              });
+            }}
+          />
+        );
+      case "kilo":
+        return (
+          <KiloTab
+            kiloPort={kiloPort}
+            selectedKiloModel={selectedKiloModel}
+            kiloAvailableModels={kiloAvailableModels}
+            onRefreshModels={fetchKiloModels}
+            onSave={async (newSettings) => {
+              await updateAppSettings({
                 kiloPort: newSettings.kiloPort,
                 selectedKiloModel: newSettings.selectedKiloModel,
               });

@@ -103,6 +103,21 @@ export default function Popup() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* Kilo Port Section */}
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <Label htmlFor="kilo-port" className="text-[10px] uppercase font-bold tracking-widest">CỔNG KILO SERVER (PORT)</Label>
+            <Input
+              id="kilo-port"
+              type="number"
+              value={kiloPort}
+              onChange={(e) => setKiloPort(e.target.value)}
+              placeholder="9999"
+              className="text-sm font-mono"
+            />
+          </div>
+        </div>
+
         {/* Token Section */}
         <div className="space-y-3">
           <div className="flex items-center justify-between border-b border-border pb-2">
@@ -128,37 +143,26 @@ export default function Popup() {
                   className="text-sm font-mono"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="kilo-port" className="text-[10px] uppercase font-bold tracking-widest">CỔNG KILO SERVER</Label>
-                <Input
-                  id="kilo-port"
-                  type="number"
-                  value={kiloPort}
-                  onChange={(e) => setKiloPort(e.target.value)}
-                  placeholder="9999"
-                  className="text-sm font-mono"
-                />
-              </div>
               
-              <Button 
-                onClick={handleSaveToken}
-                className="w-full bg-foreground text-background font-black uppercase text-xs tracking-widest"
-                size="sm"
-              >
-                {saved ? (
-                  <>
-                    <CheckCircle2 className="h-3 w-3 mr-2" />
-                    ĐÃ LƯU THÀNH CÔNG
-                  </>
-                ) : (
-                  'LƯU TOKEN VÀO BỘ NHỚ'
-                )}
-              </Button>
-
               <TokenGuide />
             </div>
           )}
         </div>
+
+        {/* Save Button for both Port and Token */}
+        <Button 
+          onClick={handleSaveToken}
+          className="w-full bg-foreground text-background font-black uppercase text-xs tracking-widest h-10"
+        >
+          {saved ? (
+            <>
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              ĐÃ LƯU CẤU HÌNH
+            </>
+          ) : (
+            'LƯU CẤU HÌNH'
+          )}
+        </Button>
 
         <div className="space-y-4">
           {/* Call Kilo Button */}

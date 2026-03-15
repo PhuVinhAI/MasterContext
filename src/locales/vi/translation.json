@@ -245,7 +245,8 @@
       "project": "Dự án",
       "profile": "Hồ sơ",
       "export": "Xuất File",
-      "ai": "AI"
+      "ai": "AI",
+      "kilo": "Kilo Agent"
     },
     "appearance": {
       "title": "Cài đặt Giao diện",
@@ -372,13 +373,15 @@
         "topP": "Top-P",
         "topK": "Top-K",
         "maxTokens": "Số Token Tối đa"
-      },
-      "kilo": {
-        "title": "Cài đặt Kilo Agent",
-        "port": "Cổng (Port) Kilo Server",
-        "model": "Kilo Model Mặc định",
-        "description": "Port này phải khớp với cấu hình Port trong AI Studio Archiver Extension. Mặc định là 9999."
       }
+    },
+    "kilo": {
+      "title": "Cài đặt Kilo Agent",
+      "port": "Cổng (Port) Kilo Server",
+      "model": "Kilo Model Mặc định",
+      "description": "Port này phải khớp với cấu hình Port trong AI Studio Archiver Extension. Mặc định là 9999.",
+      "refreshModels": "Tải lại danh sách Models",
+      "availableModels": "Danh sách Models cục bộ từ Kilo CLI:"
     }
   },
   "welcome": {

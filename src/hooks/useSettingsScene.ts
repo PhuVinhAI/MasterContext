@@ -9,7 +9,8 @@ export type SettingsTab =
   | "project"
   | "profile"
   | "export"
-  | "ai";
+  | "ai"
+  | "kilo";
 
 export function useSettingsScene() {
   const {

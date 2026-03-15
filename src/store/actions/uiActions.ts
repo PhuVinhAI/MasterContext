@@ -116,6 +116,7 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
   stopKiloServer: async () => {
     try {
       await invoke("stop_kilo_server");
+      set({ isKiloServerRunning: false });
     } catch (e) {
       console.error("Failed to stop Kilo Server", e);
     }
