@@ -8,6 +8,7 @@ use tokio::process::Command;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use std::process::Stdio;
 use tauri::{AppHandle, Emitter};
+use tauri_plugin_notification::NotificationExt;
 
 #[derive(Deserialize)]
 pub struct KiloRequest {
@@ -377,12 +378,28 @@ async fn handle_kilo(
 
             if status.success() {
                 let _ = app_handle.emit("kilo_log", "[SUCCESS] Kilo CLI đã hoàn thành nhiệm vụ thành công.");
+                
+                // Hiển thị thông báo Notification ra hệ điều hành
+                let _ = app_handle.notification()
+                    .builder()
+                    .title("Kilo Agent (Master Context)")
+                    .body("Đã hoàn thành phân tích và cập nhật mã nguồn!")
+                    .show();
+
                 Ok(Json(ResultResponse {
                     success: true,
                     message: "Kilo CLI đã thực thi xong nhiệm vụ".into(),
                 }))
             } else {
                 let _ = app_handle.emit("kilo_log", format!("[ERROR] Kilo CLI kết thúc với mã lỗi: {}", status.code().unwrap_or(-1)));
+                
+                // Thông báo lỗi ra hệ điều hành
+                let _ = app_handle.notification()
+                    .builder()
+                    .title("Kilo Agent (Lỗi)")
+                    .body("Thực thi thất bại, vui lòng kiểm tra Kilo Panel.")
+                    .show();
+
                 Err((
                     axum::http::StatusCode::INTERNAL_SERVER_ERROR,
                     Json(ErrorResponse { error: "Kilo CLI kết thúc với lỗi. Vui lòng xem log Kilo Panel.".into() }),

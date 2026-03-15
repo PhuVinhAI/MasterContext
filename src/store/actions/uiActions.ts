@@ -149,14 +149,17 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
         
         const parts = cleanLine.split(/\s+/);
         if (parts.length > 0) {
-           let id = parts.length > 1 ? parts[1] : parts[0];
-           if (parts[0].includes('/')) id = parts[0];
+           let id = parts.find(p => p.includes('/')) || parts[0];
            models.push({ id, label: cleanLine });
         }
       });
       
       set({ kiloAvailableModels: models });
-      if (models.length > 0 && !_get().selectedKiloModel) {
+      
+      const savedModel = _get().selectedKiloModel;
+      const modelExists = models.some(m => m.id === savedModel);
+
+      if (models.length > 0 && (!savedModel || !modelExists)) {
           _get().actions.setSelectedKiloModel(models[0].id);
       }
     } catch (e) {

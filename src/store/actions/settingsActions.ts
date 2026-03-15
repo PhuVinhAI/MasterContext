@@ -286,6 +286,8 @@ export const createSettingsActions: StateCreator<
           projectAiModels.find((m) => m.id === get().selectedAiModel)?.id ||
           projectAiModels[0]?.id ||
           "",
+        // Đảm bảo Kilo Model cũng được cập nhật vào state khi load/update settings
+        selectedKiloModel: fullSettings.selectedKiloModel,
       });
     } catch (e) {
       console.error("Failed to update app settings:", e);
