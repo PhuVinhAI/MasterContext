@@ -151,6 +151,7 @@ pub fn start_group_export(
                 &app,
                 &project_data.always_apply_text,
                 project_data.append_ide_prompt.unwrap_or(false),
+                project_data.append_group_prompt.unwrap_or(false),
             );
             let exclude_extensions = project_data.export_exclude_extensions;
             let root_path = Path::new(&root_path_str);
@@ -218,6 +219,7 @@ pub fn generate_group_context(
         &app,
         &project_data.always_apply_text,
         project_data.append_ide_prompt.unwrap_or(false),
+        project_data.append_group_prompt.unwrap_or(false),
     );
     let exclude_extensions = project_data.export_exclude_extensions;
     let root_path = Path::new(&root_path_str);

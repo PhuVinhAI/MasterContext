@@ -127,6 +127,7 @@ pub fn clone_profile(
         export_dummy_logic: Some(false),
         always_apply_text: Some("".to_string()),
         append_ide_prompt: source_data.append_ide_prompt,
+        append_group_prompt: source_data.append_group_prompt,
         export_exclude_extensions: Some(vec![]),
         git_export_mode_is_context: Some(false),
     };

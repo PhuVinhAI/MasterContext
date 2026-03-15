@@ -188,6 +188,7 @@ pub struct CachedProjectData {
     pub export_dummy_logic: Option<bool>, // <-- THÊM CHẾ ĐỘ DUMMY DLL
     pub always_apply_text: Option<String>,
     pub append_ide_prompt: Option<bool>,
+    pub append_group_prompt: Option<bool>,
     pub export_exclude_extensions: Option<Vec<String>>,
     pub git_export_mode_is_context: Option<bool>,
 }

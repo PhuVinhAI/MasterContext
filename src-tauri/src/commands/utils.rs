@@ -21,10 +21,28 @@ pub fn get_ide_prompt(app: &tauri::AppHandle) -> String {
         .unwrap_or_default()
 }
 
+pub fn get_group_prompt(app: &tauri::AppHandle) -> String {
+    let resource_dir = match app.path().resource_dir() {
+        Ok(dir) => dir,
+        Err(_) => return String::new(),
+    };
+    let path1 = resource_dir.join("resources").join("group.md");
+    let path2 = resource_dir.join("_up_").join("resources").join("group.md");
+    let path3 = resource_dir.join("group.md");
+    let path4 = std::path::PathBuf::from("../resources").join("group.md");
+
+    std::fs::read_to_string(&path1)
+        .or_else(|_| std::fs::read_to_string(&path2))
+        .or_else(|_| std::fs::read_to_string(&path3))
+        .or_else(|_| std::fs::read_to_string(&path4))
+        .unwrap_or_default()
+}
+
 pub fn build_always_apply_text(
     app: &tauri::AppHandle,
     custom_text: &Option<String>,
     append_ide: bool,
+    append_group: bool,
 ) -> Option<String> {
     let mut final_text = String::new();
     if let Some(text) = custom_text {
@@ -37,6 +55,15 @@ pub fn build_always_apply_text(
                 final_text.push_str("\n\n");
             }
             final_text.push_str(&ide_prompt);
+        }
+    }
+    if append_group {
+        let group_prompt = get_group_prompt(app);
+        if !group_prompt.is_empty() {
+            if !final_text.is_empty() {
+                final_text.push_str("\n\n");
+            }
+            final_text.push_str(&group_prompt);
         }
     }
     if final_text.is_empty() {
@@ -76,6 +103,7 @@ pub fn perform_auto_export(
         app,
         &data.always_apply_text,
         data.append_ide_prompt.unwrap_or(false),
+        data.append_group_prompt.unwrap_or(false),
     );
     let exclude_extensions = &data.export_exclude_extensions;
     let all_files: Vec<String> = data.file_metadata_cache.keys().cloned().collect();

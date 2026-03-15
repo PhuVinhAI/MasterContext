@@ -28,6 +28,7 @@ fs.mkdirSync(resDir);
 console.log('Copying base config files...');
 fs.copyFileSync(path.join(extDir, 'apply.md'), path.join(resDir, 'apply.md'));
 fs.copyFileSync(path.join(extDir, 'code.md'), path.join(resDir, 'code.md'));
+fs.copyFileSync(path.join(extDir, 'group.md'), path.join(resDir, 'group.md'));
 fs.copyFileSync(path.join(extDir, 'opencode.json'), path.join(resDir, 'opencode.json'));
 
 // 4. Create README for user

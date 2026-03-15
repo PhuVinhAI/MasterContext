@@ -46,6 +46,7 @@ export function SettingsScene() {
     exportDummyLogic,
     alwaysApplyText,
     appendIdePrompt,
+    appendGroupPrompt,
     exportExcludeExtensions,
     gitExportModeIsContext,
     googleApiKey,
@@ -73,6 +74,7 @@ export function SettingsScene() {
     setExportDummyLogic,
     setAlwaysApplyText,
     setAppendIdePrompt,
+    setAppendGroupPrompt,
     setExportExcludeExtensions,
     handleToggleSync,
     handleChooseSyncPath,
@@ -128,6 +130,8 @@ export function SettingsScene() {
             setAlwaysApplyText={setAlwaysApplyText}
             appendIdePrompt={appendIdePrompt}
             setAppendIdePrompt={setAppendIdePrompt}
+            appendGroupPrompt={appendGroupPrompt}
+            setAppendGroupPrompt={setAppendGroupPrompt}
             gitExportModeIsContext={gitExportModeIsContext}
             setGitExportMode={setGitExportMode}
           />

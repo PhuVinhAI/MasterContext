@@ -44,6 +44,7 @@ export const initialState = {
   exportDummyLogic: false,
   alwaysApplyText: null,
   appendIdePrompt: false,
+  appendGroupPrompt: false,
   exportExcludeExtensions: [],
   gitExportModeIsContext: false,
   profiles: ["default"],

@@ -19,6 +19,8 @@ interface ProfileTabProps {
   setAlwaysApplyText: (text: string) => Promise<void>;
   appendIdePrompt: boolean;
   setAppendIdePrompt: (enabled: boolean) => void;
+  appendGroupPrompt: boolean;
+  setAppendGroupPrompt: (enabled: boolean) => void;
   gitExportModeIsContext: boolean;
   setGitExportMode: (enabled: boolean) => Promise<void>;
 }
@@ -32,6 +34,8 @@ export function ProfileTab({
   setAlwaysApplyText,
   appendIdePrompt,
   setAppendIdePrompt,
+  appendGroupPrompt,
+  setAppendGroupPrompt,
   gitExportModeIsContext,
   setGitExportMode,
 }: ProfileTabProps) {
@@ -39,6 +43,7 @@ export function ProfileTab({
   const [localText, setLocalText] = useState("");
   const [isSavingText, setIsSavingText] = useState(false);
   const [isCopiedPrompt, setIsCopiedPrompt] = useState(false);
+  const [isCopiedGroupPrompt, setIsCopiedGroupPrompt] = useState(false);
 
   const handleCopyIdePrompt = async () => {
     try {
@@ -50,6 +55,20 @@ export function ProfileTab({
       }
     } catch (error) {
       console.error("Failed to copy IDE prompt:", error);
+      await message(t("errors.copyFailed", { error }), { title: t("common.error"), kind: "error" });
+    }
+  };
+
+  const handleCopyGroupPrompt = async () => {
+    try {
+      const content = await invoke<string>("get_resource_file_content", { filename: "group.md" });
+      if (content) {
+        await writeText(content);
+        setIsCopiedGroupPrompt(true);
+        setTimeout(() => setIsCopiedGroupPrompt(false), 2000);
+      }
+    } catch (error) {
+      console.error("Failed to copy Group prompt:", error);
       await message(t("errors.copyFailed", { error }), { title: t("common.error"), kind: "error" });
     }
   };
@@ -141,7 +160,7 @@ export function ProfileTab({
               variant="outline"
               size="icon"
               onClick={handleCopyIdePrompt}
-              title="Sao chép Prompt IDE chuẩn"
+              title={t("settings.profile.alwaysApply.appendIde.copyTooltip")}
               className="h-8 w-8"
             >
               {isCopiedPrompt ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
@@ -150,6 +169,30 @@ export function ProfileTab({
               id="append-ide-prompt"
               checked={appendIdePrompt}
               onCheckedChange={setAppendIdePrompt}
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-between mb-4 gap-4">
+          <Label htmlFor="append-group-prompt" className="flex flex-col items-start gap-1 flex-1">
+            <span>{t("settings.profile.alwaysApply.appendGroup.label")}</span>
+            <span className="text-xs text-muted-foreground">
+              {t("settings.profile.alwaysApply.appendGroup.description")}
+            </span>
+          </Label>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleCopyGroupPrompt}
+              title={t("settings.profile.alwaysApply.appendGroup.copyTooltip")}
+              className="h-8 w-8"
+            >
+              {isCopiedGroupPrompt ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            </Button>
+            <Switch
+              id="append-group-prompt"
+              checked={appendGroupPrompt}
+              onCheckedChange={setAppendGroupPrompt}
             />
           </div>
         </div>

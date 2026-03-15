@@ -14,6 +14,7 @@ import {
   ClipboardCopy,
   BrainCircuit,
   Tag,
+  Sparkles,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -52,6 +53,7 @@ interface GroupItemProps {
   onExport: (group: Group) => void;
   onSaveTokenLimit: (group: Group, limit?: number) => void;
   onDelete: (group: Group) => void;
+  onOpenAiUpdate: (group: Group) => void;
 }
 
 export function GroupItem({
@@ -67,6 +69,7 @@ export function GroupItem({
   onExport,
   onSaveTokenLimit,
   onDelete,
+  onOpenAiUpdate,
 }: GroupItemProps) {
   const { t } = useTranslation();
   if (isEditing) {
@@ -140,6 +143,10 @@ export function GroupItem({
             </DropdownMenuSubContent>
           </DropdownMenuSub>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => onOpenAiUpdate(group)}>
+            <Sparkles className="mr-2 h-4 w-4 text-purple-500" />
+            <span>{t("groupItem.menu.aiUpdate")}</span>
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onCopyContext(group)}>
             <ClipboardCopy className="mr-2 h-4 w-4" />
             <span>{t("groupItem.menu.copyContext")}</span>

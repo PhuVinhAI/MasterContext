@@ -106,6 +106,7 @@
     "menu": {
       "rename": "Đổi tên",
       "editTokenLimit": "Sửa giới hạn Token",
+      "aiUpdate": "Cập nhật qua AI",
       "attachToAi": "Đính kèm vào AI",
       "copyContext": "Sao chép Ngữ cảnh",
       "exportContext": "Xuất Ngữ cảnh",
@@ -114,6 +115,13 @@
     "deleteDialog": {
       "title": "Bạn có chắc chắn muốn xóa?",
       "description": "Hành động này không thể hoàn tác. Nhóm \"{{name}}\" sẽ bị xóa vĩnh viễn."
+    },
+    "aiUpdateDialog": {
+      "title": "Cập nhật nhóm bằng AI: {{name}}",
+      "description": "Dán kết quả có định dạng Diff (+ path / - path) do AI sinh ra vào đây để thêm/bớt file hàng loạt.",
+      "placeholder": "+ src/components/Button.tsx\n- src/components/OldButton.tsx",
+      "apply": "Áp dụng thay đổi",
+      "success": "Đã thêm {{added}} file và xóa {{removed}} file khỏi nhóm."
     }
   },
   "groupManager": {
@@ -310,7 +318,13 @@
         "saveButton": "Lưu văn bản",
         "appendIde": {
           "label": "Đính kèm Prompt IDE (Chuẩn)",
-          "description": "Tự động chèn ẩn Prompt IDE chuẩn vào cuối ngữ cảnh để tối ưu cho AI Agent (không hiển thị trong khung nhập)."
+          "description": "Tự động chèn ẩn Prompt IDE chuẩn vào cuối ngữ cảnh để tối ưu cho AI Agent.",
+          "copyTooltip": "Sao chép Prompt IDE chuẩn"
+        },
+        "appendGroup": {
+          "label": "Đính kèm Prompt quản lý Nhóm",
+          "description": "Tự động chèn hướng dẫn cho AI xuất định dạng + / - để cập nhật nhóm.",
+          "copyTooltip": "Sao chép Prompt Nhóm chuẩn"
         }
       }
     },

@@ -20,6 +20,7 @@ export interface CachedProjectData {
   export_dummy_logic?: boolean | null;
   always_apply_text?: string | null;
   append_ide_prompt?: boolean | null;
+  append_group_prompt?: boolean | null;
   export_exclude_extensions?: string[];
   git_export_mode_is_context?: boolean | null;
 }
@@ -228,6 +229,7 @@ export interface AppState {
   exportDummyLogic: boolean;
   alwaysApplyText: string | null;
   appendIdePrompt: boolean;
+  appendGroupPrompt: boolean;
   exportExcludeExtensions: string[];
   gitExportModeIsContext: boolean;
 

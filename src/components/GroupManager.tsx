@@ -10,6 +10,7 @@ import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useShallow } from "zustand/react/shallow";
 import { GroupItem } from "./GroupItem";
+import { GroupAIUpdateDialog } from "./GroupAIUpdateDialog";
 
 interface GroupManagerProps {
   profileName: string;
@@ -60,6 +61,7 @@ export function GroupManager({
     switchProfile,
     attachItemToAi,
     updateGroup,
+    _updateGroupFromAi,
   } = useAppActions();
 
   // ... (state và effects cho việc export/copy giữ nguyên)
@@ -69,6 +71,8 @@ export function GroupManager({
     context: string;
     group: Group;
   } | null>(null);
+
+  const [aiUpdateGroup, setAiUpdateGroup] = useState<Group | null>(null);
 
   useEffect(() => {
     const unlistenComplete = listen<{ groupId: string; context: string }>(
@@ -215,6 +219,37 @@ export function GroupManager({
     );
   };
 
+  const handleApplyAiUpdate = async (text: string) => {
+    if (!aiUpdateGroup || !rootPath) return;
+    
+    const lines = text.split('\n');
+    const pathsToAdd: string[] = [];
+    const pathsToRemove: string[] = [];
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('+ ')) {
+        pathsToAdd.push(trimmed.substring(2).trim());
+      } else if (trimmed.startsWith('- ')) {
+        pathsToRemove.push(trimmed.substring(2).trim());
+      }
+    }
+
+    try {
+      const result = await invoke<import("@/store/types").AIGroupUpdateResult>("update_group_paths_from_ai", {
+        path: rootPath,
+        profileName,
+        groupId: aiUpdateGroup.id,
+        pathsToAdd,
+        pathsToRemove
+      });
+      _updateGroupFromAi(result.updatedGroup);
+      message(t("groupItem.aiUpdateDialog.success", { added: pathsToAdd.length, removed: pathsToRemove.length }), { title: t("common.success"), kind: "info" });
+    } catch (e) {
+      message(t("errors.error", { error: e }), { title: t("common.error"), kind: "error" });
+    }
+  };
+
   return (
     <>
       {groups.length === 0 &&
@@ -250,10 +285,20 @@ export function GroupManager({
                 onExport={handleExport}
                 onSaveTokenLimit={handleSaveTokenLimit}
                 onDelete={handleDeleteGroup}
+                onOpenAiUpdate={setAiUpdateGroup}
               />
             );
           })}
         </div>
+      )}
+      
+      {aiUpdateGroup && (
+        <GroupAIUpdateDialog
+          isOpen={!!aiUpdateGroup}
+          onClose={() => setAiUpdateGroup(null)}
+          groupName={aiUpdateGroup.name}
+          onApply={handleApplyAiUpdate}
+        />
       )}
     </>
   );

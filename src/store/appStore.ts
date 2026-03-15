@@ -95,6 +95,7 @@ export interface AppState {
   exportDummyLogic: boolean;
   alwaysApplyText: string | null;
   appendIdePrompt: boolean;
+  appendGroupPrompt: boolean;
   exportExcludeExtensions: string[];
   gitExportModeIsContext: boolean;
 

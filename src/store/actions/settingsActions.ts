@@ -41,6 +41,7 @@ export interface SettingsActions {
   setExportDummyLogic: (enabled: boolean) => Promise<void>;
   setAlwaysApplyText: (text: string) => Promise<void>;
   setAppendIdePrompt: (enabled: boolean) => Promise<void>;
+  setAppendGroupPrompt: (enabled: boolean) => Promise<void>;
   setExportExcludeExtensions: (extensions: string[]) => Promise<void>;
   setGitExportMode: (enabled: boolean) => Promise<void>;
   updateAppSettings: (settings: Partial<Omit<AppSettings, 'nvidiaApiKey'>>) => Promise<void>;
@@ -216,6 +217,14 @@ export const createSettingsActions: StateCreator<
     await _persistExportToggle(rootPath, activeProfile, "set_append_ide_prompt_setting", enabled,
       () => set((s) => ({ appendIdePrompt: !s.appendIdePrompt })),
       "Không thể lưu cài đặt Prompt IDE");
+  },
+  setAppendGroupPrompt: async (enabled: boolean) => {
+    const { rootPath, activeProfile } = get();
+    if (!rootPath) return;
+    set({ appendGroupPrompt: enabled });
+    await _persistExportToggle(rootPath, activeProfile, "set_append_group_prompt_setting", enabled,
+      () => set((s) => ({ appendGroupPrompt: !s.appendGroupPrompt })),
+      "Không thể lưu cài đặt Prompt Nhóm");
   },
   setExportExcludeExtensions: async (extensions: string[]) => {
     const { rootPath, activeProfile } = get();

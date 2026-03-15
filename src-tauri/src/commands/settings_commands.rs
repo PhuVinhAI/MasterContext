@@ -195,6 +195,18 @@ pub fn set_append_ide_prompt_setting(
 }
 
 #[command]
+pub fn set_append_group_prompt_setting(
+    app: AppHandle,
+    path: String,
+    profile_name: String,
+    enabled: bool,
+) -> Result<(), String> {
+    let mut project_data = file_cache::load_project_data(&app, &path, &profile_name)?;
+    project_data.append_group_prompt = Some(enabled);
+    file_cache::save_project_data(&app, &path, &profile_name, &project_data)
+}
+
+#[command]
 pub fn set_always_apply_text_setting(
     app: AppHandle,
     path: String,
