@@ -325,6 +325,11 @@
           "label": "Append Group Manager Prompt",
           "description": "Automatically append instructions for AI to output +/- format for group updates.",
           "copyTooltip": "Copy standard Group Prompt"
+        },
+        "appendJules": {
+          "label": "Append Jules Prompt (Cloud Agent)",
+          "description": "Automatically append instructions for the Jules Agent running in a cloud environment.",
+          "copyTooltip": "Copy standard Jules Prompt"
         }
       }
     },

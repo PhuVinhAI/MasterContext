@@ -27,6 +27,7 @@ fs.mkdirSync(resDir);
 // 3. Copy base config files
 console.log('Copying base config files...');
 fs.copyFileSync(path.join(extDir, 'apply.md'), path.join(resDir, 'apply.md'));
+fs.copyFileSync(path.join(extDir, 'jules.md'), path.join(resDir, 'jules.md'));
 fs.copyFileSync(path.join(extDir, 'code.md'), path.join(resDir, 'code.md'));
 fs.copyFileSync(path.join(extDir, 'group.md'), path.join(resDir, 'group.md'));
 fs.copyFileSync(path.join(extDir, 'opencode.json'), path.join(resDir, 'opencode.json'));

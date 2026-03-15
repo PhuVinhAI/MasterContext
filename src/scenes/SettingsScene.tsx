@@ -47,6 +47,7 @@ export function SettingsScene() {
     alwaysApplyText,
     appendIdePrompt,
     appendGroupPrompt,
+    appendJulesPrompt,
     exportExcludeExtensions,
     gitExportModeIsContext,
     googleApiKey,
@@ -75,6 +76,7 @@ export function SettingsScene() {
     setAlwaysApplyText,
     setAppendIdePrompt,
     setAppendGroupPrompt,
+    setAppendJulesPrompt,
     setExportExcludeExtensions,
     handleToggleSync,
     handleChooseSyncPath,
@@ -132,6 +134,8 @@ export function SettingsScene() {
             setAppendIdePrompt={setAppendIdePrompt}
             appendGroupPrompt={appendGroupPrompt}
             setAppendGroupPrompt={setAppendGroupPrompt}
+            appendJulesPrompt={appendJulesPrompt}
+            setAppendJulesPrompt={setAppendJulesPrompt}
             gitExportModeIsContext={gitExportModeIsContext}
             setGitExportMode={setGitExportMode}
           />

@@ -325,6 +325,11 @@
           "label": "Đính kèm Prompt quản lý Nhóm",
           "description": "Tự động chèn hướng dẫn cho AI xuất định dạng + / - để cập nhật nhóm.",
           "copyTooltip": "Sao chép Prompt Nhóm chuẩn"
+        },
+        "appendJules": {
+          "label": "Đính kèm Prompt Jules (Cloud Agent)",
+          "description": "Tự động chèn hướng dẫn cho Jules Agent chạy trên môi trường mây.",
+          "copyTooltip": "Sao chép Prompt Jules chuẩn"
         }
       }
     },

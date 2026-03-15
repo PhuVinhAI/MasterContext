@@ -21,6 +21,7 @@ export interface CachedProjectData {
   always_apply_text?: string | null;
   append_ide_prompt?: boolean | null;
   append_group_prompt?: boolean | null;
+  append_jules_prompt?: boolean | null;
   export_exclude_extensions?: string[];
   git_export_mode_is_context?: boolean | null;
 }
@@ -230,6 +231,7 @@ export interface AppState {
   alwaysApplyText: string | null;
   appendIdePrompt: boolean;
   appendGroupPrompt: boolean;
+  appendJulesPrompt: boolean;
   exportExcludeExtensions: string[];
   gitExportModeIsContext: boolean;
 

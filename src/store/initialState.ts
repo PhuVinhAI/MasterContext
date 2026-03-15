@@ -45,6 +45,7 @@ export const initialState = {
   alwaysApplyText: null,
   appendIdePrompt: false,
   appendGroupPrompt: false,
+  appendJulesPrompt: false,
   exportExcludeExtensions: [],
   gitExportModeIsContext: false,
   profiles: ["default"],

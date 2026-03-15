@@ -21,6 +21,8 @@ interface ProfileTabProps {
   setAppendIdePrompt: (enabled: boolean) => void;
   appendGroupPrompt: boolean;
   setAppendGroupPrompt: (enabled: boolean) => void;
+  appendJulesPrompt: boolean;
+  setAppendJulesPrompt: (enabled: boolean) => void;
   gitExportModeIsContext: boolean;
   setGitExportMode: (enabled: boolean) => Promise<void>;
 }
@@ -36,6 +38,8 @@ export function ProfileTab({
   setAppendIdePrompt,
   appendGroupPrompt,
   setAppendGroupPrompt,
+  appendJulesPrompt,
+  setAppendJulesPrompt,
   gitExportModeIsContext,
   setGitExportMode,
 }: ProfileTabProps) {
@@ -44,6 +48,7 @@ export function ProfileTab({
   const [isSavingText, setIsSavingText] = useState(false);
   const [isCopiedPrompt, setIsCopiedPrompt] = useState(false);
   const [isCopiedGroupPrompt, setIsCopiedGroupPrompt] = useState(false);
+  const [isCopiedJulesPrompt, setIsCopiedJulesPrompt] = useState(false);
 
   const handleCopyIdePrompt = async () => {
     try {
@@ -69,6 +74,20 @@ export function ProfileTab({
       }
     } catch (error) {
       console.error("Failed to copy Group prompt:", error);
+      await message(t("errors.copyFailed", { error }), { title: t("common.error"), kind: "error" });
+    }
+  };
+
+  const handleCopyJulesPrompt = async () => {
+    try {
+      const content = await invoke<string>("get_resource_file_content", { filename: "jules.md" });
+      if (content) {
+        await writeText(content);
+        setIsCopiedJulesPrompt(true);
+        setTimeout(() => setIsCopiedJulesPrompt(false), 2000);
+      }
+    } catch (error) {
+      console.error("Failed to copy Jules prompt:", error);
       await message(t("errors.copyFailed", { error }), { title: t("common.error"), kind: "error" });
     }
   };
@@ -193,6 +212,30 @@ export function ProfileTab({
               id="append-group-prompt"
               checked={appendGroupPrompt}
               onCheckedChange={setAppendGroupPrompt}
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-between mb-4 gap-4">
+          <Label htmlFor="append-jules-prompt" className="flex flex-col items-start gap-1 flex-1">
+            <span>{t("settings.profile.alwaysApply.appendJules.label")}</span>
+            <span className="text-xs text-muted-foreground">
+              {t("settings.profile.alwaysApply.appendJules.description")}
+            </span>
+          </Label>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleCopyJulesPrompt}
+              title={t("settings.profile.alwaysApply.appendJules.copyTooltip")}
+              className="h-8 w-8"
+            >
+              {isCopiedJulesPrompt ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            </Button>
+            <Switch
+              id="append-jules-prompt"
+              checked={appendJulesPrompt}
+              onCheckedChange={setAppendJulesPrompt}
             />
           </div>
         </div>
