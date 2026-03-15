@@ -120,6 +120,11 @@ pub fn run() {
         .expect("error while building tauri application")
         .run(|app_handle, event| match event {
             tauri::RunEvent::ExitRequested { .. } => {
+                let abort_state = app_handle.state::<KiloAbortSignal>();
+                if let Some(tx) = abort_state.0.lock().unwrap().take() {
+                    let _ = tx.send(());
+                }
+                
                 let state = app_handle.state::<KiloServerHandle>();
                 if let Some(tx) = state.0.lock().unwrap().take() {
                     let _ = tx.send(());

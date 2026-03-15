@@ -344,14 +344,16 @@ async fn handle_kilo(
         c.args(&["/c", &command_string])
          .current_dir(&current_dir)
          .stdout(Stdio::piped())
-         .stderr(Stdio::piped());
+         .stderr(Stdio::piped())
+         .kill_on_drop(true);
         c
     } else {
         let mut c = Command::new(cmd_name);
         c.args(&["run", "--auto", &short_prompt])
          .current_dir(&current_dir)
          .stdout(Stdio::piped())
-         .stderr(Stdio::piped());
+         .stderr(Stdio::piped())
+         .kill_on_drop(true);
         c
     };
 
@@ -371,6 +373,7 @@ async fn handle_kilo(
 
     match child_cmd.spawn() {
         Ok(mut process) => {
+            let pid = process.id();
             let stdout = process.stdout.take().expect("Failed to open stdout");
             let stderr = process.stderr.take().expect("Failed to open stderr");
 
@@ -435,6 +438,13 @@ async fn handle_kilo(
                     }
                 }
                 _ = abort_rx => {
+                    #[cfg(target_os = "windows")]
+                    if let Some(p) = pid {
+                        let _ = tokio::process::Command::new("taskkill")
+                            .args(&["/F", "/T", "/PID", &p.to_string()])
+                            .output()
+                            .await;
+                    }
                     let _ = process.kill().await;
                     let _ = fs::remove_file(&temp_filepath);
                     let _ = app_handle.emit("kilo_log", "[ERROR] Kilo CLI đã bị buộc dừng (Killed) bởi người dùng.");

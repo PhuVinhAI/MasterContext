@@ -120,7 +120,10 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
   stopKiloServer: async () => {
     try {
       await invoke("stop_kilo_server");
-      set({ isKiloServerRunning: false, kiloTaskStatus: "idle" });
+      // Chỉ cập nhật trạng thái tác vụ. 
+      // Trạng thái Server (isKiloServerRunning) sẽ được cập nhật dựa vào event "kilo_status_changed" từ Rust
+      // Điều này đảm bảo UI chờ Backend dọn dẹp sạch Port trước khi người dùng bấm bật lại.
+      set({ kiloTaskStatus: "idle" });
     } catch (e) {
       console.error("Failed to stop Kilo Server", e);
     }
