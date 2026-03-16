@@ -310,7 +310,11 @@ export const createAiChatActions: StateCreator<
               Authorization: `Bearer ${actualApiKey}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ ...payload, stream: streamResponse }),
+            body: JSON.stringify({ 
+              ...payload, 
+              stream: streamResponse,
+              ...(streamResponse ? { stream_options: { include_usage: true } } : {})
+            }),
             signal: controller.signal,
           }
         );

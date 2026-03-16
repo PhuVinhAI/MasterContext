@@ -250,6 +250,8 @@ export const handleNonStreamingResponse = async (
   isOpenRouter: boolean = true
 ): Promise<ChatMessage> => {
   const data = await response.json();
+  console.log("[DEBUG NON-STREAM RESPONSE]:", data);
+
   const assistantMessage = data.choices[0].message;
   const generationId = data.id;
 
@@ -258,7 +260,16 @@ export const handleNonStreamingResponse = async (
     assistantMessage.thoughts = assistantMessage.reasoning_content;
   }
 
-  if (generationId && isOpenRouter) {
+  // Extract standard OpenAI/NVIDIA usage if available
+  if (data.usage) {
+    assistantMessage.generationInfo = {
+      tokens_prompt: data.usage.prompt_tokens || 0,
+      tokens_completion: data.usage.completion_tokens || 0,
+      total_cost: 0,
+    };
+  }
+
+  if (generationId && isOpenRouter && !assistantMessage.generationInfo) {
     const fetchedInfo = await fetchGenerationInfoWithRetry(
       generationId,
       apiKey
@@ -317,19 +328,29 @@ export const handleStreamingResponse = async (
 
       try {
         const json = JSON.parse(line.substring(5));
+        
+        if (json.usage) {
+          console.log("[DEBUG STREAM USAGE CHUNK]:", json.usage);
+          finalUsage = {
+            tokens_prompt: json.usage.prompt_tokens || 0,
+            tokens_completion: json.usage.completion_tokens || 0,
+            total_cost: 0,
+          };
+        }
+
         if (json.id && !generationId) {
           generationId = json.id;
         }
 
-        const toolCallsChunk = json.choices[0]?.delta?.tool_calls;
+        const toolCallsChunk = json.choices?.[0]?.delta?.tool_calls;
         if (toolCallsChunk && toolCallsChunk.length > 0) {
           reader.cancel(); // Stop stream processing
           await handleToolCalls(toolCallsChunk, storeApi);
           return; // Exit fetch function
         }
 
-        const delta = json.choices[0]?.delta?.content || "";
-        const reasoning = json.choices[0]?.delta?.reasoning_content || "";
+        const delta = json.choices?.[0]?.delta?.content || "";
+        const reasoning = json.choices?.[0]?.delta?.reasoning_content || "";
         
         if (delta || reasoning) {
           if (isFirstChunk) {
