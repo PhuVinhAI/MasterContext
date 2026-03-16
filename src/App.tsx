@@ -612,11 +612,8 @@ function App() {
       listen("kilo_task_success", async () => {
         const state = useAppStore.getState();
         state.actions.setKiloTaskStatus("success");
-        await message(t("Trợ lý Kilo đã hoàn thành nhiệm vụ và cập nhật mã nguồn thành công!"), {
-          title: "Kilo Agent",
-          kind: "info",
-        });
 
+        // 1. Bắn thông báo Discord NGAY LẬP TỨC (Không bị block bởi UI Dialog)
         if (state.discordWebhookUrl) {
           const projectName = state.rootPath ? state.rootPath.split(/[/\\]/).pop() : "Dự án";
           try {
@@ -632,9 +629,16 @@ function App() {
           }
         }
 
+        // 2. Trigger rescan project ngay lập tức
         if (!state.isScanning) {
           state.actions.rescanProject();
         }
+
+        // 3. Hiển thị Dialog UI CUỐI CÙNG (Vì hàm này sẽ chặn luồng cho đến khi user bấm OK)
+        await message(t("Trợ lý Kilo đã hoàn thành nhiệm vụ và cập nhật mã nguồn thành công!"), {
+          title: "Kilo Agent",
+          kind: "info",
+        });
       })
     );
 
