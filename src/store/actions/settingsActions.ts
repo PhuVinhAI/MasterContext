@@ -296,6 +296,11 @@ export const createSettingsActions: StateCreator<
     try {
       await invoke("update_app_settings", { settings: fullSettings });
 
+      // Đồng bộ model Kilo xuống Backend (Rust) ngay lập tức để áp dụng ngay cho lần chạy tiếp theo
+      if (fullSettings.selectedKiloModel) {
+        await invoke("set_kilo_model", { model: fullSettings.selectedKiloModel }).catch(console.error);
+      }
+
       const projectAiModels: AppState["aiModels"] = (
         fullSettings.aiModels ?? ["openai/gpt-3.5-turbo"]
       )
