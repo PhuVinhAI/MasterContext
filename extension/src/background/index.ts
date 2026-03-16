@@ -186,10 +186,12 @@ async function executeKiloWorkflow(url: string, tabId?: number, isManual: boolea
     let prompt = lastTurn.content;
     if (!prompt) return;
 
-    const diffRegex = /<<<START_OF_DIFF>>>([\s\S]*?)<<<END_OF_DIFF>>>/g;
+    // Hỗ trợ cả dấu gạch dưới (START_OF_DIFF) và khoảng trắng (START OF DIFF), không phân biệt hoa thường và linh hoạt số lượng dấu < >
+    const diffRegex = /<{2,4}\s*START[_ ]OF[_ ]DIFF\s*>{2,4}([\s\S]*?)<{2,4}\s*END[_ ]OF[_ ]DIFF\s*>{2,4}/gi;
     const matches = [...prompt.matchAll(diffRegex)];
     if (matches.length > 0) {
-      prompt = matches.map(m => m[1].trim()).join('\n\n');
+      // BẮT BUỘC: Phải bọc lại bằng marker chuẩn vì luồng Kilo Agent (apply.md) ở local yêu cầu quét tìm chính xác chuỗi <<<START_OF_DIFF>>>
+      prompt = matches.map(m => `<<<START_OF_DIFF>>>\n${m[1].trim()}\n<<<END_OF_DIFF>>>`).join('\n\n');
     } else {
       showNotification(`${prefix} Bỏ Qua`, 'AI đã trả lời nhưng không có mã nguồn nào cần cập nhật.', 'info', tabId);
       return;
