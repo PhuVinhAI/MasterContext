@@ -182,6 +182,20 @@ pub async fn init_kilo_config(app_handle: tauri::AppHandle, project_path: String
     let apply_md_dest = master_context_dir.join("apply.md");
     let opencode_json_dest = path.join("opencode.json");
 
+    // Quản lý file .gitignore
+    let gitignore_path = path.join(".gitignore");
+    let ignore_entry = "\n# Bỏ qua thư mục tạm của Master Context\n.master-context\n";
+    
+    if gitignore_path.exists() {
+        if let Ok(content) = fs::read_to_string(&gitignore_path) {
+            if !content.contains(".master-context") {
+                let _ = fs::write(&gitignore_path, format!("{}{}", content, ignore_entry));
+            }
+        }
+    } else {
+        let _ = fs::write(&gitignore_path, ignore_entry);
+    }
+
     let resource_dir = app_handle.path().resource_dir().map_err(|e| e.to_string())?;
     let res_dir = resource_dir.join("resources");
     let up_res_dir = resource_dir.join("_up_").join("resources");

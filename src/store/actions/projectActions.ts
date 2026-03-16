@@ -10,6 +10,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open, message } from "@tauri-apps/plugin-dialog";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { join } from "@tauri-apps/api/path";
+import { expandPaths } from "@/lib/treeUtils";
 
 export interface ProjectActions {
   selectRootPath: (path: string) => Promise<void>;
@@ -215,6 +216,16 @@ export const createProjectActions: StateCreator<
     // Luôn làm mới trạng thái Git sau khi quét xong
     await get().actions.checkGitRepo();
     await get().actions.fetchGitStatus();
+
+    // Cập nhật lại UI FileTree nếu đang mở Group Editor để các file mới (nằm trong thư mục đã chọn) tự động được tick
+    const currentEditingGroupId = get().editingGroupId;
+    if (currentEditingGroupId && payload.file_tree) {
+      const updatedGroup = loadedGroups.find((g) => g.id === currentEditingGroupId);
+      if (updatedGroup) {
+        const expanded = expandPaths(payload.file_tree, new Set(updatedGroup.paths));
+        set({ tempSelectedPaths: expanded });
+      }
+    }
 
     // After everything is updated, if a file was open, refresh its content
     if (fileToReopen) {

@@ -2,7 +2,7 @@
 use super::utils::{perform_auto_export, sanitize_group_name};
 use crate::models::AIGroupUpdateResult;
 use crate::{context_generator, file_cache, group_updater, models};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tauri::{command, AppHandle, Emitter, Window};
@@ -321,27 +321,16 @@ pub fn update_group_paths_from_ai(
         let group = &mut project_data.groups[index];
 
         // --- START OF NEW LOGIC ---
-        // 1. Expand the current group paths into a full set of individual files.
-        let mut final_paths: HashSet<String> = context_generator::expand_group_paths_to_files(
-            &group.paths,
-            &metadata_cache_clone,
-            root_path,
-        )
-        .into_iter()
-        .collect();
-
-        // 2. Remove the requested files from the expanded set.
+        // Không phân rã group.paths thành file lẻ để giữ tính năng "auto-tick" toàn thư mục cha.
         for p in &paths_to_remove {
-            final_paths.remove(p);
+            group.paths.retain(|existing| existing != p);
         }
 
-        // 3. Add the new files/folders directly. The user/AI can add a folder back if needed.
         for p in &paths_to_add {
-            final_paths.insert(p.clone());
+            if !group.paths.contains(p) {
+                group.paths.push(p.clone());
+            }
         }
-
-        // 4. The group's paths are now an explicit list of files.
-        group.paths = final_paths.into_iter().collect();
         // --- END OF NEW LOGIC ---
 
         // Recalculate stats
