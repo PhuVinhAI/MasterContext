@@ -187,6 +187,29 @@ export function ChatMessage({
         }
         break;
 
+      case "get_dummy_project_context":
+        ToolIcon = Brain;
+        toolContent = (
+          <p className="font-medium text-foreground">
+            {t("aiPanel.toolCall.gettingDummyContext", "Đang phân tích cấu trúc mã nguồn (Dummy DLLs)...")}
+          </p>
+        );
+        break;
+
+      case "create_context_group":
+        ToolIcon = Folder;
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          toolContent = (
+            <p className="font-medium text-foreground">
+              {t("aiPanel.toolCall.creatingGroup", "Đang tạo nhóm ngữ cảnh:")} <code className="ml-1 px-1.5 py-0.5 bg-background rounded-md text-xs">{args.name}</code>
+            </p>
+          );
+        } catch (e) {
+          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.creatingGroup", "Đang tạo nhóm ngữ cảnh...")}</p>;
+        }
+        break;
+
       default:
         toolContent = <p>{tool.function.name}</p>;
         break;

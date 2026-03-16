@@ -106,6 +106,28 @@ const ALL_TOOLS: Record<string, ToolDefinition> = {
       required: ["file_path", "start_line", "end_line"],
     },
   },
+  GET_DUMMY_PROJECT_CONTEXT: {
+    name: "get_dummy_project_context",
+    description: "Lấy toàn bộ ngữ cảnh dự án ở chế độ Dummy (chỉ giữ lại cấu trúc file, class, hàm, biến và ẩn đi logic bên trong). Dùng công cụ này để có cái nhìn tổng quan về kiến trúc mã nguồn nhằm tự động tạo nhóm ngữ cảnh.",
+    parameters: {
+      type: "object",
+      properties: {},
+    },
+  },
+  CREATE_CONTEXT_GROUP: {
+    name: "create_context_group",
+    description: "Tạo một nhóm ngữ cảnh (Context Group) mới với tên chỉ định. Nhóm vừa tạo sẽ tự động được chọn làm nhóm đang chỉnh sửa hiện tại.",
+    parameters: {
+      type: "object",
+      properties: {
+        name: {
+          type: "string",
+          description: "Tên của nhóm ngữ cảnh mới (ví dụ: 'Fix Login Bug', 'Refactor Auth').",
+        },
+      },
+      required: ["name"],
+    },
+  },
 };
 
 /**
@@ -124,9 +146,17 @@ function getAvailableTools(
     ALL_TOOLS.READ_FILE,
   ];
 
-  if (editingGroupId) {
-    tools.push(ALL_TOOLS.GET_CURRENT_CONTEXT_GROUP_FILES);
-    if (aiChatMode === "context" || aiChatMode === "mc") {
+  if (aiChatMode === "mc") {
+    tools.push(ALL_TOOLS.GET_DUMMY_PROJECT_CONTEXT);
+    tools.push(ALL_TOOLS.CREATE_CONTEXT_GROUP);
+    tools.push(ALL_TOOLS.MODIFY_CONTEXT_GROUP);
+    tools.push(ALL_TOOLS.ADD_EXCLUSION_RANGE_TO_FILE);
+    if (editingGroupId) {
+      tools.push(ALL_TOOLS.GET_CURRENT_CONTEXT_GROUP_FILES);
+    }
+  } else if (aiChatMode === "context") {
+    if (editingGroupId) {
+      tools.push(ALL_TOOLS.GET_CURRENT_CONTEXT_GROUP_FILES);
       tools.push(ALL_TOOLS.MODIFY_CONTEXT_GROUP);
       tools.push(ALL_TOOLS.ADD_EXCLUSION_RANGE_TO_FILE);
     }

@@ -152,6 +152,34 @@ export const handleToolCalls = async (
       toolResultContent = `Error adding exclusion range: ${e}`;
       toolSucceeded = false;
     }
+  } else if (tool.function.name === "get_dummy_project_context") {
+    const { rootPath, activeProfile } = getState();
+    if (!rootPath || !activeProfile) {
+      toolResultContent = "Error: Project path or profile is not available.";
+    } else {
+      try {
+        const context = await invoke<string>("generate_dummy_project_context_for_ai", {
+          path: rootPath,
+          profileName: activeProfile,
+        });
+        toolResultContent = `DUMMY PROJECT CONTEXT:\n\n${context}`;
+        toolSucceeded = true;
+      } catch (e) {
+        toolResultContent = `Error generating dummy context: ${e}`;
+        toolSucceeded = false;
+      }
+    }
+  } else if (tool.function.name === "create_context_group") {
+    try {
+      const args = JSON.parse(tool.function.arguments);
+      const name = args.name || "AI Generated Group";
+      getState().actions.addGroup({ name });
+      toolResultContent = `Successfully created and selected new context group: "${name}". You can now use modify_context_group to add files to it.`;
+      toolSucceeded = true;
+    } catch (e) {
+      toolResultContent = `Error creating group: ${e}`;
+      toolSucceeded = false;
+    }
   }
 
   // 3. Update the assistant message in state with the tool's execution status

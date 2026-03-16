@@ -215,7 +215,9 @@
       "readingFile": "Reading file",
       "executingTool": "Executing tool",
       "modifiedGroup": "Modified context group",
-      "listingGroupFiles": "Listing files in current group"
+      "listingGroupFiles": "Listing files in current group",
+      "gettingDummyContext": "Analyzing source code structure (Dummy DLLs)...",
+      "creatingGroup": "Creating context group:"
     },
     "addedExclusion": "Added exclusion for",
     "addedExclusionError": "Failed to add exclusion for"

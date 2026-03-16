@@ -64,6 +64,7 @@ pub fn run() {
             commands::update_sync_settings,
             commands::generate_group_context,
             commands::generate_project_context,
+            commands::generate_dummy_project_context_for_ai,
             commands::update_custom_ignore_patterns,
             // Các command mới để quản lý hồ sơ
             commands::list_profiles,

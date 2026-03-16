@@ -129,6 +129,36 @@ pub fn start_project_export(window: Window, app: AppHandle, path: String, profil
 }
 
 #[command]
+pub fn generate_dummy_project_context_for_ai(
+    app: AppHandle,
+    path: String,
+    profile_name: String,
+) -> Result<String, String> {
+    let project_data = file_cache::load_project_data(&app, &path, &profile_name)?;
+    let exclude_extensions = project_data.export_exclude_extensions;
+    let all_files: Vec<String> = project_data.file_metadata_cache.keys().cloned().collect();
+    if all_files.is_empty() {
+        return Err("project.generate_context_no_files".to_string());
+    }
+    context_generator::generate_context_from_files(
+        &path,
+        &all_files,
+        false, // use_full_tree
+        &project_data.file_tree,
+        false, // export_only_tree
+        true,  // with_line_numbers
+        true,  // without_comments
+        true,  // remove_debug_logs
+        false, // super_compressed
+        &None, // always_apply_text
+        &exclude_extensions,
+        &project_data.file_metadata_cache,
+        false, // export_claude_mode
+        true,  // export_dummy_logic
+    )
+}
+
+#[command]
 pub fn generate_project_context(
     app: AppHandle,
     path: String,

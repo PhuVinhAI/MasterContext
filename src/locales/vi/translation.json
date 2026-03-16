@@ -215,7 +215,9 @@
       "readingFile": "Đang đọc file",
       "executingTool": "Thực thi công cụ",
       "modifiedGroup": "Đã sửa đổi nhóm ngữ cảnh",
-      "listingGroupFiles": "Liệt kê tệp trong nhóm hiện tại"
+      "listingGroupFiles": "Liệt kê tệp trong nhóm hiện tại",
+      "gettingDummyContext": "Đang phân tích cấu trúc mã nguồn (Dummy DLLs)...",
+      "creatingGroup": "Đang tạo nhóm ngữ cảnh:"
     },
     "addedExclusion": "Đã thêm vùng loại trừ cho",
     "addedExclusionError": "Không thể thêm vùng loại trừ cho"
