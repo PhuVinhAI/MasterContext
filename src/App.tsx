@@ -34,6 +34,7 @@ import { GitPanel } from "./components/GitPanel";
 import { AIPanel } from "./components/AIPanel"; // THÊM IMPORT
 import { KiloPanel } from "./components/KiloPanel"; // THÊM IMPORT KILO PANEL
 import { MainPanel } from "./scenes/MainPanel";
+import { googleModels, nvidiaModels } from "@/lib/aiModels";
 import { StatusBar } from "./components/StatusBar";
 import { RescanIndicator } from "./components/RescanIndicator";
 import {
@@ -151,82 +152,6 @@ function App() {
         const settings = await invoke<AppSettings>("get_app_settings");
         // Cập nhật state một lần với tất cả cài đặt
         _setRecentPaths(settings.recentPaths ?? []);
-
-        const googleModels: AIModel[] = [
-          {
-            provider: "google",
-            id: "gemini-3-flash-preview",
-            name: "Gemini 3 Flash Preview",
-            context_length: 1048576,
-            pricing: { prompt: "0", completion: "0" },
-          },
-          {
-            provider: "google",
-            id: "gemini-3.1-flash-lite-preview",
-            name: "Gemini 3.1 Flash Lite Preview",
-            context_length: 1048576,
-            pricing: { prompt: "0", completion: "0" },
-          },
-          {
-            provider: "google",
-            id: "gemini-flash-latest",
-            name: "Gemini 2.5 Flash",
-            context_length: 1048576,
-            pricing: { prompt: "0", completion: "0" },
-          },
-          {
-            provider: "google",
-            id: "gemini-flash-lite-latest",
-            name: "Gemini 2.5 Flash Lite",
-            context_length: 1048576,
-            pricing: { prompt: "0", completion: "0" },
-          },
-          {
-            provider: "google",
-            id: "gemini-2.5-pro",
-            name: "Gemini 2.5 Pro",
-            context_length: 1048576,
-            pricing: { prompt: "0", completion: "0" },
-          },
-          {
-            provider: "google",
-            id: "gemini-robotics-er-1.5-preview",
-            name: "Gemini Robotics ER 1.5 Preview",
-            context_length: 1048576,
-            pricing: { prompt: "0", completion: "0" },
-          },
-          {
-            provider: "google",
-            id: "gemini-2.0-flash",
-            name: "Gemini 2.0 Flash",
-            context_length: 1048576,
-            pricing: { prompt: "0", completion: "0" },
-          },
-          {
-            provider: "google",
-            id: "gemini-2.0-flash-lite",
-            name: "Gemini 2.0 Flash Lite",
-            context_length: 1048576,
-            pricing: { prompt: "0", completion: "0" },
-          },
-        ];
-
-        const nvidiaModels: AIModel[] = [
-          {
-            provider: "nvidia",
-            id: "meta/llama-3.1-405b-instruct",
-            name: "Llama 3.1 405B (NVIDIA)",
-            context_length: 128000,
-            pricing: { prompt: "0", completion: "0" },
-          },
-          {
-            provider: "nvidia",
-            id: "stepfun-ai/step-3.5-flash",
-            name: "Step 3.5 Flash (NVIDIA)",
-            context_length: 16384,
-            pricing: { prompt: "0", completion: "0" },
-          },
-        ];
 
         let allAvailableModels: AIModel[] = [...googleModels, ...nvidiaModels];
 
