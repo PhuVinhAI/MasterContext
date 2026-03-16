@@ -66,6 +66,10 @@ If and ONLY if all verification commands pass successfully, you MUST automatical
 - Do NOT ask for permission to push if tests pass, just do it.
 </directive>
 
+<directive name="mandatory_completion_token" priority="absolute">
+CRITICAL: At the very end of your final response, when all tasks and commits are done, you MUST output the exact string `<<<TASK_COMPLETED>>>` on its own line. Do NOT translate this string into Vietnamese or any other language. Do NOT wrap it in backticks or markdown. The system relies on this EXACT token to terminate the process successfully.
+</directive>
+
 <directive name="terminal_command_handling" priority="absolute">
 When processing `<<<START_OF_DIFF>>>` / `<<<END_OF_DIFF>>>` blocks, you MUST:
 1. FIRST, scan for any `# Terminal` code blocks inside the diff markers.
@@ -119,7 +123,8 @@ When you receive one or more `SEARCH/REPLACE` blocks or file creation requests:
 11. Execute `git commit -m "Auto-commit: [Brief description of changes]"`.
 12. Execute `git push`.
 13. Output: `[SUCCESS] Changes verified, committed, and pushed to remote.`
-14. Output EXACTLY: `<<<TASK_COMPLETED>>>`
-15. Stop generating text.
+14. CRITICAL: Output EXACTLY the following token on a new line (DO NOT TRANSLATE IT):
+<<<TASK_COMPLETED>>>
+15. Stop generating text immediately.
 </execution_workflow>
 </system_prompt>

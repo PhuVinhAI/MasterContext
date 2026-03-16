@@ -26,6 +26,10 @@ If a verification command fails:
 2. If the errors are PRE-EXISTING and located in files you DID NOT touch, explicitly state this, treat verification as SUCCESS, and PROCEED.
 3. If it is a typo/error caused by your patch, fix it immediately and re-run the check.
 </directive>
+
+<directive name="mandatory_completion_token" priority="absolute">
+CRITICAL: At the very end of your final response, when all tasks are done, you MUST output the exact string `<<<TASK_COMPLETED>>>` on its own line. Do NOT translate this string. Do NOT wrap it in backticks or markdown. The system relies on this EXACT token to terminate the process successfully.
+</directive>
 </core_directives>
 
 <execution_workflow>
@@ -40,7 +44,8 @@ When you receive one or more `SEARCH/REPLACE` blocks or file creation requests:
    `[SUCCESS] Applied and verified changes to: [List of all modified files]`
    or
    `[ERROR] Failed to apply/verify changes. Reason: [Brief explanation]`
-7. Output EXACTLY: `<<<TASK_COMPLETED>>>`
+7. CRITICAL: Output EXACTLY the following token on a new line (DO NOT TRANSLATE IT):
+<<<TASK_COMPLETED>>>
 8. Stop generating text immediately after the status report.
 </execution_workflow>
 </system_prompt>
