@@ -128,7 +128,6 @@ pub fn clone_profile(
         always_apply_text: Some("".to_string()),
         append_ide_prompt: source_data.append_ide_prompt,
         append_group_prompt: source_data.append_group_prompt,
-        append_jules_prompt: source_data.append_jules_prompt,
         export_exclude_extensions: Some(vec![]),
         git_export_mode_is_context: Some(false),
     };

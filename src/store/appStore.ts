@@ -96,7 +96,6 @@ export interface AppState {
   alwaysApplyText: string | null;
   appendIdePrompt: boolean;
   appendGroupPrompt: boolean;
-  appendJulesPrompt: boolean;
   exportExcludeExtensions: string[];
   gitExportModeIsContext: boolean;
 

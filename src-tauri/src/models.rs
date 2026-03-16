@@ -196,7 +196,6 @@ pub struct CachedProjectData {
     pub always_apply_text: Option<String>,
     pub append_ide_prompt: Option<bool>,
     pub append_group_prompt: Option<bool>,
-    pub append_jules_prompt: Option<bool>,
     pub export_exclude_extensions: Option<Vec<String>>,
     pub git_export_mode_is_context: Option<bool>,
 }

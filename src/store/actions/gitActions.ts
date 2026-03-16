@@ -25,7 +25,6 @@ export interface GitActions {
   checkoutLatestBranch: () => Promise<void>;
   fetchGitBranches: () => Promise<void>;
   switchBranch: (branchName: string) => Promise<void>;
-  createBranch: (branchName: string) => Promise<void>;
   resetAndForcePush: (commitSha: string) => Promise<void>;
 }
 
@@ -249,17 +248,6 @@ export const createGitActions: StateCreator<AppState, [], [], GitActions> = (
       get().actions.rescanProject();
     } catch (e) {
       message(`Không thể chuyển nhánh: ${e}`, { title: "Lỗi", kind: "error" });
-    }
-  },
-
-  createBranch: async (branchName: string) => {
-    const { rootPath } = get();
-    if (!rootPath) return;
-    try {
-      await invoke("create_git_branch", { path: rootPath, branchName });
-      await get().actions.checkGitRepo();
-    } catch (e) {
-      message(`Không thể tạo nhánh: ${e}`, { title: "Lỗi", kind: "error" });
     }
   },
 

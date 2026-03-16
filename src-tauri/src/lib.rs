@@ -89,14 +89,12 @@ pub fn run() {
             commands::set_always_apply_text_setting,
             commands::set_append_ide_prompt_setting,
             commands::set_append_group_prompt_setting,
-            commands::set_append_jules_prompt_setting,
             commands::get_app_settings,
             commands::set_recent_paths,
             commands::update_app_settings, // <-- COMMAND MỚI
             commands::get_resource_file_content,
             commands::check_git_repository,
             commands::get_git_branches,
-            commands::create_git_branch,
             commands::reset_and_force_push,
             commands::get_git_commits, // SỬA LỖI: Thiếu dấu phẩy
             commands::get_commit_diff,

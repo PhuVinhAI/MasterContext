@@ -42,7 +42,6 @@ export interface SettingsActions {
   setAlwaysApplyText: (text: string) => Promise<void>;
   setAppendIdePrompt: (enabled: boolean) => Promise<void>;
   setAppendGroupPrompt: (enabled: boolean) => Promise<void>;
-  setAppendJulesPrompt: (enabled: boolean) => Promise<void>;
   setExportExcludeExtensions: (extensions: string[]) => Promise<void>;
   setGitExportMode: (enabled: boolean) => Promise<void>;
   updateAppSettings: (settings: Partial<AppSettings>) => Promise<void>;
@@ -226,14 +225,6 @@ export const createSettingsActions: StateCreator<
     await _persistExportToggle(rootPath, activeProfile, "set_append_group_prompt_setting", enabled,
       () => set((s) => ({ appendGroupPrompt: !s.appendGroupPrompt })),
       "Không thể lưu cài đặt Prompt Nhóm");
-  },
-  setAppendJulesPrompt: async (enabled: boolean) => {
-    const { rootPath, activeProfile } = get();
-    if (!rootPath) return;
-    set({ appendJulesPrompt: enabled });
-    await _persistExportToggle(rootPath, activeProfile, "set_append_jules_prompt_setting", enabled,
-      () => set((s) => ({ appendJulesPrompt: !s.appendJulesPrompt })),
-      "Không thể lưu cài đặt Jules Prompt");
   },
   setExportExcludeExtensions: async (extensions: string[]) => {
     const { rootPath, activeProfile } = get();

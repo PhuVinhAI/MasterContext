@@ -58,7 +58,6 @@ export const createProfileActions: StateCreator<
           alwaysApplyText: profileData.always_apply_text ?? null,
           appendIdePrompt: profileData.append_ide_prompt ?? false,
           appendGroupPrompt: profileData.append_group_prompt ?? false,
-          appendJulesPrompt: profileData.append_jules_prompt ?? false,
           exportExcludeExtensions: profileData.export_exclude_extensions ?? [],
           gitExportModeIsContext:
             profileData.git_export_mode_is_context ?? false,

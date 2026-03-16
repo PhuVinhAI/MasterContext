@@ -296,7 +296,6 @@ pub fn perform_smart_scan_and_rebuild(
         always_apply_text: old_data.always_apply_text,
         append_ide_prompt: old_data.append_ide_prompt,
         append_group_prompt: old_data.append_group_prompt,
-        append_jules_prompt: old_data.append_jules_prompt,
         export_exclude_extensions: old_data.export_exclude_extensions,
         git_export_mode_is_context: old_data.git_export_mode_is_context,
     };

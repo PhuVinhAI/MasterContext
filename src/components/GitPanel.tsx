@@ -17,16 +17,12 @@ import {
   Check,
   History,
   RotateCcw,
-  Plus,
   Flame,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "./ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,7 +46,6 @@ export function GitPanel() {
     checkoutCommit,
     checkoutLatestBranch,
     switchBranch,
-    createBranch,
     resetAndForcePush,
   } = useAppActions();
   const {
@@ -87,8 +82,6 @@ export function GitPanel() {
   const [copiedSha, setCopiedSha] = useState<string | null>(null);
   const [checkoutSha, setCheckoutSha] = useState<string | null>(null);
   const [forcePushSha, setForcePushSha] = useState<string | null>(null);
-  const [isCreateBranchOpen, setIsCreateBranchOpen] = useState(false);
-  const [newBranchName, setNewBranchName] = useState("");
   const [isForcePushing, setIsForcePushing] = useState(false);
 
   const handleCopy = async (sha: string) => {
@@ -153,9 +146,6 @@ export function GitPanel() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => setIsCreateBranchOpen(true)} title={t("gitPanel.createBranch")}>
-                <Plus className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         )}
@@ -360,44 +350,6 @@ export function GitPanel() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Dialog tạo nhánh mới */}
-      <Dialog open={isCreateBranchOpen} onOpenChange={setIsCreateBranchOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>{t("gitPanel.createBranchDialog.title")}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid w-full gap-1.5">
-              <Label htmlFor="branchName">{t("gitPanel.createBranchDialog.placeholder")}</Label>
-              <Input
-                id="branchName"
-                value={newBranchName}
-                onChange={(e) => setNewBranchName(e.target.value)}
-                placeholder="feature/new-branch"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && newBranchName.trim()) {
-                    createBranch(newBranchName.trim());
-                    setIsCreateBranchOpen(false);
-                    setNewBranchName("");
-                  }
-                }}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateBranchOpen(false)}>{t("common.cancel")}</Button>
-            <Button onClick={() => {
-              if (newBranchName.trim()) {
-                createBranch(newBranchName.trim());
-                setIsCreateBranchOpen(false);
-                setNewBranchName("");
-              }
-            }}>{t("common.save")}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Dialog Force Push */}
       <AlertDialog

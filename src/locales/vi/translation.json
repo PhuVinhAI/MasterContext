@@ -101,11 +101,6 @@
       "confirm": "Xác nhận và Checkout"
     },
     "branch": "Nhánh",
-    "createBranch": "Tạo nhánh mới",
-    "createBranchDialog": {
-      "title": "Tạo nhánh mới",
-      "placeholder": "Tên nhánh..."
-    },
     "forcePushTooltip": "Khôi phục nhánh về commit này và Đẩy đè lên Remote (XÓA COMMIT MỚI)",
     "forcePushDialog": {
       "title": "Xác nhận ghi đè lịch sử (Force Push)?",
@@ -319,11 +314,6 @@
           "label": "Đính kèm Prompt quản lý Nhóm",
           "description": "Tự động chèn hướng dẫn cho AI xuất định dạng + / - để cập nhật nhóm.",
           "copyTooltip": "Sao chép Prompt Nhóm chuẩn"
-        },
-        "appendJules": {
-          "label": "Đính kèm Prompt Jules (Cloud Agent)",
-          "description": "Tự động chèn hướng dẫn cho Jules Agent chạy trên môi trường mây.",
-          "copyTooltip": "Sao chép Prompt Jules chuẩn"
         }
       }
     },

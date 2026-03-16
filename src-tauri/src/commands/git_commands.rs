@@ -74,20 +74,6 @@ pub fn get_git_branches(path: String) -> Result<Vec<String>, String> {
 }
 
 #[command]
-pub fn create_git_branch(path: String, branch_name: String) -> Result<(), String> {
-    let repo = git2::Repository::open(&path).map_err(|e| e.to_string())?;
-    let head = repo.head().map_err(|e| e.to_string())?;
-    let commit = head.peel_to_commit().map_err(|e| e.to_string())?;
-    repo.branch(&branch_name, &commit, false).map_err(|e| e.to_string())?;
-    
-    // Checkout the new branch
-    let obj = repo.revparse_single(&format!("refs/heads/{}", branch_name)).map_err(|e| e.to_string())?;
-    repo.checkout_tree(&obj, None).map_err(|e| e.to_string())?;
-    repo.set_head(&format!("refs/heads/{}", branch_name)).map_err(|e| e.to_string())?;
-    Ok(())
-}
-
-#[command]
 pub async fn reset_and_force_push(path: String, commit_sha: String, branch: String) -> Result<(), String> {
     use tokio::process::Command;
     
