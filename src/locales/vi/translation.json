@@ -409,6 +409,9 @@
       "description": "Port này phải khớp với cấu hình Port trong AI Studio Archiver Extension. Mặc định là 9999.",
       "discordWebhook": "Discord Webhook URL",
       "discordWebhookDesc": "Nhận thông báo qua Discord khi Kilo Agent hoàn thành tác vụ.",
+      "testWebhook": "Kiểm tra",
+      "testWebhookSuccess": "Gửi tin nhắn test thành công! Vui lòng kiểm tra Discord.",
+      "testWebhookError": "Lỗi khi gửi test: {{error}}",
       "refreshModels": "Tải lại danh sách Models",
       "availableModels": "Danh sách Models cục bộ từ Kilo CLI:"
     }

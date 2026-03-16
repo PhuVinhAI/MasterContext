@@ -3,8 +3,9 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, Loader2, RefreshCw, Terminal } from "lucide-react";
+import { Save, Loader2, RefreshCw, Terminal, Send } from "lucide-react";
 import { type KiloModelInfo } from "@/store/types";
+import { message } from "@tauri-apps/plugin-dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -31,6 +32,7 @@ export function KiloTab({
   const [localDiscordUrl, setLocalDiscordUrl] = useState(discordWebhookUrl);
   const [isSaving, setIsSaving] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isTestingWebhook, setIsTestingWebhook] = useState(false);
 
   useEffect(() => {
     setLocalKiloPort(kiloPort);
@@ -52,6 +54,29 @@ export function KiloTab({
     setIsRefreshing(true);
     await onRefreshModels();
     setIsRefreshing(false);
+  };
+
+  const handleTestWebhook = async () => {
+    if (!localDiscordUrl) return;
+    setIsTestingWebhook(true);
+    try {
+      const res = await fetch(localDiscordUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: `🔔 **Master Context**: Đây là tin nhắn kiểm tra cấu hình Webhook. Nếu bạn nhận được tin nhắn này, mọi thứ đã hoạt động tốt!`,
+        }),
+      });
+      if (res.ok) {
+        await message(t("settings.kilo.testWebhookSuccess"), { title: t("common.success"), kind: "info" });
+      } else {
+        throw new Error(`HTTP ${res.status}`);
+      }
+    } catch (e) {
+      await message(t("settings.kilo.testWebhookError", { error: String(e) }), { title: t("common.error"), kind: "error" });
+    } finally {
+      setIsTestingWebhook(false);
+    }
   };
 
   const isChanged = localKiloPort !== kiloPort || localKiloModel !== selectedKiloModel || localDiscordUrl !== discordWebhookUrl;
@@ -82,13 +107,25 @@ export function KiloTab({
 
         <div className="space-y-2 pt-4 border-t">
           <Label htmlFor="discord-webhook">{t("settings.kilo.discordWebhook")}</Label>
-          <Input
-            id="discord-webhook"
-            type="url"
-            placeholder="https://discord.com/api/webhooks/..."
-            value={localDiscordUrl}
-            onChange={(e) => setLocalDiscordUrl(e.target.value)}
-          />
+          <div className="flex gap-2">
+            <Input
+              id="discord-webhook"
+              type="url"
+              placeholder="https://discord.com/api/webhooks/..."
+              value={localDiscordUrl}
+              onChange={(e) => setLocalDiscordUrl(e.target.value)}
+            />
+            <Button
+              variant="outline"
+              onClick={handleTestWebhook}
+              disabled={!localDiscordUrl || isTestingWebhook}
+              title={t("settings.kilo.testWebhook")}
+              className="shrink-0"
+            >
+              {isTestingWebhook ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              <span className="ml-2 hidden sm:inline">{t("settings.kilo.testWebhook")}</span>
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground">{t("settings.kilo.discordWebhookDesc")}</p>
         </div>
 
