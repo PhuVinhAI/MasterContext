@@ -47,10 +47,10 @@ function TerminalToolView({ command, result, status, t }: any) {
         {isOpen ? <ChevronUp className="h-4 w-4 shrink-0"/> : <ChevronDown className="h-4 w-4 shrink-0"/>}
       </div>
       {isOpen && (
-        <div className="mt-2 p-2.5 bg-black/90 dark:bg-black/60 rounded-md text-green-400 font-mono text-[11px] overflow-auto max-h-64 custom-scrollbar w-full border border-border/10">
+        <div className="mt-2 p-2.5 bg-black/90 dark:bg-black/60 rounded-md text-green-400 font-mono text-[11px] overflow-x-auto max-h-64 custom-scrollbar w-full border border-border/10">
           <div className="text-white/90 mb-2 select-all break-all font-semibold">$ {command}</div>
           {status ? (
-            <div className="whitespace-pre-wrap break-all border-t border-white/20 pt-2 text-green-300/80">{result || "No output"}</div>
+            <div className="whitespace-pre min-w-max border-t border-white/20 pt-2 text-green-300/80">{result || "No output"}</div>
           ) : (
             <div className="flex items-center gap-2 text-muted-foreground italic border-t border-white/20 pt-2"><Loader2 className="h-3 w-3 animate-spin"/> Running...</div>
           )}
@@ -457,16 +457,19 @@ export function ChatMessage({
           "transition-all"
         )}
       >
-        <div
-          className={cn(
-            "max-w-xs md:max-w-md lg:max-w-lg text-sm rounded-lg",
-            editingMessageIndex === index &&
-              "ring-2 ring-primary ring-offset-2 ring-offset-background",
-            message.role === "user" && !message.hidden && "cursor-pointer",
-            message.role === "user"
-              ? "bg-muted px-3 py-2 group-hover:bg-accent"
-              : ""
-          )}
+      <div
+        className={cn(
+          message.role === "assistant" && message.tool_calls && message.tool_calls.length > 0
+            ? "max-w-full lg:max-w-3xl w-full"
+            : "max-w-xs md:max-w-md lg:max-w-lg",
+          "text-sm rounded-lg",
+          editingMessageIndex === index &&
+            "ring-2 ring-primary ring-offset-2 ring-offset-background",
+          message.role === "user" && !message.hidden && "cursor-pointer",
+          message.role === "user"
+            ? "bg-muted px-3 py-2 group-hover:bg-accent"
+            : ""
+        )}
           onClick={
             message.role === "user" && !message.hidden
               ? () => onStartEdit(index)

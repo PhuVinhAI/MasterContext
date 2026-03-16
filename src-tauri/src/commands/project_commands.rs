@@ -394,7 +394,7 @@ pub fn apply_search_replace(
 }
 
 #[command]
-pub fn execute_terminal_command(root_path_str: String, command: String) -> Result<String, String> {
+pub async fn execute_terminal_command(root_path_str: String, command: String) -> Result<String, String> {
     let root_path = Path::new(&root_path_str);
 
     use std::process::Command;

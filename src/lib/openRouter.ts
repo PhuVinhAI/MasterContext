@@ -301,6 +301,7 @@ export const handleStreamingResponse = async (
   const decoder = new TextDecoder();
   let buffer = "";
   let isFirstChunk = true;
+  let finalUsage: GenerationInfo | null = null;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -370,8 +371,25 @@ export const handleStreamingResponse = async (
     }
   }
 
-  // After stream is complete, fetch generation info
-  if (generationId && apiKey && isOpenRouter) {
+  // Cập nhật finalUsage nếu API trả về trực tiếp (như NVIDIA)
+  if (finalUsage) {
+    setState((state) => {
+      const lastMessage = state.chatMessages[state.chatMessages.length - 1];
+      if (lastMessage && lastMessage.role === "assistant") {
+        const updatedMessage = { ...lastMessage, generationInfo: finalUsage };
+        const finalMessages = [
+          ...state.chatMessages.slice(0, -1),
+          updatedMessage,
+        ];
+        getState().actions.saveCurrentChatSession(finalMessages);
+        return { chatMessages: finalMessages };
+      }
+      return state;
+    });
+  }
+
+  // After stream is complete, fetch generation info (dành cho OpenRouter)
+  if (generationId && apiKey && isOpenRouter && !finalUsage) {
     const generationInfo = await fetchGenerationInfoWithRetry(
       generationId,
       apiKey
