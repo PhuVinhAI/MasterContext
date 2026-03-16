@@ -13,6 +13,7 @@ import {
   type AttachedItem,
 } from "../types";
 import { invoke } from "@tauri-apps/api/core";
+import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import {
   handleNonStreamingResponse,
   handleStreamingResponse,
@@ -234,7 +235,7 @@ export const createAiChatActions: StateCreator<
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${
           model.id
         }:${streamResponse ? "streamGenerateContent" : "generateContent"}`;
-        const response = await fetch(endpoint, {
+        const response = await tauriFetch(endpoint, {
           method: "POST",
           headers: {
             "x-goog-api-key": actualApiKey,
@@ -301,7 +302,7 @@ export const createAiChatActions: StateCreator<
           ? "https://integrate.api.nvidia.com/v1/chat/completions"
           : "https://openrouter.ai/api/v1/chat/completions";
 
-        const response = await fetch(
+        const response = await tauriFetch(
           endpointUrl,
           {
             method: "POST",

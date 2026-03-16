@@ -16,7 +16,11 @@
     "http:allow-fetch-read-body",
     {
       "identifier": "http:allow-fetch",
-      "allow": [{ "url": "https://integrate.api.nvidia.com/*" }]
+      "allow": [
+        { "url": "https://integrate.api.nvidia.com/*" },
+        { "url": "https://openrouter.ai/*" },
+        { "url": "https://generativelanguage.googleapis.com/*" }
+      ]
     }
   ]
 }

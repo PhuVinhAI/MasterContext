@@ -11,7 +11,7 @@ import {
 } from "@tauri-apps/api/menu";
 import { save, message } from "@tauri-apps/plugin-dialog"; // <-- THAY ĐỔI IMPORT
 import { invoke } from "@tauri-apps/api/core";
-import axios from "axios";
+import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import {
   isPermissionGranted,
@@ -232,10 +232,11 @@ function App() {
 
         // Fetch all models from OpenRouter
         try {
-          const response = await axios.get(
+          const response = await tauriFetch(
             "https://openrouter.ai/api/v1/models"
           );
-          const allModelsData: any[] = response.data.data;
+          const data = await response.json();
+          const allModelsData: any[] = data.data;
           const openRouterModels: AIModel[] = allModelsData.map((m: any) => ({
             provider: "openrouter",
             id: m.id,

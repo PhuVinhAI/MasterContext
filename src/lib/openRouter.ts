@@ -1,8 +1,8 @@
 // src/lib/openRouter.ts
 import { invoke } from "@tauri-apps/api/core";
+import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { type AppState, useAppStore } from "@/store/appStore";
 import { type ChatMessage, type GenerationInfo } from "@/store/types";
-import axios from "axios";
 
 type StoreApi = {
   getState: () => AppState;
@@ -206,22 +206,28 @@ export const fetchGenerationInfoWithRetry = async (
 ): Promise<GenerationInfo | null> => {
   for (let i = 0; i < retries; i++) {
     try {
-      const response = await axios.get(
+      const response = await tauriFetch(
         `https://openrouter.ai/api/v1/generation?id=${generationId}`,
         { headers: { Authorization: `Bearer ${apiKey}` } }
       );
-      return response.data.data as GenerationInfo;
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        console.log(`Attempt ${i + 1} failed (404). Retrying in ${delay}ms...`);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      } else {
-        console.error(
-          "Failed to fetch generation info with non-retriable error:",
-          error
-        );
-        return null;
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log(`Attempt ${i + 1} failed (404). Retrying in ${delay}ms...`);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      const data = await response.json();
+      return data.data as GenerationInfo;
+    } catch (error) {
+      console.error(
+        "Failed to fetch generation info with non-retriable error:",
+        error
+      );
+      return null;
     }
   }
   console.warn(
