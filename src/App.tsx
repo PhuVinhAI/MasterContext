@@ -535,7 +535,7 @@ function App() {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                content: `@everyone ✅ **Kilo Agent** đã hoàn thành tác vụ cập nhật mã nguồn trong dự án \`${projectName}\`.`,
+                content: `@everyone ✅ **Kilo Agent** đã hoàn thành tác vụ cập nhật mã nguồn trong dự án \`${projectName}\`.\n*🕒 ${new Date().toLocaleString('vi-VN')} | ID: ${Math.random().toString(36).substring(7)}*`,
               }),
             });
           } catch (e) {

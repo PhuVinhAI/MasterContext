@@ -64,7 +64,7 @@ export function KiloTab({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: `@everyone 🔔 **Master Context**: Đây là tin nhắn kiểm tra cấu hình Webhook. Nếu bạn nhận được tin nhắn này, mọi thứ đã hoạt động tốt!`,
+          content: `@everyone 🔔 **Master Context**: Đây là tin nhắn kiểm tra cấu hình Webhook. Nếu bạn nhận được tin nhắn này, mọi thứ đã hoạt động tốt!\n*🕒 ${new Date().toLocaleString('vi-VN')} | ID: ${Math.random().toString(36).substring(7)}*`,
         }),
       });
       if (res.ok) {
