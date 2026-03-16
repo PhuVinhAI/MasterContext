@@ -41,6 +41,10 @@ pub struct ToolCall {
     #[serde(rename = "type")] // Map Rust's `r#type` to JSON's `type`
     pub r#type: String,
     pub function: ToolCallFunction,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub result: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -58,6 +62,8 @@ pub struct GenerationInfo {
 pub struct ChatMessage {
     pub role: String, // "user" | "assistant" | "system"
     pub content: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thoughts: Option<String>,
     #[serde(
         rename = "hiddenContent",
         default,
