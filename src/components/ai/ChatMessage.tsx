@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -14,6 +15,9 @@ import {
   Scissors,
   XCircle,
   RotateCcw,
+  Brain,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type ChatMessage as ChatMessageType } from "@/store/types";
@@ -39,6 +43,7 @@ export function ChatMessage({
   onStartEdit,
 }: ChatMessageProps) {
   const { t } = useTranslation();
+  const [showThoughts, setShowThoughts] = useState(false);
 
   if (message.hidden) {
     return null;
@@ -375,15 +380,38 @@ export function ChatMessage({
               {message.tool_calls.map(renderToolCall)}
             </div>
           ) : (
-            <div className="markdown-content">
-              {message.role === "assistant" ? (
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeHighlight]}
-                >
-                  {message.content || ""}
-                </ReactMarkdown>
-              ) : null}
+            <div className="flex flex-col w-full">
+              {message.role === "assistant" && message.thoughts && (
+                <div className="mb-3 rounded-md border border-border/50 bg-muted/20 overflow-hidden">
+                  <button
+                    className="flex w-full items-center justify-between p-2 text-xs font-semibold text-muted-foreground hover:bg-muted/50 transition-colors"
+                    onClick={() => setShowThoughts(!showThoughts)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Brain className="h-4 w-4" />
+                      <span className="uppercase tracking-wider">{t("aiPanel.thinking")}</span>
+                    </div>
+                    {showThoughts ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </button>
+                  {showThoughts && (
+                    <div className="p-3 pt-0 text-sm text-muted-foreground border-t border-border/50 markdown-content">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.thoughts}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="markdown-content">
+                {message.role === "assistant" ? (
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeHighlight]}
+                  >
+                    {message.content || ""}
+                  </ReactMarkdown>
+                ) : null}
+              </div>
             </div>
           )}
         </div>

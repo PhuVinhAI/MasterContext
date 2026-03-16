@@ -143,6 +143,7 @@ export interface AttachedItem {
 export interface ChatMessage {
   role: "user" | "assistant" | "system";
   content: string | null; // Allow null content for tool calls
+  thoughts?: string; // Reasoning content from AI
   attachedFiles?: AttachedItem[]; // Files attached to this specific message
   hiddenContent?: string;
   generationInfo?: GenerationInfo;

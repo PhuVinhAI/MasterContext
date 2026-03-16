@@ -248,6 +248,11 @@ export const handleNonStreamingResponse = async (
   const assistantMessage = data.choices[0].message;
   const generationId = data.id;
 
+  // Catch reasoning content for non-streaming response
+  if (assistantMessage.reasoning_content) {
+    assistantMessage.thoughts = assistantMessage.reasoning_content;
+  }
+
   if (generationId && isOpenRouter) {
     const fetchedInfo = await fetchGenerationInfoWithRetry(
       generationId,
@@ -317,13 +322,16 @@ export const handleStreamingResponse = async (
           return; // Exit fetch function
         }
 
-        const delta = json.choices[0]?.delta?.content;
-        if (delta) {
+        const delta = json.choices[0]?.delta?.content || "";
+        const reasoning = json.choices[0]?.delta?.reasoning_content || "";
+        
+        if (delta || reasoning) {
           if (isFirstChunk) {
             isFirstChunk = false;
             const newAssistantMessage: ChatMessage = {
               role: "assistant",
               content: delta,
+              thoughts: reasoning || undefined,
             };
             setState((state) => ({
               chatMessages: [...state.chatMessages, newAssistantMessage],
@@ -335,8 +343,11 @@ export const handleStreamingResponse = async (
               if (lastMessage && lastMessage.role === "assistant") {
                 const updatedMessage = {
                   ...lastMessage,
-                  content: lastMessage.content + delta,
+                  content: (lastMessage.content || "") + delta,
                 };
+                if (reasoning) {
+                  updatedMessage.thoughts = (lastMessage.thoughts || "") + reasoning;
+                }
                 return {
                   chatMessages: [
                     ...state.chatMessages.slice(0, -1),
