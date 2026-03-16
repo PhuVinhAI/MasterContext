@@ -84,16 +84,16 @@ export const handleNonStreamingResponseGoogle = async (
   const content = candidate.content.parts[0].text;
   const usage = data.usageMetadata;
 
-  const generationInfo: GenerationInfo = {
+  const generationInfo: GenerationInfo | undefined = usage ? {
     tokens_prompt: usage.promptTokenCount || 0,
     tokens_completion: usage.candidatesTokenCount || 0,
     total_cost: 0, // Google pricing is complex, skip for now
-  };
+  } : undefined;
 
   const assistantMessage: ChatMessage = {
     role: "assistant",
     content: content,
-    generationInfo: generationInfo,
+    ...(generationInfo && { generationInfo }),
   };
 
   // Check for tool calls
@@ -201,6 +201,14 @@ export const handleStreamingResponseGoogle = async (
     if (objectsToProcess.length > 0) {
       let combinedText = "";
       for (const chunk of objectsToProcess) {
+        if (chunk.usageMetadata) {
+          finalUsage = {
+            tokens_prompt: chunk.usageMetadata.promptTokenCount || 0,
+            tokens_completion: chunk.usageMetadata.candidatesTokenCount || 0,
+            total_cost: 0,
+          };
+        }
+
         const part = chunk?.candidates?.[0]?.content?.parts?.[0];
         if (!part) continue;
 
@@ -218,13 +226,6 @@ export const handleStreamingResponseGoogle = async (
         }
 
         combinedText += part.text || "";
-        if (chunk.usageMetadata) {
-          finalUsage = {
-            tokens_prompt: chunk.usageMetadata.promptTokenCount || 0,
-            tokens_completion: chunk.usageMetadata.candidatesTokenCount || 0,
-            total_cost: 0,
-          };
-        }
       }
 
       if (!combinedText) {

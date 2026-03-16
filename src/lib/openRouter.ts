@@ -250,8 +250,6 @@ export const handleNonStreamingResponse = async (
   isOpenRouter: boolean = true
 ): Promise<ChatMessage> => {
   const data = await response.json();
-  console.log("[DEBUG NON-STREAM RESPONSE]:", data);
-
   const assistantMessage = data.choices[0].message;
   const generationId = data.id;
 
@@ -312,7 +310,6 @@ export const handleStreamingResponse = async (
   const decoder = new TextDecoder();
   let buffer = "";
   let isFirstChunk = true;
-  let finalUsage: GenerationInfo | null = null;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -330,12 +327,20 @@ export const handleStreamingResponse = async (
         const json = JSON.parse(line.substring(5));
         
         if (json.usage) {
-          console.log("[DEBUG STREAM USAGE CHUNK]:", json.usage);
-          finalUsage = {
+          const usageInfo = {
             tokens_prompt: json.usage.prompt_tokens || 0,
             tokens_completion: json.usage.completion_tokens || 0,
             total_cost: 0,
           };
+          // Cập nhật State token ngay lập tức khi nhận được chunk
+          setState((state) => {
+            const newMessages = [...state.chatMessages];
+            const lastIndex = newMessages.length - 1;
+            if (newMessages[lastIndex] && newMessages[lastIndex].role === "assistant") {
+              newMessages[lastIndex] = { ...newMessages[lastIndex], generationInfo: usageInfo };
+            }
+            return { chatMessages: newMessages };
+          });
         }
 
         if (json.id && !generationId) {
@@ -392,20 +397,10 @@ export const handleStreamingResponse = async (
     }
   }
 
-  // Cập nhật finalUsage nếu API trả về trực tiếp (như NVIDIA)
-  if (finalUsage) {
-    const state = getState();
-    const newMessages = [...state.chatMessages];
-    const lastIndex = newMessages.length - 1;
-    if (newMessages[lastIndex] && newMessages[lastIndex].role === "assistant") {
-      newMessages[lastIndex] = { ...newMessages[lastIndex], generationInfo: finalUsage };
-      setState({ chatMessages: newMessages });
-      await getState().actions.saveCurrentChatSession(newMessages);
-    }
-  }
-
   // After stream is complete, fetch generation info (dành cho OpenRouter)
-  if (generationId && apiKey && isOpenRouter && !finalUsage) {
+  // Lưu ý: Nếu stream đã trả về trực tiếp usage, biến lastMessageHasInfo sẽ block hàm fetch API bên dưới.
+  const lastMessageHasInfo = getState().chatMessages[getState().chatMessages.length - 1]?.generationInfo;
+  if (generationId && apiKey && isOpenRouter && !lastMessageHasInfo) {
     const generationInfo = await fetchGenerationInfoWithRetry(
       generationId,
       apiKey
