@@ -33,6 +33,7 @@ export const toGooglePayload = (
     topP: number;
     topK: number;
     maxTokens: number;
+    thinkingLevel?: "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
     tools?: { function_declarations: any[] };
   }
 ) => {
@@ -58,6 +59,7 @@ export const toGooglePayload = (
       topP: config.topP,
       topK: config.topK > 0 ? config.topK : undefined,
       maxOutputTokens: config.maxTokens > 0 ? config.maxTokens : undefined,
+      ...(config.thinkingLevel ? { thinkingConfig: { thinkingLevel: config.thinkingLevel } } : {})
     },
     tools: config.tools ? [config.tools] : undefined,
   };

@@ -388,7 +388,14 @@
         "temperature": "Nhiệt độ (Temperature)",
         "topP": "Top-P",
         "topK": "Top-K",
-        "maxTokens": "Số Token Tối đa"
+        "maxTokens": "Số Token Tối đa",
+        "geminiThinkingLevel": "Mức độ suy luận (Gemini)",
+        "thinkingLevels": {
+          "MINIMAL": "Tối thiểu",
+          "LOW": "Thấp",
+          "MEDIUM": "Trung bình",
+          "HIGH": "Cao"
+        }
       }
     },
     "kilo": {

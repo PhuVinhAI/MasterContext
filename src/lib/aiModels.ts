@@ -17,27 +17,6 @@ export const googleModels: AIModel[] = [
   },
   {
     provider: "google",
-    id: "gemini-flash-latest",
-    name: "Gemini 2.5 Flash",
-    context_length: 1048576,
-    pricing: { prompt: "0", completion: "0" },
-  },
-  {
-    provider: "google",
-    id: "gemini-flash-lite-latest",
-    name: "Gemini 2.5 Flash Lite",
-    context_length: 1048576,
-    pricing: { prompt: "0", completion: "0" },
-  },
-  {
-    provider: "google",
-    id: "gemini-2.5-pro",
-    name: "Gemini 2.5 Pro",
-    context_length: 1048576,
-    pricing: { prompt: "0", completion: "0" },
-  },
-  {
-    provider: "google",
     id: "gemini-robotics-er-1.5-preview",
     name: "Gemini Robotics ER 1.5 Preview",
     context_length: 1048576,

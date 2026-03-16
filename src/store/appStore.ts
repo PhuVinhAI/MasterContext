@@ -146,6 +146,7 @@ export interface AppState {
   topP: number;
   topK: number;
   maxTokens: number;
+  geminiThinkingLevel: "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
   systemPrompt: string;
   streamResponse: boolean;
   selectedAiModel: string;

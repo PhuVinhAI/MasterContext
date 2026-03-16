@@ -198,6 +198,7 @@ export const createAiChatActions: StateCreator<
       topP,
       topK,
       maxTokens,
+      geminiThinkingLevel,
       aiChatMode,
     } = get();
     const { editingGroupId } = get();
@@ -228,6 +229,7 @@ export const createAiChatActions: StateCreator<
         topP,
         topK,
         maxTokens,
+        thinkingLevel: geminiThinkingLevel,
         tools,
       });
 

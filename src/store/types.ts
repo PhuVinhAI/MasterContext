@@ -101,6 +101,7 @@ export interface AppSettings {
   topP?: number;
   topK?: number;
   maxTokens?: number;
+  geminiThinkingLevel?: "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
   selectedKiloModel?: string;
   kiloPort?: number;
   discordWebhookUrl?: string;
@@ -282,6 +283,7 @@ export interface AppState {
   topP: number;
   topK: number;
   maxTokens: number;
+  geminiThinkingLevel: "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
   systemPrompt: string;
   streamResponse: boolean;
   selectedAiModel: string;

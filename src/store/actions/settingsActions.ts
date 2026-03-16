@@ -267,6 +267,7 @@ export const createSettingsActions: StateCreator<
       topP,
       topK,
       maxTokens,
+      geminiThinkingLevel,
     } = get();
     const fullSettings: AppSettings = {
       recentPaths: newSettings.recentPaths ?? recentPaths,
@@ -282,6 +283,7 @@ export const createSettingsActions: StateCreator<
       topP: newSettings.topP ?? topP,
       topK: newSettings.topK ?? topK,
       maxTokens: newSettings.maxTokens ?? maxTokens,
+      geminiThinkingLevel: newSettings.geminiThinkingLevel ?? geminiThinkingLevel,
       selectedKiloModel: newSettings.selectedKiloModel ?? get().selectedKiloModel,
       kiloPort: newSettings.kiloPort ?? get().kiloPort,
       discordWebhookUrl: newSettings.discordWebhookUrl ?? get().discordWebhookUrl,
@@ -318,6 +320,7 @@ export const createSettingsActions: StateCreator<
         topP: fullSettings.topP ?? 1.0,
         topK: fullSettings.topK ?? 0,
         maxTokens: fullSettings.maxTokens ?? 0,
+        geminiThinkingLevel: fullSettings.geminiThinkingLevel ?? "MEDIUM",
         // Cập nhật model được chọn nếu danh sách thay đổi
         selectedAiModel:
           projectAiModels.find((m) => m.id === get().selectedAiModel)?.id ||

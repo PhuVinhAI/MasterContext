@@ -85,6 +85,7 @@ export const initialState = {
   topP: 1.0,
   topK: 0, // 0 means not set
   maxTokens: 0, // 0 means not set
+  geminiThinkingLevel: "MEDIUM" as const,
   systemPrompt: "",
   streamResponse: true,
   selectedAiModel: "openai/gpt-3.5-turbo",

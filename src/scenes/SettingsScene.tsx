@@ -27,6 +27,7 @@ import { useAppStore, useAppActions } from "@/store/appStore";
 export function SettingsScene() {
   const { fetchKiloModels } = useAppActions();
   const kiloAvailableModels = useAppStore(state => state.kiloAvailableModels);
+  const geminiThinkingLevel = useAppStore(state => state.geminiThinkingLevel);
   const { t } = useTranslation();
   const {
     activeTab,
@@ -174,6 +175,7 @@ export function SettingsScene() {
             topP={topP}
             topK={topK}
             maxTokens={maxTokens}
+            geminiThinkingLevel={geminiThinkingLevel}
             onSave={async (newSettings) => {
               await updateAppSettings({
                 openRouterApiKey: newSettings.apiKey,
@@ -186,6 +188,7 @@ export function SettingsScene() {
                 topP: newSettings.topP,
                 topK: newSettings.topK,
                 maxTokens: newSettings.maxTokens,
+                geminiThinkingLevel: newSettings.geminiThinkingLevel,
               });
             }}
           />

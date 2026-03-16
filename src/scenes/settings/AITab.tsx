@@ -10,6 +10,13 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Save, Loader2, X, ChevronsUpDown } from "lucide-react";
 import { useAppStore } from "@/store/appStore";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useShallow } from "zustand/react/shallow";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +46,7 @@ interface AITabProps {
   topP: number;
   topK: number;
   maxTokens: number;
+  geminiThinkingLevel: "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
   onSave: (settings: {
     apiKey: string;
     googleApiKey: string;
@@ -50,6 +58,7 @@ interface AITabProps {
     topP: number;
     topK: number;
     maxTokens: number;
+    geminiThinkingLevel: "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
   }) => Promise<void>;
 }
 
@@ -64,6 +73,7 @@ export function AITab({
   topP,
   topK,
   maxTokens,
+  geminiThinkingLevel,
   onSave,
 }: AITabProps) {
   const { t } = useTranslation();
@@ -83,6 +93,7 @@ export function AITab({
   const [localTopP, setLocalTopP] = useState(topP);
   const [localTopK, setLocalTopK] = useState(topK);
   const [localMaxTokens, setLocalMaxTokens] = useState(maxTokens);
+  const [localGeminiThinkingLevel, setLocalGeminiThinkingLevel] = useState(geminiThinkingLevel);
   const [isSaving, setIsSaving] = useState(false);
   const [isModelPickerOpen, setIsModelPickerOpen] = useState(false);
 
@@ -97,6 +108,7 @@ export function AITab({
     setLocalTopP(topP);
     setLocalTopK(topK);
     setLocalMaxTokens(maxTokens);
+    setLocalGeminiThinkingLevel(geminiThinkingLevel);
   }, [
     apiKey,
     googleApiKey,
@@ -108,6 +120,7 @@ export function AITab({
     topP,
     topK,
     maxTokens,
+    geminiThinkingLevel,
   ]);
 
   const handleSave = async () => {
@@ -123,6 +136,7 @@ export function AITab({
       topP: localTopP,
       topK: localTopK,
       maxTokens: localMaxTokens,
+      geminiThinkingLevel: localGeminiThinkingLevel,
     });
     setIsSaving(false);
   };
@@ -149,7 +163,8 @@ export function AITab({
     localTemperature !== temperature ||
     localTopP !== topP ||
     localTopK !== topK ||
-    localMaxTokens !== maxTokens;
+    localMaxTokens !== maxTokens ||
+    localGeminiThinkingLevel !== geminiThinkingLevel;
 
   return (
     <div className="space-y-6">
@@ -435,6 +450,23 @@ export function AITab({
                 }
               />
             </div>
+          </div>
+          <div className="space-y-2 mt-4 pt-4 border-t">
+            <Label>{t("settings.ai.parameters.geminiThinkingLevel")}</Label>
+            <Select
+              value={localGeminiThinkingLevel}
+              onValueChange={(val: any) => setLocalGeminiThinkingLevel(val)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MINIMAL">{t("settings.ai.parameters.thinkingLevels.MINIMAL")}</SelectItem>
+                <SelectItem value="LOW">{t("settings.ai.parameters.thinkingLevels.LOW")}</SelectItem>
+                <SelectItem value="MEDIUM">{t("settings.ai.parameters.thinkingLevels.MEDIUM")}</SelectItem>
+                <SelectItem value="HIGH">{t("settings.ai.parameters.thinkingLevels.HIGH")}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

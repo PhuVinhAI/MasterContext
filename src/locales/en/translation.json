@@ -388,7 +388,14 @@
         "temperature": "Temperature",
         "topP": "Top-P",
         "topK": "Top-K",
-        "maxTokens": "Max Output Tokens"
+        "maxTokens": "Max Output Tokens",
+        "geminiThinkingLevel": "Gemini Thinking Level",
+        "thinkingLevels": {
+          "MINIMAL": "Minimal",
+          "LOW": "Low",
+          "MEDIUM": "Medium",
+          "HIGH": "High"
+        }
       }
     },
     "kilo": {
