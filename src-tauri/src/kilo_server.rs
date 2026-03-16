@@ -389,6 +389,10 @@ async fn handle_kilo(
         let _ = app_handle.emit("kilo_log", format!("[SYSTEM] Sử dụng AI Model: {}", selected_model));
     }
 
+    let (resp_tx, resp_rx) = tokio::sync::oneshot::channel();
+
+    // Đưa toàn bộ vòng đời tiến trình Kilo ra một task độc lập để sống sót kể cả khi Chrome Extension ngắt kết nối HTTP
+    tokio::spawn(async move {
         let (abort_tx_oneshot, abort_rx) = tokio::sync::oneshot::channel::<()>();
         {
             let mut lock = state.abort_tx.lock().unwrap();
@@ -427,7 +431,7 @@ async fn handle_kilo(
                 }
             });
 
-            tokio::select! {
+            let result = tokio::select! {
                 _ = done_rx.recv() => {
                     // AI báo cáo xong -> Dùng spawn để giải phóng lập tức, không chờ taskkill bị treo
                     let _ = state.abort_tx.lock().unwrap().take();
@@ -459,13 +463,18 @@ async fn handle_kilo(
                 status_res = process.wait() => {
                     let _ = state.abort_tx.lock().unwrap().take();
                     
-                    let status = status_res.map_err(|e| {
-                        let _ = app_handle.emit("kilo_task_error", ());
-                        (
-                            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ErrorResponse { error: format!("Lỗi chờ tiến trình: {}", e) }),
-                        )
-                    })?;
+                    let status = match status_res {
+                        Ok(s) => s,
+                        Err(e) => {
+                            let _ = app_handle.emit("kilo_task_error", ());
+                            let _ = fs::remove_file(&temp_filepath);
+                            let _ = resp_tx.send(Err((
+                                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                                Json(ErrorResponse { error: format!("Lỗi chờ tiến trình: {}", e) }),
+                            )));
+                            return;
+                        }
+                    };
 
                     let _ = fs::remove_file(&temp_filepath);
 
@@ -517,14 +526,25 @@ async fn handle_kilo(
                         Json(ErrorResponse { error: "Tiến trình đã bị hủy".into() }),
                     ))
                 }
-            }
+            };
+
+            let _ = resp_tx.send(result);
         }
         Err(e) => {
             let _ = app_handle.emit("kilo_log", format!("[ERROR] Lỗi khởi chạy tiến trình Kilo: {}", e));
-            Err((
+            let _ = resp_tx.send(Err((
                 axum::http::StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ErrorResponse { error: format!("Không thể khởi chạy Kilo CLI: {}", e) }),
-            ))
+            )));
         }
+    }
+    });
+
+    match resp_rx.await {
+        Ok(res) => res,
+        Err(_) => Err((
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse { error: "Tiến trình xử lý ngầm bị ngắt kết nối".into() }),
+        ))
     }
 }
