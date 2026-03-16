@@ -34,13 +34,6 @@ export interface UIActions {
     startLine: number,
     endLine: number
   ) => Promise<{ success: boolean; message: string }>;
-  executeFileOperationFromAI: (
-    toolName: "write_file" | "create_file" | "delete_file" | "rename_file" | "create_directory" | "apply_search_replace" | "execute_terminal_command",
-    args: any
-  ) => Promise<{
-    success: boolean;
-    message: string;
-  }>;
   setInlineEditingGroup: (
     state: { mode: "create" | "rename"; profileName: string; groupId?: string } | null
   ) => void;
@@ -412,103 +405,4 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
       };
     }
   },
-  executeFileOperationFromAI: async (toolName, args) => {
-    const { rootPath } = _get();
-    const { file_path } = args;
-    if (!rootPath) {
-      return {
-        success: false,
-        message: "Error: Project path not found.",
-      };
-    }
-
-    try {
-      if (toolName === "delete_file") {
-        await invoke("delete_file", {
-          rootPathStr: rootPath,
-          fileRelPath: file_path,
-        });
-      } else if (toolName === "create_file") {
-        await invoke("create_file", {
-          rootPathStr: rootPath,
-          fileRelPath: file_path,
-          content: args.content || "",
-        });
-      } else if (toolName === "rename_file") {
-        await invoke("rename_file", {
-          rootPathStr: rootPath,
-          oldRelPath: args.old_path,
-          newRelPath: args.new_path,
-        });
-      } else if (toolName === "create_directory") {
-        await invoke("create_directory", {
-          rootPathStr: rootPath,
-          dirRelPath: args.dir_path,
-        });
-      } else if (toolName === "apply_search_replace") {
-        await invoke("apply_search_replace", {
-          rootPathStr: rootPath,
-          fileRelPath: args.file_path,
-          searchText: args.search_text,
-          replaceText: args.replace_text,
-        });
-      } else if (toolName === "execute_terminal_command") {
-        const output = await invoke<string>("execute_terminal_command", {
-          rootPathStr: rootPath,
-          command: args.command,
-        });
-        return {
-          success: true,
-          message: output,
-        };
-      } else if (toolName === "write_file") {
-        const originalContent = await invoke<string>("get_file_content", {
-          rootPathStr: rootPath,
-          fileRelPath: file_path,
-        });
-        const finalContent = applyLineChanges(
-          originalContent,
-          args.content,
-          args.start_line,
-          args.end_line
-        );
-        await invoke("save_file_content", {
-          rootPathStr: rootPath,
-          fileRelPath: file_path,
-          content: finalContent,
-        });
-      }
-
-      // Quét lại ngay lập tức để cập nhật UI
-      _get().actions.rescanProject();
-
-      return {
-        success: true,
-        message: `Successfully executed ${toolName} on ${file_path}.`,
-      };
-    } catch (e) {
-      return {
-        success: false,
-        message: `Error during file operation for ${file_path}: ${String(e)}`,
-      };
-    }
-  },
 });
-
-// Helper function to apply line-based changes to content
-const applyLineChanges = (
-  originalContent: string,
-  newContent: string,
-  startLine?: number,
-  endLine?: number
-): string => {
-  if (!startLine) {
-    return newContent; // Overwrite whole file
-  }
-  const originalLines = originalContent.split("\n");
-  const newLines = newContent.split("\n");
-  const startIndex = startLine - 1;
-  const endIndex = endLine ? endLine : startIndex;
-  originalLines.splice(startIndex, endIndex - startIndex, ...newLines);
-  return originalLines.join("\n");
-};

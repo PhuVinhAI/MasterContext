@@ -213,43 +213,17 @@
     "modes": {
       "ask": "Ask",
       "context": "Context",
-      "agent": "Agent"
+      "mc": "Master Context"
     },
     "toolCall": {
       "listingFiles": "Liệt kê tệp dự án",
       "readingFile": "Đang đọc file",
       "executingTool": "Thực thi công cụ",
       "modifiedGroup": "Đã sửa đổi nhóm ngữ cảnh",
-      "listingGroupFiles": "Liệt kê tệp trong nhóm hiện tại",
-      "writingFileGeneric": "Thực thi thao tác tệp",
-      "writeFileSuccess": "Đã sửa đổi thành công",
-      "writeFileError": "Không thể sửa đổi",
-      "createFileSuccess": "Đã tạo thành công",
-      "createFileError": "Không thể tạo",
-      "deleteFileSuccess": "Đã xóa thành công",
-      "deleteFileError": "Không thể xóa",
-      "renameFileSuccess": "Đã đổi tên/di chuyển thành công",
-      "renameFileError": "Không thể đổi tên",
-      "createDirSuccess": "Đã tạo thư mục",
-      "createDirError": "Không thể tạo thư mục",
-      "executingCommand": "Đang chạy lệnh Terminal",
-      "searchReplaceSuccess": "Đã áp dụng Search/Replace cho",
-      "searchReplaceError": "Lỗi Search/Replace tại"
+      "listingGroupFiles": "Liệt kê tệp trong nhóm hiện tại"
     },
     "addedExclusion": "Đã thêm vùng loại trừ cho",
-    "addedExclusionError": "Không thể thêm vùng loại trừ cho",
-    "stagingDialog": {
-      "title": "Xác nhận áp dụng thay đổi",
-      "description": "Bạn có các thay đổi chưa được áp dụng. Bạn muốn áp dụng tất cả thay đổi hay hủy bỏ chúng trước khi tiếp tục?",
-      "acceptAll": "Áp dụng tất cả",
-      "discardAll": "Hủy bỏ tất cả"
-    },
-    "revertDialog": {
-      "title": "Khôi phục trạng thái dự án?",
-      "description": "Lượt này đã thực hiện các thay đổi đối với file dự án. Bạn có muốn khôi phục các file về trạng thái trước khi thực hiện lượt này không?",
-      "proceed": "Tiếp tục mà không khôi phục",
-      "revertAndProceed": "Khôi phục & Tiếp tục"
-    }
+    "addedExclusionError": "Không thể thêm vùng loại trừ cho"
   },
   "mainPanel": {
     "placeholder": {

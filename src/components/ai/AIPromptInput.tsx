@@ -36,8 +36,8 @@ interface AIPromptInputProps {
   isLoading: boolean;
   attachedFiles: AttachedItem[];
   onDetachFile: (itemId: string) => void;
-  chatMode: "ask" | "context" | "agent";
-  setChatMode: (mode: "ask" | "context" | "agent") => void;
+  chatMode: "ask" | "context" | "mc";
+  setChatMode: (mode: "ask" | "context" | "mc") => void;
   models: AIModel[];
   selectedModel: string;
   setSelectedModel: (modelId: string) => void;
@@ -141,7 +141,7 @@ export function AIPromptInput({
                   <DropdownMenuRadioGroup
                     value={chatMode}
                     onValueChange={(value) =>
-                      setChatMode(value as "ask" | "context" | "agent")
+                      setChatMode(value as "ask" | "context" | "mc")
                     }
                   >
                     <DropdownMenuRadioItem value="ask">
@@ -150,8 +150,8 @@ export function AIPromptInput({
                     <DropdownMenuRadioItem value="context">
                       {t("aiPanel.modes.context")}
                     </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="agent">
-                      {t("aiPanel.modes.agent")}
+                    <DropdownMenuRadioItem value="mc">
+                      {t("aiPanel.modes.mc")}
                     </DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
                 </DropdownMenuContent>

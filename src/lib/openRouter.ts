@@ -152,28 +152,6 @@ export const handleToolCalls = async (
       toolResultContent = `Error adding exclusion range: ${e}`;
       toolSucceeded = false;
     }
-  } else if (
-    tool.function.name === "write_file" ||
-    tool.function.name === "create_file" ||
-    tool.function.name === "delete_file" ||
-    tool.function.name === "rename_file" ||
-    tool.function.name === "create_directory" ||
-    tool.function.name === "apply_search_replace" ||
-    tool.function.name === "execute_terminal_command"
-  ) {
-    const { actions } = getState();
-    try {
-      const args = JSON.parse(tool.function.arguments);
-      const result = await actions.executeFileOperationFromAI(
-        tool.function.name,
-        args
-      );
-      toolSucceeded = result.success;
-      toolResultContent = result.message;
-    } catch (e) {
-      toolResultContent = `Error during file operation: ${e}`;
-      toolSucceeded = false;
-    }
   }
 
   // 3. Update the assistant message in state with the tool's execution status

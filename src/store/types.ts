@@ -76,7 +76,7 @@ export interface ScanCompletePayload {
   isFirstScan: boolean;
 }
 
-export type AiChatMode = "ask" | "context" | "agent";
+export type AiChatMode = "ask" | "context" | "mc";
 
 export interface AIModel {
   provider: "openrouter" | "google" | "nvidia";

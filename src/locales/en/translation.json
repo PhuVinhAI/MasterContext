@@ -213,43 +213,17 @@
     "modes": {
       "ask": "Ask",
       "context": "Context",
-      "agent": "Agent"
+      "mc": "Master Context"
     },
     "toolCall": {
       "listingFiles": "Listing project files",
       "readingFile": "Reading file",
       "executingTool": "Executing tool",
       "modifiedGroup": "Modified context group",
-      "listingGroupFiles": "Listing files in current group",
-      "writingFileGeneric": "Executing file operation",
-      "writeFileSuccess": "Successfully modified",
-      "writeFileError": "Failed to modify",
-      "createFileSuccess": "Successfully created",
-      "createFileError": "Failed to create",
-      "deleteFileSuccess": "Successfully deleted",
-      "deleteFileError": "Failed to delete",
-      "renameFileSuccess": "Successfully renamed/moved",
-      "renameFileError": "Failed to rename",
-      "createDirSuccess": "Successfully created directory",
-      "createDirError": "Failed to create directory",
-      "executingCommand": "Executing terminal command",
-      "searchReplaceSuccess": "Successfully applied Search/Replace to",
-      "searchReplaceError": "Failed to apply Search/Replace to"
+      "listingGroupFiles": "Listing files in current group"
     },
     "addedExclusion": "Added exclusion for",
-    "addedExclusionError": "Failed to add exclusion for",
-    "stagingDialog": {
-      "title": "Confirm Apply Changes",
-      "description": "You have unapplied changes. Do you want to apply all changes or discard them before proceeding?",
-      "acceptAll": "Apply All",
-      "discardAll": "Discard All"
-    },
-    "revertDialog": {
-      "title": "Restore Project State?",
-      "description": "This turn made changes to project files. Do you want to restore the files to their state before this turn was executed?",
-      "proceed": "Continue without Reverting",
-      "revertAndProceed": "Revert & Continue"
-    }
+    "addedExclusionError": "Failed to add exclusion for"
   },
   "mainPanel": {
     "placeholder": {

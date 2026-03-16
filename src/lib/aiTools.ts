@@ -106,143 +106,13 @@ const ALL_TOOLS: Record<string, ToolDefinition> = {
       required: ["file_path", "start_line", "end_line"],
     },
   },
-  WRITE_FILE: {
-    name: "write_file",
-    description:
-      "Ghi hoặc ghi đè nội dung vào một file cụ thể. Có thể thay thế toàn bộ nội dung file hoặc thay thế một khoảng dòng cụ thể. Để thay thế các dòng cụ thể, BẮT BUỘC phải sử dụng tham số 'start_line'. Để chèn dòng mới mà không xóa, đặt 'end_line' bằng 'start_line'. Để xóa các dòng, cung cấp một chuỗi rỗng cho 'content' và chỉ định 'start_line' và 'end_line'.",
-    parameters: {
-      type: "object",
-      properties: {
-        file_path: {
-          type: "string",
-          description: "Đường dẫn tương đối đến file sẽ được ghi nội dung vào.",
-        },
-        content: {
-          type: "string",
-          description: "Nội dung mới để ghi vào file.",
-        },
-        start_line: {
-          type: "number",
-          description:
-            "Tùy chọn. Số dòng (tính từ 1) nơi việc thay thế sẽ bắt đầu. Nếu bỏ qua, toàn bộ file sẽ bị ghi đè.",
-        },
-        end_line: {
-          type: "number",
-          description:
-            "Tùy chọn. Số dòng (tính từ 1) nơi việc thay thế sẽ kết thúc. Nếu bỏ qua, nội dung được thay thế từ start_line đến hết nội dung mới.",
-        },
-      },
-      required: ["file_path", "content"],
-    },
-  },
-  CREATE_FILE: {
-    name: "create_file",
-    description:
-      "Tạo một file mới tại một đường dẫn được chỉ định với nội dung ban đầu. Nếu thư mục chứa file chưa tồn tại, hệ thống sẽ tự động tạo thư mục đó.",
-    parameters: {
-      type: "object",
-      properties: {
-        file_path: {
-          type: "string",
-          description: "Đường dẫn tương đối nơi file mới sẽ được tạo (VD: src/components/NewButton.tsx).",
-        },
-        content: {
-          type: "string",
-          description: "Tùy chọn. Nội dung ban đầu của file mới.",
-        },
-      },
-      required: ["file_path"],
-    },
-  },
-  RENAME_FILE: {
-    name: "rename_file",
-    description: "Đổi tên hoặc di chuyển một file HOẶC một thư mục sang đường dẫn mới.",
-    parameters: {
-      type: "object",
-      properties: {
-        old_path: {
-          type: "string",
-          description: "Đường dẫn tương đối hiện tại của file/thư mục cần đổi tên.",
-        },
-        new_path: {
-          type: "string",
-          description: "Đường dẫn tương đối mới cho file/thư mục.",
-        },
-      },
-      required: ["old_path", "new_path"],
-    },
-  },
-  CREATE_DIRECTORY: {
-    name: "create_directory",
-    description: "Tạo một thư mục mới trống rỗng (sẽ tự tạo cả các thư mục cha nếu chưa có). Lưu ý: Nếu dùng lệnh create_file thì không cần gọi lệnh này vì hệ thống tự tạo thư mục cha.",
-    parameters: {
-      type: "object",
-      properties: {
-        dir_path: {
-          type: "string",
-          description: "Đường dẫn tương đối của thư mục cần tạo.",
-        },
-      },
-      required: ["dir_path"],
-    },
-  },
-  DELETE_FILE: {
-    name: "delete_file",
-    description: "Xóa một file HOẶC một thư mục (bao gồm toàn bộ nội dung bên trong) được chỉ định khỏi dự án.",
-    parameters: {
-      type: "object",
-      properties: {
-        file_path: {
-          type: "string",
-          description: "Đường dẫn tương đối của file hoặc thư mục cần xóa.",
-        },
-      },
-      required: ["file_path"],
-    },
-  },
-  APPLY_SEARCH_REPLACE: {
-    name: "apply_search_replace",
-    description: "Sửa đổi code bằng cách tìm chính xác một đoạn text và thay thế nó. Khuyến khích dùng cách này thay vì write_file để an toàn và tốn ít token.",
-    parameters: {
-      type: "object",
-      properties: {
-        file_path: {
-          type: "string",
-          description: "Đường dẫn file.",
-        },
-        search_text: {
-          type: "string",
-          description: "Đoạn code gốc cần tìm. Bắt buộc phải chính xác 100% từng ký tự, khoảng trắng và thụt lề.",
-        },
-        replace_text: {
-          type: "string",
-          description: "Đoạn code mới để thay thế.",
-        },
-      },
-      required: ["file_path", "search_text", "replace_text"],
-    },
-  },
-  EXECUTE_TERMINAL_COMMAND: {
-    name: "execute_terminal_command",
-    description: "Thực thi các lệnh Terminal (npm install, cargo build, git status, chạy test, list file...). Lệnh sẽ chạy ngầm và trả về stdout/stderr cho bạn.",
-    parameters: {
-      type: "object",
-      properties: {
-        command: {
-          type: "string",
-          description: "Câu lệnh bash/cmd cần thực thi (vd: npm run lint).",
-        },
-      },
-      required: ["command"],
-    },
-  },
 };
 
 /**
  * Lấy danh sách các tool có sẵn dựa trên ngữ cảnh hiện tại.
  */
 function getAvailableTools(
-  aiChatMode: "ask" | "context" | "agent",
+  aiChatMode: "ask" | "context" | "mc",
   editingGroupId: string | null
 ): ToolDefinition[] {
   if (aiChatMode === "ask") {
@@ -256,24 +126,10 @@ function getAvailableTools(
 
   if (editingGroupId) {
     tools.push(ALL_TOOLS.GET_CURRENT_CONTEXT_GROUP_FILES);
-    if (aiChatMode === "context") {
+    if (aiChatMode === "context" || aiChatMode === "mc") {
       tools.push(ALL_TOOLS.MODIFY_CONTEXT_GROUP);
       tools.push(ALL_TOOLS.ADD_EXCLUSION_RANGE_TO_FILE);
     }
-  }
-
-  if (aiChatMode === "agent") {
-    tools.push(
-      ALL_TOOLS.WRITE_FILE,
-      ALL_TOOLS.CREATE_FILE,
-      ALL_TOOLS.RENAME_FILE,
-      ALL_TOOLS.CREATE_DIRECTORY,
-      ALL_TOOLS.DELETE_FILE,
-      ALL_TOOLS.APPLY_SEARCH_REPLACE,
-      ALL_TOOLS.EXECUTE_TERMINAL_COMMAND,
-      ALL_TOOLS.MODIFY_CONTEXT_GROUP,
-      ALL_TOOLS.ADD_EXCLUSION_RANGE_TO_FILE
-    );
   }
 
   return tools;
@@ -283,7 +139,7 @@ function getAvailableTools(
  * Định dạng các tool cho API của OpenRouter/OpenAI.
  */
 export function getOpenRouterTools(
-  aiChatMode: "ask" | "context" | "agent",
+  aiChatMode: "ask" | "context" | "mc",
   editingGroupId: string | null
 ): any[] | undefined {
   const tools = getAvailableTools(aiChatMode, editingGroupId);
@@ -321,7 +177,7 @@ function convertTypesToUppercase(obj: any): any {
  * Định dạng các tool cho API của Google Gemini.
  */
 export function getGoogleTools(
-  aiChatMode: "ask" | "context" | "agent",
+  aiChatMode: "ask" | "context" | "mc",
   editingGroupId: string | null
 ): { function_declarations: any[] } | undefined {
   const tools = getAvailableTools(aiChatMode, editingGroupId);

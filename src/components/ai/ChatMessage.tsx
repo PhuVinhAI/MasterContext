@@ -9,17 +9,12 @@ import {
   Folder,
   ListChecks,
   Loader2,
-  FilePlus,
-  FileMinus,
-  FileEdit,
   Scissors,
   XCircle,
   RotateCcw,
   Brain,
   ChevronDown,
   ChevronUp,
-  Terminal,
-  FileDiff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type ChatMessage as ChatMessageType } from "@/store/types";
@@ -33,31 +28,6 @@ interface ChatMessageProps {
   isLastAssistantMessageInTurn: boolean;
   editingMessageIndex: number | null;
   onStartEdit: (index: number) => void;
-}
-
-function TerminalToolView({ command, result, status }: any) {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <div className="flex flex-col w-full min-w-0">
-      <div 
-        className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1.5 -mx-1 rounded transition-colors text-xs font-medium text-muted-foreground" 
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <span className="flex-1 truncate font-mono text-foreground">$ {command}</span>
-        {isOpen ? <ChevronUp className="h-4 w-4 shrink-0"/> : <ChevronDown className="h-4 w-4 shrink-0"/>}
-      </div>
-      {isOpen && (
-        <div className="mt-1 p-2.5 bg-black/90 dark:bg-black/60 rounded-md text-green-400 font-mono text-[11px] overflow-x-auto max-h-64 custom-scrollbar w-full border border-border/10">
-          <div className="text-white/90 mb-2 select-all break-all font-semibold">$ {command}</div>
-          {status ? (
-            <div className="whitespace-pre min-w-max border-t border-white/20 pt-2 text-green-300/80">{result || "No output"}</div>
-          ) : (
-            <div className="flex items-center gap-2 text-muted-foreground italic border-t border-white/20 pt-2"><Loader2 className="h-3 w-3 animate-spin"/> Running...</div>
-          )}
-        </div>
-      )}
-    </div>
-  );
 }
 
 export function ChatMessage({
@@ -181,207 +151,6 @@ export function ChatMessage({
         }
         break;
 
-      case "create_file":
-        ToolIcon = FilePlus;
-        try {
-          const args = JSON.parse(tool.function.arguments);
-          const filePath = args.file_path ?? "unknown file";
-          const fileName = filePath.split("/").pop() ?? filePath;
-          const success = tool.status !== "error";
-
-          toolContent = (
-            <div className="flex items-baseline gap-1.5">
-              <span
-                className={cn(
-                  "font-medium",
-                  success ? "text-foreground" : "text-destructive"
-                )}
-              >
-                {t(
-                  success
-                    ? "aiPanel.toolCall.createFileSuccess"
-                    : "aiPanel.toolCall.createFileError"
-                )}
-              </span>
-              <code className="font-medium" title={filePath}>
-                {fileName}
-              </code>
-            </div>
-          );
-        } catch (e) {
-          toolContent = <p>{t("aiPanel.toolCall.writingFileGeneric")}</p>;
-        }
-        break;
-
-      case "delete_file":
-        ToolIcon = FileMinus;
-        try {
-          const args = JSON.parse(tool.function.arguments);
-          const filePath = args.file_path ?? "unknown file";
-          const fileName = filePath.split("/").pop() ?? filePath;
-          const success = tool.status !== "error";
-
-          toolContent = (
-            <div className="flex items-baseline gap-1.5">
-              <span
-                className={cn(
-                  "font-medium",
-                  success ? "text-foreground" : "text-destructive"
-                )}
-              >
-                {t(
-                  success
-                    ? "aiPanel.toolCall.deleteFileSuccess"
-                    : "aiPanel.toolCall.deleteFileError"
-                )}
-              </span>
-              <code className="font-medium" title={filePath}>
-                {fileName}
-              </code>
-            </div>
-          );
-        } catch (e) {
-          toolContent = <p>{t("aiPanel.toolCall.writingFileGeneric")}</p>;
-        }
-        break;
-
-      case "rename_file":
-        ToolIcon = FileEdit;
-        try {
-          const args = JSON.parse(tool.function.arguments);
-          const success = tool.status !== "error";
-          const oldName = args.old_path?.split("/").pop() || "unknown";
-          const newName = args.new_path?.split("/").pop() || "unknown";
-
-          toolContent = (
-            <div className="flex items-baseline gap-1.5 flex-wrap">
-              <span
-                className={cn(
-                  "font-medium",
-                  success ? "text-foreground" : "text-destructive"
-                )}
-              >
-                {t(
-                  success
-                    ? "aiPanel.toolCall.renameFileSuccess"
-                    : "aiPanel.toolCall.renameFileError"
-                )}
-              </span>
-              <code className="font-medium text-xs" title={args.old_path}>{oldName}</code>
-              <span className="text-xs">→</span>
-              <code className="font-medium text-xs" title={args.new_path}>{newName}</code>
-            </div>
-          );
-        } catch (e) {
-          toolContent = <p>{t("aiPanel.toolCall.writingFileGeneric")}</p>;
-        }
-        break;
-
-      case "create_directory":
-        ToolIcon = Folder;
-        try {
-          const args = JSON.parse(tool.function.arguments);
-          const success = tool.status !== "error";
-          const dirName = args.dir_path?.split("/").pop() || "unknown";
-
-          toolContent = (
-            <div className="flex items-baseline gap-1.5">
-              <span
-                className={cn(
-                  "font-medium",
-                  success ? "text-foreground" : "text-destructive"
-                )}
-              >
-                {t(
-                  success
-                    ? "aiPanel.toolCall.createDirSuccess"
-                    : "aiPanel.toolCall.createDirError"
-                )}
-              </span>
-              <code className="font-medium" title={args.dir_path}>
-                {dirName}/
-              </code>
-            </div>
-          );
-        } catch (e) {
-          toolContent = <p>{t("aiPanel.toolCall.writingFileGeneric")}</p>;
-        }
-        break;
-
-      case "apply_search_replace":
-        ToolIcon = FileDiff;
-        try {
-          const args = JSON.parse(tool.function.arguments);
-          const filePath = args.file_path ?? "unknown file";
-          const fileName = filePath.split("/").pop() ?? filePath;
-          const success = tool.status !== "error";
-
-          toolContent = (
-            <div className="flex items-baseline gap-1.5">
-              <span
-                className={cn(
-                  "font-medium",
-                  success ? "text-foreground" : "text-destructive"
-                )}
-              >
-                {t(
-                  success
-                    ? "aiPanel.toolCall.searchReplaceSuccess"
-                    : "aiPanel.toolCall.searchReplaceError"
-                )}
-              </span>
-              <code className="font-medium" title={filePath}>
-                {fileName}
-              </code>
-            </div>
-          );
-        } catch (e) {
-          toolContent = <p>{t("aiPanel.toolCall.writingFileGeneric")}</p>;
-        }
-        break;
-
-      case "execute_terminal_command":
-        ToolIcon = Terminal;
-        try {
-          const args = JSON.parse(tool.function.arguments);
-          toolContent = <TerminalToolView command={args.command} result={tool.result} status={tool.status} />;
-        } catch (e) {
-          toolContent = <p>{t("aiPanel.toolCall.writingFileGeneric")}</p>;
-        }
-        break;
-
-      case "write_file":
-        ToolIcon = FileEdit;
-        try {
-          const args = JSON.parse(tool.function.arguments);
-          const filePath = args.file_path ?? "unknown file";
-          const fileName = filePath.split("/").pop() ?? filePath;
-          const success = tool.status !== "error";
-
-          toolContent = (
-            <div className="flex items-baseline gap-1.5">
-              <span
-                className={cn(
-                  "font-medium",
-                  success ? "text-foreground" : "text-destructive"
-                )}
-              >
-                {t(
-                  success
-                    ? "aiPanel.toolCall.writeFileSuccess"
-                    : "aiPanel.toolCall.writeFileError"
-                )}
-              </span>
-              <code className="font-medium" title={filePath}>
-                {fileName}
-              </code>
-            </div>
-          );
-        } catch (e) {
-          toolContent = <p>{t("aiPanel.toolCall.writingFileGeneric")}</p>;
-        }
-        break;
-
       case "add_exclusion_range_to_file":
         ToolIcon = Scissors;
         try {
@@ -423,17 +192,12 @@ export function ChatMessage({
         break;
     }
 
-    const isTerminal = tool.function.name === "execute_terminal_command";
-
     return (
       <div
         key={tool.id}
-        className={cn(
-          "flex text-sm bg-muted/60 dark:bg-muted/30 rounded-lg p-3 border w-full",
-          isTerminal ? "flex-col gap-2" : "flex-row items-start gap-2.5"
-        )}
+        className="flex text-sm bg-muted/60 dark:bg-muted/30 rounded-lg p-3 border w-full flex-row items-start gap-2.5"
       >
-        <div className={cn("flex items-center gap-1.5 shrink-0", isTerminal && "w-full")}>
+        <div className="flex items-center gap-1.5 shrink-0">
           {tool.status === "error" ? (
             <XCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
           ) : (
@@ -441,9 +205,6 @@ export function ChatMessage({
           )}
           {ToolIcon && (
             <ToolIcon className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-          )}
-          {isTerminal && (
-            <span className="font-medium text-foreground ml-1">{t("aiPanel.toolCall.executingCommand")}</span>
           )}
         </div>
         <div className="flex-1 w-full min-w-0">

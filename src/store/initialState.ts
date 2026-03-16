@@ -70,7 +70,7 @@ export const initialState = {
   kiloAvailableModels: [],
   kiloTaskStatus: "idle" as const,
   isAiPanelVisible: false,
-  aiChatMode: "ask" as "ask" | "context" | "agent",
+  aiChatMode: "ask" as "ask" | "context" | "mc",
   openRouterApiKey: "",
   googleApiKey: "",
   nvidiaApiKey: "",
