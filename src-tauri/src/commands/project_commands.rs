@@ -333,9 +333,13 @@ pub fn delete_file(root_path_str: String, file_rel_path: String) -> Result<(), S
     let root_path = std::path::Path::new(&root_path_str);
     let full_path = root_path.join(file_rel_path);
     if full_path.exists() {
-        fs::remove_file(full_path).map_err(|e| format!("Không thể xóa file: {}", e))
+        if full_path.is_dir() {
+            fs::remove_dir_all(full_path).map_err(|e| format!("Không thể xóa thư mục: {}", e))
+        } else {
+            fs::remove_file(full_path).map_err(|e| format!("Không thể xóa file: {}", e))
+        }
     } else {
-        Ok(()) // File không tồn tại, coi như đã xóa thành công
+        Ok(()) // File/Thư mục không tồn tại, coi như đã xóa thành công
     }
 }
 #[command]

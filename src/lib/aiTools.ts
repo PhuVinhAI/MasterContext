@@ -156,13 +156,13 @@ const ALL_TOOLS: Record<string, ToolDefinition> = {
   },
   DELETE_FILE: {
     name: "delete_file",
-    description: "Xóa một file được chỉ định khỏi dự án.",
+    description: "Xóa một file HOẶC một thư mục (bao gồm toàn bộ nội dung bên trong) được chỉ định khỏi dự án.",
     parameters: {
       type: "object",
       properties: {
         file_path: {
           type: "string",
-          description: "Đường dẫn tương đối của file cần xóa.",
+          description: "Đường dẫn tương đối của file hoặc thư mục cần xóa.",
         },
       },
       required: ["file_path"],
