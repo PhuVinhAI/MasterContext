@@ -138,13 +138,13 @@ const ALL_TOOLS: Record<string, ToolDefinition> = {
   CREATE_FILE: {
     name: "create_file",
     description:
-      "Tạo một file mới tại một đường dẫn được chỉ định với nội dung ban đầu tùy chọn.",
+      "Tạo một file mới tại một đường dẫn được chỉ định với nội dung ban đầu. Nếu thư mục chứa file chưa tồn tại, hệ thống sẽ tự động tạo thư mục đó.",
     parameters: {
       type: "object",
       properties: {
         file_path: {
           type: "string",
-          description: "Đường dẫn tương đối nơi file mới sẽ được tạo.",
+          description: "Đường dẫn tương đối nơi file mới sẽ được tạo (VD: src/components/NewButton.tsx).",
         },
         content: {
           type: "string",
@@ -152,6 +152,38 @@ const ALL_TOOLS: Record<string, ToolDefinition> = {
         },
       },
       required: ["file_path"],
+    },
+  },
+  RENAME_FILE: {
+    name: "rename_file",
+    description: "Đổi tên hoặc di chuyển một file HOẶC một thư mục sang đường dẫn mới.",
+    parameters: {
+      type: "object",
+      properties: {
+        old_path: {
+          type: "string",
+          description: "Đường dẫn tương đối hiện tại của file/thư mục cần đổi tên.",
+        },
+        new_path: {
+          type: "string",
+          description: "Đường dẫn tương đối mới cho file/thư mục.",
+        },
+      },
+      required: ["old_path", "new_path"],
+    },
+  },
+  CREATE_DIRECTORY: {
+    name: "create_directory",
+    description: "Tạo một thư mục mới trống rỗng (sẽ tự tạo cả các thư mục cha nếu chưa có). Lưu ý: Nếu dùng lệnh create_file thì không cần gọi lệnh này vì hệ thống tự tạo thư mục cha.",
+    parameters: {
+      type: "object",
+      properties: {
+        dir_path: {
+          type: "string",
+          description: "Đường dẫn tương đối của thư mục cần tạo.",
+        },
+      },
+      required: ["dir_path"],
     },
   },
   DELETE_FILE: {
@@ -198,6 +230,8 @@ function getAvailableTools(
     tools.push(
       ALL_TOOLS.WRITE_FILE,
       ALL_TOOLS.CREATE_FILE,
+      ALL_TOOLS.RENAME_FILE,
+      ALL_TOOLS.CREATE_DIRECTORY,
       ALL_TOOLS.DELETE_FILE,
       ALL_TOOLS.MODIFY_CONTEXT_GROUP,
       ALL_TOOLS.ADD_EXCLUSION_RANGE_TO_FILE

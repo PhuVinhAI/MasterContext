@@ -35,7 +35,7 @@ export interface UIActions {
     endLine: number
   ) => Promise<{ success: boolean; message: string }>;
   executeFileOperationFromAI: (
-    toolName: "write_file" | "create_file" | "delete_file",
+    toolName: "write_file" | "create_file" | "delete_file" | "rename_file" | "create_directory",
     args: any
   ) => Promise<{
     success: boolean;
@@ -433,6 +433,17 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
           rootPathStr: rootPath,
           fileRelPath: file_path,
           content: args.content || "",
+        });
+      } else if (toolName === "rename_file") {
+        await invoke("rename_file", {
+          rootPathStr: rootPath,
+          oldRelPath: args.old_path,
+          newRelPath: args.new_path,
+        });
+      } else if (toolName === "create_directory") {
+        await invoke("create_directory", {
+          rootPathStr: rootPath,
+          dirRelPath: args.dir_path,
         });
       } else if (toolName === "write_file") {
         const originalContent = await invoke<string>("get_file_content", {

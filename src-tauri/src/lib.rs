@@ -48,6 +48,8 @@ pub fn run() {
             commands::read_file_with_lines,
             commands::save_file_content,
             commands::create_file,
+            commands::rename_file,
+            commands::create_directory,
             commands::delete_file,
             commands::update_groups_in_project_data,
             commands::start_group_update,

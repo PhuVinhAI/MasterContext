@@ -215,7 +215,11 @@
       "createFileSuccess": "Đã tạo thành công",
       "createFileError": "Không thể tạo",
       "deleteFileSuccess": "Đã xóa thành công",
-      "deleteFileError": "Không thể xóa"
+      "deleteFileError": "Không thể xóa",
+      "renameFileSuccess": "Đã đổi tên/di chuyển thành công",
+      "renameFileError": "Không thể đổi tên",
+      "createDirSuccess": "Đã tạo thư mục",
+      "createDirError": "Không thể tạo thư mục"
     },
     "addedExclusion": "Đã thêm vùng loại trừ cho",
     "addedExclusionError": "Không thể thêm vùng loại trừ cho",

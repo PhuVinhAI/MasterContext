@@ -329,6 +329,30 @@ pub fn create_file(
 }
 
 #[command]
+pub fn rename_file(
+    root_path_str: String,
+    old_rel_path: String,
+    new_rel_path: String,
+) -> Result<(), String> {
+    let root_path = std::path::Path::new(&root_path_str);
+    let old_path = root_path.join(old_rel_path);
+    let new_path = root_path.join(new_rel_path);
+
+    if let Some(parent_dir) = new_path.parent() {
+        fs::create_dir_all(parent_dir).map_err(|e| format!("Không thể tạo thư mục cha: {}", e))?;
+    }
+
+    fs::rename(old_path, new_path).map_err(|e| format!("Không thể đổi tên/di chuyển: {}", e))
+}
+
+#[command]
+pub fn create_directory(root_path_str: String, dir_rel_path: String) -> Result<(), String> {
+    let root_path = std::path::Path::new(&root_path_str);
+    let full_path = root_path.join(dir_rel_path);
+    fs::create_dir_all(full_path).map_err(|e| format!("Không thể tạo thư mục: {}", e))
+}
+
+#[command]
 pub fn delete_file(root_path_str: String, file_rel_path: String) -> Result<(), String> {
     let root_path = std::path::Path::new(&root_path_str);
     let full_path = root_path.join(file_rel_path);

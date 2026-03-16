@@ -218,6 +218,69 @@ export function ChatMessage({
         }
         break;
 
+      case "rename_file":
+        ToolIcon = FileEdit;
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const success = tool.status !== "error";
+          const oldName = args.old_path?.split("/").pop() || "unknown";
+          const newName = args.new_path?.split("/").pop() || "unknown";
+
+          toolContent = (
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span
+                className={cn(
+                  "font-medium",
+                  success ? "text-foreground" : "text-destructive"
+                )}
+              >
+                {t(
+                  success
+                    ? "aiPanel.toolCall.renameFileSuccess"
+                    : "aiPanel.toolCall.renameFileError"
+                )}
+              </span>
+              <code className="font-medium text-xs" title={args.old_path}>{oldName}</code>
+              <span className="text-xs">→</span>
+              <code className="font-medium text-xs" title={args.new_path}>{newName}</code>
+            </div>
+          );
+        } catch (e) {
+          toolContent = <p>{t("aiPanel.toolCall.writingFileGeneric")}</p>;
+        }
+        break;
+
+      case "create_directory":
+        ToolIcon = Folder;
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const success = tool.status !== "error";
+          const dirName = args.dir_path?.split("/").pop() || "unknown";
+
+          toolContent = (
+            <div className="flex items-baseline gap-1.5">
+              <span
+                className={cn(
+                  "font-medium",
+                  success ? "text-foreground" : "text-destructive"
+                )}
+              >
+                {t(
+                  success
+                    ? "aiPanel.toolCall.createDirSuccess"
+                    : "aiPanel.toolCall.createDirError"
+                )}
+              </span>
+              <code className="font-medium" title={args.dir_path}>
+                {dirName}/
+              </code>
+            </div>
+          );
+        } catch (e) {
+          toolContent = <p>{t("aiPanel.toolCall.writingFileGeneric")}</p>;
+        }
+        break;
+
       case "write_file":
         ToolIcon = FileEdit;
         try {

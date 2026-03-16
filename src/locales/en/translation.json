@@ -215,7 +215,11 @@
       "createFileSuccess": "Successfully created",
       "createFileError": "Failed to create",
       "deleteFileSuccess": "Successfully deleted",
-      "deleteFileError": "Failed to delete"
+      "deleteFileError": "Failed to delete",
+      "renameFileSuccess": "Successfully renamed/moved",
+      "renameFileError": "Failed to rename",
+      "createDirSuccess": "Successfully created directory",
+      "createDirError": "Failed to create directory"
     },
     "addedExclusion": "Added exclusion for",
     "addedExclusionError": "Failed to add exclusion for",
