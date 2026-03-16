@@ -200,13 +200,16 @@ export const handleStreamingResponseGoogle = async (
 
     if (objectsToProcess.length > 0) {
       let combinedText = "";
+      let chunkUsage: GenerationInfo | null = null;
+      
       for (const chunk of objectsToProcess) {
         if (chunk.usageMetadata) {
-          finalUsage = {
+          chunkUsage = {
             tokens_prompt: chunk.usageMetadata.promptTokenCount || 0,
             tokens_completion: chunk.usageMetadata.candidatesTokenCount || 0,
             total_cost: 0,
           };
+          finalUsage = chunkUsage;
         }
 
         const part = chunk?.candidates?.[0]?.content?.parts?.[0];
@@ -228,26 +231,28 @@ export const handleStreamingResponseGoogle = async (
         combinedText += part.text || "";
       }
 
-      if (!combinedText) {
+      if (!combinedText && !chunkUsage) {
         continue;
       }
 
-      if (isFirstChunk) {
+      if (isFirstChunk && combinedText) {
         isFirstChunk = false;
         const newAssistantMessage: ChatMessage = {
           role: "assistant",
           content: combinedText,
+          ...(chunkUsage && { generationInfo: chunkUsage }),
         };
         setState((state) => ({
           chatMessages: [...state.chatMessages, newAssistantMessage],
         }));
-      } else {
+      } else if (combinedText || chunkUsage) {
         setState((state) => {
           const lastMessage = state.chatMessages[state.chatMessages.length - 1];
           if (lastMessage && lastMessage.role === "assistant") {
             const updatedMessage = {
               ...lastMessage,
-              content: (lastMessage.content || "") + combinedText,
+              content: combinedText ? (lastMessage.content || "") + combinedText : lastMessage.content,
+              ...(chunkUsage && { generationInfo: chunkUsage }),
             };
             return {
               chatMessages: [
@@ -262,22 +267,14 @@ export const handleStreamingResponseGoogle = async (
     }
   }
 
-  // After stream is complete, add generation info
+  // After stream is complete, save session
   if (finalUsage) {
-    setState((state) => {
-      const lastMessage = state.chatMessages[state.chatMessages.length - 1];
-      if (lastMessage && lastMessage.role === "assistant") {
-        const updatedMessage = { ...lastMessage, generationInfo: finalUsage };
-        const finalMessages = [
-          ...state.chatMessages.slice(0, -1),
-          updatedMessage,
-        ];
-        getState().actions.saveCurrentChatSession(finalMessages);
-        return {
-          chatMessages: finalMessages,
-        };
-      }
-      return state;
-    });
+    const state = getState();
+    const lastMessage = state.chatMessages[state.chatMessages.length - 1];
+    if (lastMessage && lastMessage.role === "assistant") {
+      // The state is already updated with finalUsage from the loop above,
+      // so we just need to persist the session to the backend.
+      getState().actions.saveCurrentChatSession(state.chatMessages);
+    }
   }
 };

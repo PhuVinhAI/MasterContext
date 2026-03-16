@@ -70,8 +70,7 @@ export function AIPanelHeader({
         </h1>
         {view === "chat" && activeChatSession && (
           <div className="text-xs text-muted-foreground flex items-center gap-3 mt-1">
-            {selectedModelDetails?.provider !== "google" &&
-              activeChatSession.totalTokens != null &&
+            {activeChatSession.totalTokens != null &&
               selectedModelDetails?.context_length != null && (
                 <div
                   className={cn(
@@ -99,8 +98,7 @@ export function AIPanelHeader({
                   </span>
                 </div>
               )}
-            {selectedModelDetails?.provider !== "google" &&
-              activeChatSession.totalCost != null &&
+            {activeChatSession.totalCost != null &&
               activeChatSession.totalCost > 0 && (
                 <div
                   className="flex items-center gap-1.5"
