@@ -185,6 +185,7 @@ export const createAiChatActions: StateCreator<
     const {
       openRouterApiKey,
       googleApiKey,
+      nvidiaApiKey,
       allAvailableModels,
       aiModels,
       selectedAiModel,
@@ -206,7 +207,7 @@ export const createAiChatActions: StateCreator<
     const model = allAvailableModels.find((m) => m.id === selectedAiModel);
     if (!model || !activeChatSession) return;
 
-    const actualApiKey = model.provider === "google" ? googleApiKey : openRouterApiKey;
+    const actualApiKey = model.provider === "google" ? googleApiKey : (model.provider === "nvidia" ? nvidiaApiKey : openRouterApiKey);
     if (!actualApiKey) {
       console.error(`API key for ${model.provider} is not set.`);
       set({ isAiPanelLoading: false });
@@ -296,8 +297,12 @@ export const createAiChatActions: StateCreator<
       };
 
       try {
+        const endpointUrl = model.provider === "nvidia" 
+          ? "https://integrate.api.nvidia.com/v1/chat/completions"
+          : "https://openrouter.ai/api/v1/chat/completions";
+
         const response = await fetch(
-          "https://openrouter.ai/api/v1/chat/completions",
+          endpointUrl,
           {
             method: "POST",
             headers: {
@@ -322,7 +327,8 @@ export const createAiChatActions: StateCreator<
         } else {
           const assistantMessage = await handleNonStreamingResponse(
             response,
-            actualApiKey
+            actualApiKey,
+            model.provider === "openrouter"
           );
           set((state) => ({
             chatMessages: [...state.chatMessages, assistantMessage],

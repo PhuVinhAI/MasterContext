@@ -174,7 +174,7 @@
   "aiPanel": {
     "title": "AI Chat",
     "placeholder": "Enter your prompt...",
-    "noApiKey": "OpenRouter API key not set. Please add it in Settings > AI.",
+    "noApiKey": "API key for the selected provider is not set. Please add it in Settings > AI.",
     "error": "An error occurred. Please check your API key and network connection.",
     "responding": "Responding...",
     "newChat": "New Chat",
@@ -384,6 +384,9 @@
       },
       "google": {
         "getApiKeyHint": "Get your API key from <1>Google AI Studio</1>."
+      },
+      "nvidia": {
+        "getApiKeyHint": "Get your API key from <1>NVIDIA NIM</1>."
       },
       "streamResponse": {
         "label": "Stream responses",

@@ -235,13 +235,14 @@ export const fetchGenerationInfoWithRetry = async (
  */
 export const handleNonStreamingResponse = async (
   response: Response,
-  apiKey: string
+  apiKey: string,
+  isOpenRouter: boolean = true
 ): Promise<ChatMessage> => {
   const data = await response.json();
   const assistantMessage = data.choices[0].message;
   const generationId = data.id;
 
-  if (generationId) {
+  if (generationId && isOpenRouter) {
     const fetchedInfo = await fetchGenerationInfoWithRetry(
       generationId,
       apiKey
@@ -275,7 +276,9 @@ export const handleStreamingResponse = async (
   }
 
   const { getState, setState } = storeApi;
-  const apiKey = getState().openRouterApiKey;
+  const { openRouterApiKey, selectedAiModel, allAvailableModels } = getState();
+  const apiKey = openRouterApiKey;
+  const isOpenRouter = allAvailableModels.find((m) => m.id === selectedAiModel)?.provider === "openrouter";
   let generationId: string | null = null;
 
   const reader = response.body.getReader();
@@ -346,7 +349,7 @@ export const handleStreamingResponse = async (
   }
 
   // After stream is complete, fetch generation info
-  if (generationId && apiKey) {
+  if (generationId && apiKey && isOpenRouter) {
     const generationInfo = await fetchGenerationInfoWithRetry(
       generationId,
       apiKey

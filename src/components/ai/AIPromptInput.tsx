@@ -187,6 +187,8 @@ export function AIPromptInput({
                                 className={
                                   model.provider === "google"
                                     ? "font-semibold text-blue-600 dark:text-blue-400"
+                                    : model.provider === "nvidia"
+                                    ? "font-semibold text-green-600 dark:text-green-400"
                                     : ""
                                 }
                               >

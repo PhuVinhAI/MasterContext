@@ -211,7 +211,24 @@ function App() {
           },
         ];
 
-        let allAvailableModels: AIModel[] = [...googleModels];
+        const nvidiaModels: AIModel[] = [
+          {
+            provider: "nvidia",
+            id: "meta/llama-3.1-405b-instruct",
+            name: "Llama 3.1 405B (NVIDIA)",
+            context_length: 128000,
+            pricing: { prompt: "0", completion: "0" },
+          },
+          {
+            provider: "nvidia",
+            id: "stepfun-ai/step-3.5-flash",
+            name: "Step 3.5 Flash (NVIDIA)",
+            context_length: 16384,
+            pricing: { prompt: "0", completion: "0" },
+          },
+        ];
+
+        let allAvailableModels: AIModel[] = [...googleModels, ...nvidiaModels];
 
         // Fetch all models from OpenRouter
         try {
@@ -258,6 +275,7 @@ function App() {
           nonAnalyzableExtensions: settings.nonAnalyzableExtensions ?? [],
           openRouterApiKey: settings.openRouterApiKey ?? "",
           googleApiKey: settings.googleApiKey ?? "",
+          nvidiaApiKey: settings.nvidiaApiKey ?? "",
           allAvailableModels,
           // SỬA LỖI: Thêm các cài đặt AI bị thiếu vào đây
           streamResponse: settings.streamResponse ?? true,

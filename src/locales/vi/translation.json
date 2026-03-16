@@ -174,7 +174,7 @@
   "aiPanel": {
     "title": "Trò chuyện AI",
     "placeholder": "Nhập câu lệnh của bạn...",
-    "noApiKey": "Chưa có API key OpenRouter. Vui lòng thêm trong Cài đặt > AI.",
+    "noApiKey": "Chưa có API key cho nhà cung cấp đã chọn. Vui lòng thêm trong Cài đặt > AI.",
     "error": "Đã xảy ra lỗi. Vui lòng kiểm tra API key và kết nối mạng.",
     "responding": "Đang phản hồi...",
     "newChat": "Cuộc trò chuyện mới",
@@ -384,6 +384,9 @@
       },
       "google": {
         "getApiKeyHint": "Lấy API key của bạn từ <1>Google AI Studio</1>."
+      },
+      "nvidia": {
+        "getApiKeyHint": "Lấy API key của bạn từ <1>NVIDIA NIM</1>."
       },
       "streamResponse": {
         "label": "Stream phản hồi",

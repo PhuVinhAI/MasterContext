@@ -23,6 +23,8 @@ export function AIPanel() {
     chatMessages,
     isAiPanelLoading,
     openRouterApiKey,
+    googleApiKey,
+    nvidiaApiKey,
     aiModels,
     selectedAiModel,
     aiChatMode,
@@ -33,6 +35,8 @@ export function AIPanel() {
       chatMessages: state.chatMessages,
       isAiPanelLoading: state.isAiPanelLoading,
       openRouterApiKey: state.openRouterApiKey,
+      googleApiKey: state.googleApiKey,
+      nvidiaApiKey: state.nvidiaApiKey,
       aiModels: state.aiModels,
       selectedAiModel: state.selectedAiModel,
       aiChatMode: state.aiChatMode,
@@ -84,7 +88,13 @@ export function AIPanel() {
   };
 
   const renderChatView = () => {
-    if (!openRouterApiKey) {
+    const provider = aiModels.find((m) => m.id === selectedAiModel)?.provider || "openrouter";
+    const hasKey = 
+      (provider === "openrouter" && openRouterApiKey) ||
+      (provider === "google" && googleApiKey) ||
+      (provider === "nvidia" && nvidiaApiKey);
+
+    if (!hasKey) {
       return <NoApiKeyView />;
     }
 

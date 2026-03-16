@@ -133,6 +133,7 @@ export interface AppState {
   aiChatMode: AiChatMode;
   openRouterApiKey: string;
   googleApiKey: string;
+  nvidiaApiKey: string;
   allAvailableModels: AIModel[];
   aiModels: AIModel[];
   chatMessages: ChatMessage[];

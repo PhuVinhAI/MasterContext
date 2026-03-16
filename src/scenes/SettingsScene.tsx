@@ -52,6 +52,7 @@ export function SettingsScene() {
     gitExportModeIsContext,
     googleApiKey,
     openRouterApiKey, // This should be apiKey
+    nvidiaApiKey,
     aiModels, // This should be models
     systemPrompt,
     temperature,
@@ -169,6 +170,7 @@ export function SettingsScene() {
           <AITab
             apiKey={openRouterApiKey}
             googleApiKey={googleApiKey}
+            nvidiaApiKey={nvidiaApiKey}
             models={aiModels}
             systemPrompt={systemPrompt}
             streamResponse={streamResponse}
@@ -180,6 +182,7 @@ export function SettingsScene() {
               await updateAppSettings({
                 openRouterApiKey: newSettings.apiKey,
                 googleApiKey: newSettings.googleApiKey,
+                nvidiaApiKey: newSettings.nvidiaApiKey,
                 aiModels: newSettings.models,
                 systemPrompt: newSettings.systemPrompt,
                 streamResponse: newSettings.streamResponse,
