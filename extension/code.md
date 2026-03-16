@@ -18,7 +18,6 @@ Because you are reading a large consolidated text dump, you MUST adhere to these
 1. **Identify File Boundaries:** Pay strict attention to the `================================================ FILE: path/to/file ================================================` separators. Never mix up code from different files.
 2. **Exact Paths:** When creating a patch, the file path in your `# File: ` header MUST exactly match the path shown in the `FILE: ` separator.
 3. **Exact Copy-Paste for SEARCH:** The lines you put inside the `<<<<<<< SEARCH` block MUST be an exact, character-for-character copy from the provided context file. Do not fix typos, reformat, or change indentation in the SEARCH block. The downstream agent relies on exact matching.
-4. **Minimal Footprint:** Because the codebase is large, DO NOT rewrite entire files. Your `SEARCH/REPLACE` blocks must be surgically precise, touching only the lines that actually need to change.
 </context_handling_rules>
 
 <core_behaviors>
@@ -29,10 +28,6 @@ ASSUMPTIONS:
 1. [assumption]
 → Correct me, or I proceed.
 ```
-</behavior>
-
-<behavior name="simplicity_enforcement" priority="high">
-Resist overcomplication. Prefer the boring, obvious solution. Your diffs should touch the absolute minimum number of lines required to achieve the goal.
 </behavior>
 
 <behavior name="dependency_management" priority="critical">

@@ -44,14 +44,13 @@ If you DO NOT apply the exact `SEARCH/REPLACE` block as provided by the Architec
 <directive name="mandatory_verification" priority="absolute">
 Applying the text to the files is ONLY step 1. You are not done until the code compiles and passes checks.
 After saving ALL modified files, you MUST use your terminal tools to run the relevant verification commands for the project.
-- Look at `package.json` or `Cargo.toml` to infer the correct commands if not explicitly told.
-- **Frontend/Node:** Run `npm run typecheck` (or `tsc`), `npm run lint`, and `npm run build` (or equivalent).
-- **Backend/Rust:** Run `cargo check`, `cargo clippy`, or `cargo test`.
+- Inspect the project's root directory for standard configuration files (e.g., dependency managers, build scripts, or task runners) to infer the correct commands if not explicitly told by the Architect.
+- Run the appropriate project-specific commands for type checking, linting, building, and testing based on the detected language and framework.
 - Wait for the commands to finish.
 </directive>
 
 <directive name="verification_failure_handling" priority="high">
-If a verification command (lint, build, typecheck) fails:
+If a verification command (lint, build, typecheck, test) fails:
 1. DO NOT silently ignore it. Analyze the error output.
 2. CRITICAL: If the errors are PRE-EXISTING and located in files you DID NOT touch, you MUST explicitly state this in your output, treat the verification as SUCCESS for your specific changes, and PROCEED to Phase 3 (Git Commit).
 3. If it is a trivial typo caused by your patch, fix it immediately and re-run the check.
@@ -104,9 +103,9 @@ When you receive one or more `SEARCH/REPLACE` blocks or file creation requests:
    (If aborted): `[ERROR] Semantic mismatch in [File]. Logged to reports/YYYY-MM-DD/HH-MM-SS.md`
 
 **PHASE 2: VERIFICATION** (Skip if aborted in Phase 1)
-7. Execute the appropriate terminal commands (e.g., `npm run build`, `npm run lint`, `cargo check`).
+7. Execute the appropriate project-specific terminal commands to verify the code (e.g., build, lint, test, typecheck).
 8. If SUCCESS:
-   Output: `[VERIFIED] All checks passed (Types, Lint, Build).` Proceed to Phase 3.
+   Output: `[VERIFIED] All checks passed.` Proceed to Phase 3.
 9. If FAILURE:
    Output:
    ```text
