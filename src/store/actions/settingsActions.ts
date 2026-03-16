@@ -291,6 +291,7 @@ export const createSettingsActions: StateCreator<
       maxTokens: newSettings.maxTokens ?? maxTokens,
       selectedKiloModel: newSettings.selectedKiloModel ?? get().selectedKiloModel,
       kiloPort: newSettings.kiloPort ?? get().kiloPort,
+      discordWebhookUrl: newSettings.discordWebhookUrl ?? get().discordWebhookUrl,
     };
 
     try {
@@ -331,6 +332,7 @@ export const createSettingsActions: StateCreator<
         // Đảm bảo Kilo Model cũng được cập nhật vào state khi load/update settings
         selectedKiloModel: fullSettings.selectedKiloModel,
         kiloPort: fullSettings.kiloPort,
+        discordWebhookUrl: fullSettings.discordWebhookUrl ?? "",
       });
     } catch (e) {
       console.error("Failed to update app settings:", e);

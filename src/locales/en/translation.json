@@ -407,6 +407,8 @@
       "port": "Kilo Server Port",
       "model": "Default Kilo Model",
       "description": "This port must match the Port configured in the AI Studio Archiver Extension. Default is 9999.",
+      "discordWebhook": "Discord Webhook URL",
+      "discordWebhookDesc": "Receive a Discord notification when Kilo Agent successfully completes a task.",
       "refreshModels": "Refresh Models",
       "availableModels": "Available Models from Kilo CLI:"
     }

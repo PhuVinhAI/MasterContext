@@ -103,6 +103,7 @@ export interface AppSettings {
   maxTokens?: number;
   selectedKiloModel?: string;
   kiloPort?: number;
+  discordWebhookUrl?: string;
 }
 
 export interface GitRepositoryInfo {

@@ -126,6 +126,7 @@ export interface AppState {
   kiloAvailableModels: KiloModelInfo[];
   kiloTaskStatus: "idle" | "running" | "success" | "error";
   kiloPort: number;
+  discordWebhookUrl: string;
 
   // AI Panel
   isAiPanelVisible: boolean;

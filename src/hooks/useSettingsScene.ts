@@ -45,6 +45,7 @@ export function useSettingsScene() {
     streamResponse,
     kiloPort,
     selectedKiloModel,
+    discordWebhookUrl,
   } = useAppStore(
     useShallow((state) => ({
       syncEnabled: state.syncEnabled,
@@ -78,6 +79,7 @@ export function useSettingsScene() {
       streamResponse: state.streamResponse,
       kiloPort: state.kiloPort,
       selectedKiloModel: state.selectedKiloModel,
+      discordWebhookUrl: state.discordWebhookUrl,
     }))
   );
 
@@ -192,6 +194,7 @@ export function useSettingsScene() {
     streamResponse,
     kiloPort,
     selectedKiloModel,
+    discordWebhookUrl,
     updateAppSettings,
     setSyncSettings,
     setCustomIgnorePatterns,

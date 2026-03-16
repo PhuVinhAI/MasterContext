@@ -267,6 +267,7 @@ function App() {
           topK: settings.topK ?? 0,
           maxTokens: settings.maxTokens ?? 0,
           kiloPort: settings.kiloPort ?? 9999,
+          discordWebhookUrl: settings.discordWebhookUrl ?? "",
           aiModels: projectAiModels.length
             ? projectAiModels
             : [
@@ -590,13 +591,30 @@ function App() {
 
     unlistenFuncs.push(
       listen("kilo_task_success", async () => {
-        useAppStore.getState().actions.setKiloTaskStatus("success");
+        const state = useAppStore.getState();
+        state.actions.setKiloTaskStatus("success");
         await message(t("Trợ lý Kilo đã hoàn thành nhiệm vụ và cập nhật mã nguồn thành công!"), {
           title: "Kilo Agent",
           kind: "info",
         });
-        if (!useAppStore.getState().isScanning) {
-          useAppStore.getState().actions.rescanProject();
+
+        if (state.discordWebhookUrl) {
+          const projectName = state.rootPath ? state.rootPath.split(/[/\\]/).pop() : "Dự án";
+          try {
+            await fetch(state.discordWebhookUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                content: `✅ **Kilo Agent** đã hoàn thành tác vụ cập nhật mã nguồn trong dự án \`${projectName}\`.`,
+              }),
+            });
+          } catch (e) {
+            console.error("Lỗi khi gửi Discord webhook:", e);
+          }
+        }
+
+        if (!state.isScanning) {
+          state.actions.rescanProject();
         }
       })
     );

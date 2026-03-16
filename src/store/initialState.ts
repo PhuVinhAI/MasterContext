@@ -90,6 +90,7 @@ export const initialState = {
   editingMessageIndex: null,
   aiAttachedFiles: [] as AttachedItem[],
   kiloPort: 9999,
+  discordWebhookUrl: "",
 };
 
 export type InitialState = typeof initialState;

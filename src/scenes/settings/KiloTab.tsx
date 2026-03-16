@@ -11,14 +11,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface KiloTabProps {
   kiloPort: number;
   selectedKiloModel: string;
+  discordWebhookUrl: string;
   kiloAvailableModels: KiloModelInfo[];
   onRefreshModels: () => Promise<void>;
-  onSave: (settings: { kiloPort: number; selectedKiloModel: string }) => Promise<void>;
+  onSave: (settings: { kiloPort: number; selectedKiloModel: string; discordWebhookUrl: string }) => Promise<void>;
 }
 
 export function KiloTab({
   kiloPort,
   selectedKiloModel,
+  discordWebhookUrl,
   kiloAvailableModels,
   onRefreshModels,
   onSave,
@@ -26,19 +28,22 @@ export function KiloTab({
   const { t } = useTranslation();
   const [localKiloPort, setLocalKiloPort] = useState(kiloPort);
   const [localKiloModel, setLocalKiloModel] = useState(selectedKiloModel);
+  const [localDiscordUrl, setLocalDiscordUrl] = useState(discordWebhookUrl);
   const [isSaving, setIsSaving] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     setLocalKiloPort(kiloPort);
     setLocalKiloModel(selectedKiloModel);
-  }, [kiloPort, selectedKiloModel]);
+    setLocalDiscordUrl(discordWebhookUrl);
+  }, [kiloPort, selectedKiloModel, discordWebhookUrl]);
 
   const handleSave = async () => {
     setIsSaving(true);
     await onSave({
       kiloPort: localKiloPort,
       selectedKiloModel: localKiloModel,
+      discordWebhookUrl: localDiscordUrl,
     });
     setIsSaving(false);
   };
@@ -49,7 +54,7 @@ export function KiloTab({
     setIsRefreshing(false);
   };
 
-  const isChanged = localKiloPort !== kiloPort || localKiloModel !== selectedKiloModel;
+  const isChanged = localKiloPort !== kiloPort || localKiloModel !== selectedKiloModel || localDiscordUrl !== discordWebhookUrl;
 
   return (
     <div className="space-y-6">
@@ -73,6 +78,18 @@ export function KiloTab({
             className="font-mono max-w-[200px]"
           />
           <p className="text-xs text-muted-foreground">{t("settings.kilo.description")}</p>
+        </div>
+
+        <div className="space-y-2 pt-4 border-t">
+          <Label htmlFor="discord-webhook">{t("settings.kilo.discordWebhook")}</Label>
+          <Input
+            id="discord-webhook"
+            type="url"
+            placeholder="https://discord.com/api/webhooks/..."
+            value={localDiscordUrl}
+            onChange={(e) => setLocalDiscordUrl(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">{t("settings.kilo.discordWebhookDesc")}</p>
         </div>
 
         <div className="space-y-2 pt-4 border-t">
