@@ -396,16 +396,13 @@ pub fn apply_search_replace(
 #[command]
 pub async fn execute_terminal_command(root_path_str: String, command: String) -> Result<String, String> {
     let root_path = Path::new(&root_path_str);
-
-    use std::process::Command;
+    
+    use tokio::process::Command;
     let mut cmd = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");
         c.args(&["/C", &command]);
         #[cfg(target_os = "windows")]
-        {
-            use std::os::windows::process::CommandExt;
-            c.creation_flags(0x08000000);
-        }
+        c.creation_flags(0x08000000); // Ẩn cửa sổ cmd đen
         c
     } else {
         let mut c = Command::new("sh");
@@ -415,9 +412,7 @@ pub async fn execute_terminal_command(root_path_str: String, command: String) ->
 
     cmd.current_dir(root_path);
 
-    let output = cmd
-        .output()
-        .map_err(|e| format!("Failed to execute command: {}", e))?;
+    let output = cmd.output().await.map_err(|e| format!("Failed to execute command: {}", e))?;
 
     let mut result = String::new();
     let stdout_str = String::from_utf8_lossy(&output.stdout);

@@ -373,19 +373,14 @@ export const handleStreamingResponse = async (
 
   // Cập nhật finalUsage nếu API trả về trực tiếp (như NVIDIA)
   if (finalUsage) {
-    setState((state) => {
-      const lastMessage = state.chatMessages[state.chatMessages.length - 1];
-      if (lastMessage && lastMessage.role === "assistant") {
-        const updatedMessage = { ...lastMessage, generationInfo: finalUsage };
-        const finalMessages = [
-          ...state.chatMessages.slice(0, -1),
-          updatedMessage,
-        ];
-        getState().actions.saveCurrentChatSession(finalMessages);
-        return { chatMessages: finalMessages };
-      }
-      return state;
-    });
+    const state = getState();
+    const newMessages = [...state.chatMessages];
+    const lastIndex = newMessages.length - 1;
+    if (newMessages[lastIndex] && newMessages[lastIndex].role === "assistant") {
+      newMessages[lastIndex] = { ...newMessages[lastIndex], generationInfo: finalUsage };
+      setState({ chatMessages: newMessages });
+      await getState().actions.saveCurrentChatSession(newMessages);
+    }
   }
 
   // After stream is complete, fetch generation info (dành cho OpenRouter)
@@ -395,22 +390,14 @@ export const handleStreamingResponse = async (
       apiKey
     );
     if (generationInfo) {
-      setState((state) => {
-        const lastMessage = state.chatMessages[state.chatMessages.length - 1];
-        if (lastMessage && lastMessage.role === "assistant") {
-          const updatedMessage = { ...lastMessage, generationInfo };
-          const finalMessages = [
-            ...state.chatMessages.slice(0, -1),
-            updatedMessage,
-          ];
-          // This is a good place to also trigger a save of the final message state
-          getState().actions.saveCurrentChatSession(finalMessages);
-          return {
-            chatMessages: finalMessages,
-          };
-        }
-        return state;
-      });
+      const state = getState();
+      const newMessages = [...state.chatMessages];
+      const lastIndex = newMessages.length - 1;
+      if (newMessages[lastIndex] && newMessages[lastIndex].role === "assistant") {
+        newMessages[lastIndex] = { ...newMessages[lastIndex], generationInfo };
+        setState({ chatMessages: newMessages });
+        await getState().actions.saveCurrentChatSession(newMessages);
+      }
     }
   }
 };

@@ -35,19 +35,19 @@ interface ChatMessageProps {
   onStartEdit: (index: number) => void;
 }
 
-function TerminalToolView({ command, result, status, t }: any) {
+function TerminalToolView({ command, result, status }: any) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="flex flex-col w-full min-w-0">
       <div 
-        className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1 -ml-1 rounded transition-colors" 
+        className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1.5 -mx-1 rounded transition-colors text-xs font-medium text-muted-foreground" 
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className="font-medium flex-1 text-foreground">{t("aiPanel.toolCall.executingCommand")}</span>
+        <span className="flex-1 truncate font-mono text-foreground">$ {command}</span>
         {isOpen ? <ChevronUp className="h-4 w-4 shrink-0"/> : <ChevronDown className="h-4 w-4 shrink-0"/>}
       </div>
       {isOpen && (
-        <div className="mt-2 p-2.5 bg-black/90 dark:bg-black/60 rounded-md text-green-400 font-mono text-[11px] overflow-x-auto max-h-64 custom-scrollbar w-full border border-border/10">
+        <div className="mt-1 p-2.5 bg-black/90 dark:bg-black/60 rounded-md text-green-400 font-mono text-[11px] overflow-x-auto max-h-64 custom-scrollbar w-full border border-border/10">
           <div className="text-white/90 mb-2 select-all break-all font-semibold">$ {command}</div>
           {status ? (
             <div className="whitespace-pre min-w-max border-t border-white/20 pt-2 text-green-300/80">{result || "No output"}</div>
@@ -344,7 +344,7 @@ export function ChatMessage({
         ToolIcon = Terminal;
         try {
           const args = JSON.parse(tool.function.arguments);
-          toolContent = <TerminalToolView command={args.command} result={tool.result} status={tool.status} t={t} />;
+          toolContent = <TerminalToolView command={args.command} result={tool.result} status={tool.status} />;
         } catch (e) {
           toolContent = <p>{t("aiPanel.toolCall.writingFileGeneric")}</p>;
         }
@@ -423,12 +423,17 @@ export function ChatMessage({
         break;
     }
 
+    const isTerminal = tool.function.name === "execute_terminal_command";
+
     return (
       <div
         key={tool.id}
-        className="flex items-start gap-2.5 text-sm bg-muted/60 dark:bg-muted/30 rounded-lg p-3 border"
+        className={cn(
+          "flex text-sm bg-muted/60 dark:bg-muted/30 rounded-lg p-3 border w-full",
+          isTerminal ? "flex-col gap-2" : "flex-row items-start gap-2.5"
+        )}
       >
-        <div className="flex items-center gap-1.5">
+        <div className={cn("flex items-center gap-1.5 shrink-0", isTerminal && "w-full")}>
           {tool.status === "error" ? (
             <XCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
           ) : (
@@ -437,8 +442,13 @@ export function ChatMessage({
           {ToolIcon && (
             <ToolIcon className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
           )}
+          {isTerminal && (
+            <span className="font-medium text-foreground ml-1">{t("aiPanel.toolCall.executingCommand")}</span>
+          )}
         </div>
-        {toolContent}
+        <div className="flex-1 w-full min-w-0">
+          {toolContent}
+        </div>
       </div>
     );
   };
