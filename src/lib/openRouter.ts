@@ -155,7 +155,11 @@ export const handleToolCalls = async (
   } else if (
     tool.function.name === "write_file" ||
     tool.function.name === "create_file" ||
-    tool.function.name === "delete_file"
+    tool.function.name === "delete_file" ||
+    tool.function.name === "rename_file" ||
+    tool.function.name === "create_directory" ||
+    tool.function.name === "apply_search_replace" ||
+    tool.function.name === "execute_terminal_command"
   ) {
     const { actions } = getState();
     try {
@@ -178,6 +182,7 @@ export const handleToolCalls = async (
     const lastMessage = newMessages[newMessages.length - 1];
     if (lastMessage?.role === "assistant" && lastMessage.tool_calls) {
       lastMessage.tool_calls[0].status = toolSucceeded ? "success" : "error";
+      lastMessage.tool_calls[0].result = toolResultContent; // Lưu lại kết quả cho UI
     }
     return { chatMessages: newMessages };
   });

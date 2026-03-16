@@ -18,6 +18,8 @@ import {
   Brain,
   ChevronDown,
   ChevronUp,
+  Terminal,
+  FileDiff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type ChatMessage as ChatMessageType } from "@/store/types";
@@ -31,6 +33,31 @@ interface ChatMessageProps {
   isLastAssistantMessageInTurn: boolean;
   editingMessageIndex: number | null;
   onStartEdit: (index: number) => void;
+}
+
+function TerminalToolView({ command, result, status, t }: any) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className="flex flex-col w-full min-w-0">
+      <div 
+        className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1 -ml-1 rounded transition-colors" 
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className="font-medium flex-1 text-foreground">{t("aiPanel.toolCall.executingCommand")}</span>
+        {isOpen ? <ChevronUp className="h-4 w-4 shrink-0"/> : <ChevronDown className="h-4 w-4 shrink-0"/>}
+      </div>
+      {isOpen && (
+        <div className="mt-2 p-2.5 bg-black/90 dark:bg-black/60 rounded-md text-green-400 font-mono text-[11px] overflow-auto max-h-64 custom-scrollbar w-full border border-border/10">
+          <div className="text-white/90 mb-2 select-all break-all font-semibold">$ {command}</div>
+          {status ? (
+            <div className="whitespace-pre-wrap break-all border-t border-white/20 pt-2 text-green-300/80">{result || "No output"}</div>
+          ) : (
+            <div className="flex items-center gap-2 text-muted-foreground italic border-t border-white/20 pt-2"><Loader2 className="h-3 w-3 animate-spin"/> Running...</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ChatMessage({
@@ -276,6 +303,48 @@ export function ChatMessage({
               </code>
             </div>
           );
+        } catch (e) {
+          toolContent = <p>{t("aiPanel.toolCall.writingFileGeneric")}</p>;
+        }
+        break;
+
+      case "apply_search_replace":
+        ToolIcon = FileDiff;
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const filePath = args.file_path ?? "unknown file";
+          const fileName = filePath.split("/").pop() ?? filePath;
+          const success = tool.status !== "error";
+
+          toolContent = (
+            <div className="flex items-baseline gap-1.5">
+              <span
+                className={cn(
+                  "font-medium",
+                  success ? "text-foreground" : "text-destructive"
+                )}
+              >
+                {t(
+                  success
+                    ? "aiPanel.toolCall.searchReplaceSuccess"
+                    : "aiPanel.toolCall.searchReplaceError"
+                )}
+              </span>
+              <code className="font-medium" title={filePath}>
+                {fileName}
+              </code>
+            </div>
+          );
+        } catch (e) {
+          toolContent = <p>{t("aiPanel.toolCall.writingFileGeneric")}</p>;
+        }
+        break;
+
+      case "execute_terminal_command":
+        ToolIcon = Terminal;
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          toolContent = <TerminalToolView command={args.command} result={tool.result} status={tool.status} t={t} />;
         } catch (e) {
           toolContent = <p>{t("aiPanel.toolCall.writingFileGeneric")}</p>;
         }

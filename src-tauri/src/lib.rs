@@ -50,6 +50,8 @@ pub fn run() {
             commands::create_file,
             commands::rename_file,
             commands::create_directory,
+            commands::apply_search_replace,
+            commands::execute_terminal_command,
             commands::delete_file,
             commands::update_groups_in_project_data,
             commands::start_group_update,

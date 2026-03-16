@@ -200,6 +200,42 @@ const ALL_TOOLS: Record<string, ToolDefinition> = {
       required: ["file_path"],
     },
   },
+  APPLY_SEARCH_REPLACE: {
+    name: "apply_search_replace",
+    description: "Sửa đổi code bằng cách tìm chính xác một đoạn text và thay thế nó. Khuyến khích dùng cách này thay vì write_file để an toàn và tốn ít token.",
+    parameters: {
+      type: "object",
+      properties: {
+        file_path: {
+          type: "string",
+          description: "Đường dẫn file.",
+        },
+        search_text: {
+          type: "string",
+          description: "Đoạn code gốc cần tìm. Bắt buộc phải chính xác 100% từng ký tự, khoảng trắng và thụt lề.",
+        },
+        replace_text: {
+          type: "string",
+          description: "Đoạn code mới để thay thế.",
+        },
+      },
+      required: ["file_path", "search_text", "replace_text"],
+    },
+  },
+  EXECUTE_TERMINAL_COMMAND: {
+    name: "execute_terminal_command",
+    description: "Thực thi các lệnh Terminal (npm install, cargo build, git status, chạy test, list file...). Lệnh sẽ chạy ngầm và trả về stdout/stderr cho bạn.",
+    parameters: {
+      type: "object",
+      properties: {
+        command: {
+          type: "string",
+          description: "Câu lệnh bash/cmd cần thực thi (vd: npm run lint).",
+        },
+      },
+      required: ["command"],
+    },
+  },
 };
 
 /**
@@ -233,6 +269,8 @@ function getAvailableTools(
       ALL_TOOLS.RENAME_FILE,
       ALL_TOOLS.CREATE_DIRECTORY,
       ALL_TOOLS.DELETE_FILE,
+      ALL_TOOLS.APPLY_SEARCH_REPLACE,
+      ALL_TOOLS.EXECUTE_TERMINAL_COMMAND,
       ALL_TOOLS.MODIFY_CONTEXT_GROUP,
       ALL_TOOLS.ADD_EXCLUSION_RANGE_TO_FILE
     );

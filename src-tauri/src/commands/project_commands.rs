@@ -354,7 +354,7 @@ pub fn create_directory(root_path_str: String, dir_rel_path: String) -> Result<(
 
 #[command]
 pub fn delete_file(root_path_str: String, file_rel_path: String) -> Result<(), String> {
-    let root_path = std::path::Path::new(&root_path_str);
+    let root_path = Path::new(&root_path_str);
     let full_path = root_path.join(file_rel_path);
     if full_path.exists() {
         if full_path.is_dir() {
@@ -366,6 +366,87 @@ pub fn delete_file(root_path_str: String, file_rel_path: String) -> Result<(), S
         Ok(()) // File/Thư mục không tồn tại, coi như đã xóa thành công
     }
 }
+
+#[command]
+pub fn apply_search_replace(
+    root_path_str: String,
+    file_rel_path: String,
+    search_text: String,
+    replace_text: String,
+) -> Result<(), String> {
+    let root_path = Path::new(&root_path_str);
+    let full_path = root_path.join(file_rel_path);
+
+    if !full_path.exists() {
+        return Err("File does not exist".into());
+    }
+
+    let content = fs::read_to_string(&full_path).map_err(|e| e.to_string())?;
+
+    if !content.contains(&search_text) {
+        return Err(
+            "Search block not found in file. Ensure exact matching including whitespaces.".into(),
+        );
+    }
+
+    let new_content = content.replacen(&search_text, &replace_text, 1);
+    fs::write(full_path, new_content).map_err(|e| e.to_string())
+}
+
+#[command]
+pub fn execute_terminal_command(root_path_str: String, command: String) -> Result<String, String> {
+    let root_path = Path::new(&root_path_str);
+
+    use std::process::Command;
+    let mut cmd = if cfg!(target_os = "windows") {
+        let mut c = Command::new("cmd");
+        c.args(&["/C", &command]);
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            c.creation_flags(0x08000000);
+        }
+        c
+    } else {
+        let mut c = Command::new("sh");
+        c.arg("-c").arg(&command);
+        c
+    };
+
+    cmd.current_dir(root_path);
+
+    let output = cmd
+        .output()
+        .map_err(|e| format!("Failed to execute command: {}", e))?;
+
+    let mut result = String::new();
+    let stdout_str = String::from_utf8_lossy(&output.stdout);
+    let stderr_str = String::from_utf8_lossy(&output.stderr);
+
+    result.push_str(&format!(
+        "Exit Code: {}\n",
+        output.status.code().unwrap_or(-1)
+    ));
+    if !stdout_str.trim().is_empty() {
+        result.push_str("--- STDOUT ---\n");
+        result.push_str(&stdout_str.chars().take(4000).collect::<String>());
+        if stdout_str.len() > 4000 {
+            result.push_str("\n... (truncated)");
+        }
+        result.push_str("\n");
+    }
+    if !stderr_str.trim().is_empty() {
+        result.push_str("--- STDERR ---\n");
+        result.push_str(&stderr_str.chars().take(4000).collect::<String>());
+        if stderr_str.len() > 4000 {
+            result.push_str("\n... (truncated)");
+        }
+        result.push_str("\n");
+    }
+
+    Ok(result)
+}
+
 #[command]
 pub fn update_file_exclusions(
     app: AppHandle,

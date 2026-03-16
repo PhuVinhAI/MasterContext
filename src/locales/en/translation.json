@@ -219,7 +219,10 @@
       "renameFileSuccess": "Successfully renamed/moved",
       "renameFileError": "Failed to rename",
       "createDirSuccess": "Successfully created directory",
-      "createDirError": "Failed to create directory"
+      "createDirError": "Failed to create directory",
+      "executingCommand": "Executing terminal command",
+      "searchReplaceSuccess": "Successfully applied Search/Replace to",
+      "searchReplaceError": "Failed to apply Search/Replace to"
     },
     "addedExclusion": "Added exclusion for",
     "addedExclusionError": "Failed to add exclusion for",
