@@ -12,7 +12,6 @@ use std::sync::{mpsc, Arc};
 use std::thread;
 use std::time::UNIX_EPOCH;
 use tauri::{Emitter, Window};
-use tiktoken_rs::cl100k_base;
 
 lazy_static! {
     // Define sets for files/extensions to skip during content analysis.
@@ -35,7 +34,6 @@ pub fn perform_smart_scan_and_rebuild(
     options: ScanOptions,
 ) -> Result<(CachedProjectData, bool), String> {
     let root_path = Path::new(path);
-    let bpe = Arc::new(cl100k_base().map_err(|e| e.to_string())?);
 
     // Dữ liệu cũ giờ được truyền vào trực tiếp, không cần đọc từ file ở đây
     // --- PHÁT HIỆN LẦN QUÉT ĐẦU TIÊN ---
@@ -126,7 +124,6 @@ pub fn perform_smart_scan_and_rebuild(
         let tx = tx.clone();
         let root_path = root_path.to_path_buf();
         let old_metadata_cache = Arc::clone(&old_metadata_cache);
-        let bpe = Arc::clone(&bpe);
         let window = window.clone();
         let final_non_analyzable_extensions = final_non_analyzable_extensions.clone();
 
@@ -171,7 +168,12 @@ pub fn perform_smart_scan_and_rebuild(
                 // If not cached (or changed) AND it's an analyzable file type, perform analysis.
                 if token_count == 0 && !should_skip_analysis {
                     if let Ok(content) = fs::read_to_string(&absolute_path) {
-                        token_count = bpe.encode_with_special_tokens(&content).len();
+                        // Theo Google Gemini: 1 token ≈ 4 characters
+                        let char_count = content.chars().count();
+                        token_count = (char_count as f64 / 4.0).ceil() as usize;
+                        if char_count > 0 && token_count == 0 {
+                            token_count = 1;
+                        }
                     }
                 }
 
