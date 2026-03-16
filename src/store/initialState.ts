@@ -61,6 +61,7 @@ export const initialState = {
   gitCurrentPage: 0,
   hasMoreCommits: true,
   originalGitBranch: null,
+  gitBranches: [],
   isKiloPanelVisible: false,
   isKiloServerRunning: false,
   kiloLogs: [],

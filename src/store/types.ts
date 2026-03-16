@@ -255,6 +255,7 @@ export interface AppState {
   gitCurrentPage: number;
   hasMoreCommits: boolean;
   originalGitBranch: string | null; // <-- THÊM STATE MỚI
+  gitBranches: string[];
 
   // Kilo Panel
   isKiloPanelVisible: boolean;

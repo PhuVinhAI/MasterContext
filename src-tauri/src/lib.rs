@@ -95,6 +95,9 @@ pub fn run() {
             commands::update_app_settings, // <-- COMMAND MỚI
             commands::get_resource_file_content,
             commands::check_git_repository,
+            commands::get_git_branches,
+            commands::create_git_branch,
+            commands::reset_and_force_push,
             commands::get_git_commits, // SỬA LỖI: Thiếu dấu phẩy
             commands::get_commit_diff,
             commands::generate_commit_context,

@@ -59,6 +59,66 @@ pub fn check_git_repository(path: String) -> Result<models::GitRepositoryInfo, S
 }
 
 #[command]
+pub fn get_git_branches(path: String) -> Result<Vec<String>, String> {
+    let repo = git2::Repository::open(&path).map_err(|e| e.to_string())?;
+    let branches = repo.branches(Some(git2::BranchType::Local)).map_err(|e| e.to_string())?;
+    let mut branch_names = Vec::new();
+    for branch in branches {
+        if let Ok((b, _)) = branch {
+            if let Ok(Some(name)) = b.name() {
+                branch_names.push(name.to_string());
+            }
+        }
+    }
+    Ok(branch_names)
+}
+
+#[command]
+pub fn create_git_branch(path: String, branch_name: String) -> Result<(), String> {
+    let repo = git2::Repository::open(&path).map_err(|e| e.to_string())?;
+    let head = repo.head().map_err(|e| e.to_string())?;
+    let commit = head.peel_to_commit().map_err(|e| e.to_string())?;
+    repo.branch(&branch_name, &commit, false).map_err(|e| e.to_string())?;
+    
+    // Checkout the new branch
+    let obj = repo.revparse_single(&format!("refs/heads/{}", branch_name)).map_err(|e| e.to_string())?;
+    repo.checkout_tree(&obj, None).map_err(|e| e.to_string())?;
+    repo.set_head(&format!("refs/heads/{}", branch_name)).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[command]
+pub async fn reset_and_force_push(path: String, commit_sha: String, branch: String) -> Result<(), String> {
+    use tokio::process::Command;
+    
+    let git_cmd = if cfg!(target_os = "windows") { "git.exe" } else { "git" };
+
+    // 1. git reset --hard <sha>
+    let mut reset_cmd = Command::new(git_cmd);
+    reset_cmd.current_dir(&path).args(&["reset", "--hard", &commit_sha]);
+    #[cfg(target_os = "windows")]
+    reset_cmd.creation_flags(0x08000000);
+    
+    let reset_out = reset_cmd.output().await.map_err(|e| format!("Lỗi khi chạy git reset: {}", e))?;
+    if !reset_out.status.success() {
+        return Err(String::from_utf8_lossy(&reset_out.stderr).to_string());
+    }
+
+    // 2. git push origin <branch> --force
+    let mut push_cmd = Command::new(git_cmd);
+    push_cmd.current_dir(&path).args(&["push", "origin", &branch, "--force"]);
+    #[cfg(target_os = "windows")]
+    push_cmd.creation_flags(0x08000000);
+
+    let push_out = push_cmd.output().await.map_err(|e| format!("Lỗi khi chạy git push: {}", e))?;
+    if !push_out.status.success() {
+        return Err(String::from_utf8_lossy(&push_out.stderr).to_string());
+    }
+
+    Ok(())
+}
+
+#[command]
 pub fn get_git_commits(
     path: String,
     page: usize,

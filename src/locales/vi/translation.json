@@ -99,6 +99,18 @@
       "description": "Hành động này sẽ đưa dự án của bạn về trạng thái của commit <strong>{{sha}}</strong>.",
       "warning": "Cảnh báo: Điều này sẽ đặt bạn vào trạng thái \"detached HEAD\". Mọi thay đổi chưa được commit sẽ bị mất. Hãy chắc chắn rằng bạn đã commit hoặc stash các thay đổi của mình.",
       "confirm": "Xác nhận và Checkout"
+    },
+    "branch": "Nhánh",
+    "createBranch": "Tạo nhánh mới",
+    "createBranchDialog": {
+      "title": "Tạo nhánh mới",
+      "placeholder": "Tên nhánh..."
+    },
+    "forcePushTooltip": "Khôi phục nhánh về commit này và Đẩy đè lên Remote (XÓA COMMIT MỚI)",
+    "forcePushDialog": {
+      "title": "Xác nhận ghi đè lịch sử (Force Push)?",
+      "description": "CẢNH BÁO NGUY HIỂM: Hành động này sẽ đặt lại nhánh hiện tại về commit <strong>{{sha}}</strong> và thực hiện <code>git push --force</code>. Mọi commit mới hơn trên Remote sẽ bị XÓA VĨNH VIỄN. Bạn có chắc chắn không?",
+      "confirm": "Ghi đè lịch sử (Nguy hiểm)"
     }
   },
   "groupItem": {

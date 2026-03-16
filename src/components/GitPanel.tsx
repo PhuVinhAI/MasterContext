@@ -17,10 +17,16 @@ import {
   Check,
   History,
   RotateCcw,
+  Plus,
+  Flame,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "./ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,14 +49,18 @@ export function GitPanel() {
     copyCommitDiff,
     checkoutCommit,
     checkoutLatestBranch,
+    switchBranch,
+    createBranch,
+    resetAndForcePush,
   } = useAppActions();
   const {
-    rootPath,
-    gitRepoInfo,
-    gitCommits,
-    gitLogState,
-    hasMoreCommits,
-    originalGitBranch,
+    rootPath: state_rootPath,
+    gitRepoInfo: state_gitRepoInfo,
+    gitCommits: state_gitCommits,
+    gitLogState: state_gitLogState,
+    hasMoreCommits: state_hasMoreCommits,
+    originalGitBranch: state_originalGitBranch,
+    gitBranches: state_gitBranches,
   } = useAppStore(
     useShallow((state) => ({
       rootPath: state.rootPath,
@@ -59,8 +69,16 @@ export function GitPanel() {
       gitLogState: state.gitLogState,
       hasMoreCommits: state.hasMoreCommits,
       originalGitBranch: state.originalGitBranch,
+      gitBranches: state.gitBranches,
     }))
   );
+  const rootPath = state_rootPath;
+  const gitRepoInfo = state_gitRepoInfo;
+  const gitCommits = state_gitCommits;
+  const gitLogState = state_gitLogState;
+  const hasMoreCommits = state_hasMoreCommits;
+  const originalGitBranch = state_originalGitBranch;
+  const gitBranches = state_gitBranches;
   const gitExportModeIsContext = useAppStore(
     (state) => state.gitExportModeIsContext
   );
@@ -68,6 +86,10 @@ export function GitPanel() {
   const [copyingSha, setCopyingSha] = useState<string | null>(null);
   const [copiedSha, setCopiedSha] = useState<string | null>(null);
   const [checkoutSha, setCheckoutSha] = useState<string | null>(null);
+  const [forcePushSha, setForcePushSha] = useState<string | null>(null);
+  const [isCreateBranchOpen, setIsCreateBranchOpen] = useState(false);
+  const [newBranchName, setNewBranchName] = useState("");
+  const [isForcePushing, setIsForcePushing] = useState(false);
 
   const handleCopy = async (sha: string) => {
     setCopyingSha(sha);
@@ -115,11 +137,26 @@ export function GitPanel() {
       <>
         {/* Phần URL, cố định, không cuộn */}
         {gitRepoInfo.remoteUrl && (
-          <div className="p-2 border-b flex-shrink-0">
+          <div className="p-2 border-b flex-shrink-0 space-y-2">
             <Badge variant="secondary" className="w-full justify-start">
               <GitBranch className="h-3 w-3 mr-2" />
               <span className="truncate text-xs">{gitRepoInfo.remoteUrl}</span>
             </Badge>
+            <div className="flex items-center gap-2">
+              <Select value={gitRepoInfo.currentBranch || ""} onValueChange={switchBranch}>
+                <SelectTrigger className="h-8 text-xs flex-1">
+                  <SelectValue placeholder={t("gitPanel.branch")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {gitBranches.map((b) => (
+                    <SelectItem key={b} value={b} className="text-xs">{b}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => setIsCreateBranchOpen(true)} title={t("gitPanel.createBranch")}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         )}
         {/* Khu vực danh sách commit, co giãn và có thể cuộn */}
@@ -203,6 +240,16 @@ export function GitPanel() {
                         )}
                       >
                         <Download className="h-3.5 w-3.5" />
+                      </Button>
+
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => setForcePushSha(commit.sha)}
+                        className="h-7 w-7 border-destructive/50 text-destructive hover:bg-destructive/10"
+                        title={t("gitPanel.forcePushTooltip")}
+                      >
+                        <Flame className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
@@ -310,6 +357,84 @@ export function GitPanel() {
             >
               {t("gitPanel.checkoutDialog.confirm")}
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog tạo nhánh mới */}
+      <Dialog open={isCreateBranchOpen} onOpenChange={setIsCreateBranchOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{t("gitPanel.createBranchDialog.title")}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid w-full gap-1.5">
+              <Label htmlFor="branchName">{t("gitPanel.createBranchDialog.placeholder")}</Label>
+              <Input
+                id="branchName"
+                value={newBranchName}
+                onChange={(e) => setNewBranchName(e.target.value)}
+                placeholder="feature/new-branch"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newBranchName.trim()) {
+                    createBranch(newBranchName.trim());
+                    setIsCreateBranchOpen(false);
+                    setNewBranchName("");
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateBranchOpen(false)}>{t("common.cancel")}</Button>
+            <Button onClick={() => {
+              if (newBranchName.trim()) {
+                createBranch(newBranchName.trim());
+                setIsCreateBranchOpen(false);
+                setNewBranchName("");
+              }
+            }}>{t("common.save")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Force Push */}
+      <AlertDialog
+        open={!!forcePushSha}
+        onOpenChange={(open) => !open && setForcePushSha(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive flex items-center gap-2">
+              <Flame className="h-5 w-5" />
+              {t("gitPanel.forcePushDialog.title")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span dangerouslySetInnerHTML={{
+                __html: t("gitPanel.forcePushDialog.description", {
+                  sha: forcePushSha?.substring(0, 7),
+                })
+              }} />
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isForcePushing}>{t("common.cancel")}</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={isForcePushing}
+              onClick={async () => {
+                if (forcePushSha) {
+                  setIsForcePushing(true);
+                  await resetAndForcePush(forcePushSha);
+                  setIsForcePushing(false);
+                  setForcePushSha(null);
+                }
+              }}
+            >
+              {isForcePushing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {t("gitPanel.forcePushDialog.confirm")}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

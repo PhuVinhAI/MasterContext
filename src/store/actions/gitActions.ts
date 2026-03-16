@@ -23,6 +23,10 @@ export interface GitActions {
   copyCommitDiff: (commitSha: string) => Promise<boolean>;
   checkoutCommit: (commitSha: string) => Promise<void>;
   checkoutLatestBranch: () => Promise<void>;
+  fetchGitBranches: () => Promise<void>;
+  switchBranch: (branchName: string) => Promise<void>;
+  createBranch: (branchName: string) => Promise<void>;
+  resetAndForcePush: (commitSha: string) => Promise<void>;
 }
 
 export const createGitActions: StateCreator<AppState, [], [], GitActions> = (
@@ -62,6 +66,7 @@ export const createGitActions: StateCreator<AppState, [], [], GitActions> = (
         originalGitBranch: state.originalGitBranch ?? info.currentBranch,
       }));
       if (info.isRepository) {
+        await get().actions.fetchGitBranches();
         get().actions.fetchGitCommits();
       } else {
         set({ gitLogState: "idle" });
@@ -221,6 +226,60 @@ export const createGitActions: StateCreator<AppState, [], [], GitActions> = (
         title: "Lỗi",
         kind: "error",
       });
+    }
+  },
+
+  fetchGitBranches: async () => {
+    const { rootPath } = get();
+    if (!rootPath) return;
+    try {
+      const branches = await invoke<string[]>("get_git_branches", { path: rootPath });
+      set({ gitBranches: branches });
+    } catch (e) {
+      console.error("Failed to get branches:", e);
+    }
+  },
+
+  switchBranch: async (branchName: string) => {
+    const { rootPath } = get();
+    if (!rootPath) return;
+    try {
+      await invoke("checkout_branch", { path: rootPath, branch: branchName });
+      await get().actions.checkGitRepo();
+      get().actions.rescanProject();
+    } catch (e) {
+      message(`Không thể chuyển nhánh: ${e}`, { title: "Lỗi", kind: "error" });
+    }
+  },
+
+  createBranch: async (branchName: string) => {
+    const { rootPath } = get();
+    if (!rootPath) return;
+    try {
+      await invoke("create_git_branch", { path: rootPath, branchName });
+      await get().actions.checkGitRepo();
+    } catch (e) {
+      message(`Không thể tạo nhánh: ${e}`, { title: "Lỗi", kind: "error" });
+    }
+  },
+
+  resetAndForcePush: async (commitSha: string) => {
+    const { rootPath, gitRepoInfo } = get();
+    if (!rootPath || !gitRepoInfo?.currentBranch) {
+      message("Không thể xác định nhánh hiện tại.", { title: "Lỗi", kind: "error" });
+      return;
+    }
+    try {
+      await invoke("reset_and_force_push", { 
+        path: rootPath, 
+        commitSha, 
+        branch: gitRepoInfo.currentBranch 
+      });
+      await message("Đã reset và force push thành công!", { title: "Thành công", kind: "info" });
+      await get().actions.checkGitRepo();
+      get().actions.rescanProject();
+    } catch (e) {
+      message(`Lỗi force push: ${e}`, { title: "Lỗi", kind: "error" });
     }
   },
 });

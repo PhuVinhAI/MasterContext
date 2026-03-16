@@ -99,6 +99,18 @@
       "description": "This action will revert your project to the state of commit <strong>{{sha}}</strong>.",
       "warning": "Warning: This will put you in a \"detached HEAD\" state. Any uncommitted changes will be lost. Make sure you have committed or stashed your changes.",
       "confirm": "Confirm and Checkout"
+    },
+    "branch": "Branch",
+    "createBranch": "Create new branch",
+    "createBranchDialog": {
+      "title": "Create new branch",
+      "placeholder": "Branch name..."
+    },
+    "forcePushTooltip": "Reset branch to this commit & Force Push (DROPS NEW COMMITS)",
+    "forcePushDialog": {
+      "title": "Confirm Force Push?",
+      "description": "DANGER WARNING: This action will reset the current branch to commit <strong>{{sha}}</strong> and execute <code>git push --force</code>. Any newer commits on the remote will be PERMANENTLY DELETED. Are you absolutely sure?",
+      "confirm": "Force Push (Danger)"
     }
   },
   "groupItem": {
