@@ -136,10 +136,16 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
                     || pre_text.ends_with("<")
                     || pre_text.ends_with("|")
                     || pre_text.ends_with("&")
+                    || pre_text.ends_with("const")
+                    || pre_text.ends_with("let")
+                    || pre_text.ends_with("var")
+                    || pre_text.ends_with("=")
+                    || pre_text.ends_with("(")
+                    || pre_text.ends_with("return")
                 {
                     false
                 } else {
-                    // Mặc định ẩn để tiết kiệm token tối đa (chủ yếu là function body, object literal, v.v.)
+                    // Mặc định ẩn để tiết kiệm token tối đa (chủ yếu là function body, v.v.)
                     true
                 };
 
@@ -209,7 +215,8 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
 }
 
 lazy_static! {
-    static ref C_STYLE_SINGLE_LINE_COMMENT: Regex = Regex::new(r"//.*").unwrap();
+    // Tránh match nhầm URL protocol (http://, https://, file://) bằng cách bắt đầu dòng hoặc ký tự không phải ':'
+    static ref C_STYLE_SINGLE_LINE_COMMENT: Regex = Regex::new(r"(^|[^:])//.*").unwrap();
     static ref C_STYLE_MULTI_LINE_COMMENT: Regex = Regex::new(r"(?s)/\*.*?\*/").unwrap();
     static ref HASH_COMMENT: Regex = Regex::new(r"#.*").unwrap();
     static ref HTML_XML_COMMENT: Regex = Regex::new(r"(?s)<!--.*?-->").unwrap();
@@ -253,7 +260,7 @@ fn remove_comments_from_content(content: &str, file_rel_path: &str) -> String {
         // Chú thích kiểu C (// và /* */)
         "js" | "jsx" | "ts" | "tsx" | "rs" | "go" | "c" | "cpp" | "h" | "java" | "cs" | "swift"
         | "kt" | "css" | "scss" | "less" | "jsonc" | "glsl" | "dart" | "gd" => {
-            let temp = C_STYLE_SINGLE_LINE_COMMENT.replace_all(content, "");
+            let temp = C_STYLE_SINGLE_LINE_COMMENT.replace_all(content, "$1");
             C_STYLE_MULTI_LINE_COMMENT
                 .replace_all(&temp, "")
                 .to_string()
@@ -274,14 +281,14 @@ fn remove_comments_from_content(content: &str, file_rel_path: &str) -> String {
         // Ngôn ngữ hỗn hợp
         "php" => {
             let temp1 = C_STYLE_MULTI_LINE_COMMENT.replace_all(content, "");
-            let temp2 = C_STYLE_SINGLE_LINE_COMMENT.replace_all(&temp1, "");
+            let temp2 = C_STYLE_SINGLE_LINE_COMMENT.replace_all(&temp1, "$1");
             HASH_COMMENT.replace_all(&temp2, "").to_string()
         }
         "vue" | "astro" => {
             let temp = HTML_XML_COMMENT.replace_all(content, "");
             let temp2 = C_STYLE_MULTI_LINE_COMMENT.replace_all(&temp, "");
             C_STYLE_SINGLE_LINE_COMMENT
-                .replace_all(&temp2, "")
+                .replace_all(&temp2, "$1")
                 .to_string()
         }
         _ => content.to_string(),
