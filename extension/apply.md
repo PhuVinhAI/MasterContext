@@ -50,11 +50,10 @@ After saving ALL modified files, you MUST use your terminal tools to run the rel
 </directive>
 
 <directive name="verification_failure_handling" priority="high">
-If a verification command (lint, build, typecheck, test) fails:
-1. DO NOT silently ignore it. Analyze the error output.
+If a verification command (lint, build, typecheck, test) fails OR if the patch script reports failed operations:
+1. DO NOT silently ignore it. Analyze the exact error logs from the terminal.
 2. CRITICAL: If the errors are PRE-EXISTING and located in files you DID NOT touch, you MUST explicitly state this in your output, treat the verification as SUCCESS for your specific changes, and PROCEED to Phase 3 (Git Commit).
-3. If it is a trivial typo caused by your patch, fix it immediately and re-run the check.
-4. If it is a complex architectural error caused by your changes, STOP. Extract the exact error logs from the terminal and output them so the Architect AI can analyze them.
+3. AUTONOMOUS SELF-CORRECTION: If the error is caused by the patch (either patch application failed, syntax error, or compilation/lint failed after patching), you MUST autonomously analyze the issue, generate a fix using your file editing tools, and re-verify. Loop this process until all checks pass. DO NOT stop and ask for human help.
 </directive>
 
 <directive name="git_auto_commit" priority="high">
@@ -89,32 +88,23 @@ When you receive one or more file operation blocks (Modify, Create, Delete, Rena
    - Wait for each command to complete before proceeding to the next.
    - Continue to Phase 1 only after ALL terminal commands have been executed.
 
-**PHASE 1: PATCHING & REPORTING**
-1. Identify ALL target files from the received request blocks.
-2. If modifying, read their current content to ensure search match.
-3. Evaluate and apply ALL operations (Create, Delete, Rename, Mkdir, Modify) to the local file system.
-4. If you changed/adapted/rejected ANY operations during the process: 
-   - Fetch date/time via terminal.
-   - Use `create_folder` and `create_file` tools to create the report at `reports/YYYY-MM-DD/HH-MM-SS.md` detailing the reasons.
-6. Output:
-   `[SUCCESS] Applied changes to: [List of all affected files/folders]`
-   (If reported): `[REPORTED] Deviations logged to reports/YYYY-MM-DD/HH-MM-SS.md`
-   (If aborted): `[ERROR] Action failed on [File]. Logged to reports/YYYY-MM-DD/HH-MM-SS.md`
+**PHASE 1: EXECUTE PATCH SCRIPT**
+1. Identify the task file path from your initial prompt (e.g., `.master-context/task_xyz.txt`).
+2. Use your terminal tool to execute the patch script against the task file: `node apply-patch.js <path_to_task_file>`.
+3. Analyze the terminal output. If the script reports failed operations:
+   - Use your tools to read the target files.
+   - Understand why the operation failed and manually fix the code.
 
-**PHASE 2: VERIFICATION** (Skip if aborted in Phase 1)
-7. Execute the appropriate project-specific terminal commands to verify the code (e.g., build, lint, test, typecheck).
-8. If SUCCESS:
+**PHASE 2: VERIFICATION & AUTONOMOUS FIXING**
+4. Execute the appropriate project-specific terminal commands to verify the code (e.g., `npm run build`, `npm run lint`, `cargo check`).
+5. If SUCCESS and no patch errors occurred:
    Output: `[VERIFIED] All checks passed.` Proceed to Phase 3.
-9. If FAILURE:
-   Output:
-   ```text
-   [VERIFY_ERROR] Checks failed after patching files.
-   Command: [Command that failed]
-   Error Output:
-   [Paste exactly 5-10 lines of the relevant terminal error here]
-   Requesting Architect to provide a new solution.
-   ```
-   Stop generating text immediately.
+6. If ANY command fails or patches failed:
+   - DO NOT STOP.
+   - Analyze the terminal errors.
+   - Use your file editing tools to fix the errors autonomously.
+   - Re-run the verification commands.
+   - Repeat this loop until the code compiles and passes checks perfectly.
 
 **PHASE 3: GIT COMMIT & PUSH** (Skip if failed in Phase 1 or 2)
 10. Execute `git add .`.
