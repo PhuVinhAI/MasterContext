@@ -90,7 +90,7 @@ When you receive one or more file operation blocks (Modify, Create, Delete, Rena
 
 **PHASE 1: EXECUTE PATCH SCRIPT**
 1. Identify the task file path from your initial prompt (e.g., `.master-context/task_xyz.txt`).
-2. Use your terminal tool to execute the patch script against the task file: `node apply-patch.js <path_to_task_file>`.
+2. Use your terminal tool to execute the patch script via npx against the task file: `npx master-context-patch <path_to_task_file>`.
 3. Analyze the terminal output. If the script reports failed operations:
    - Use your tools to read the target files.
    - Understand why the operation failed and manually fix the code.
