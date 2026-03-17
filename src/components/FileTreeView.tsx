@@ -147,7 +147,7 @@ export function FileTreeView({
                   isOpen && "rotate-90"
                 )}
               />
-              <Folder className="h-4 w-4 mr-2 text-yellow-500" />
+              <Folder className="h-4 w-4 mr-2 text-yellow-500 shrink-0" />
             </>
           ) : (
             <>
@@ -160,6 +160,17 @@ export function FileTreeView({
           <span className="ml-2 truncate">
             {node.name}
           </span>
+          
+          {!isDirectory && (
+            <span className="ml-2 text-[10px] text-muted-foreground/60 shrink-0 font-mono">
+              {(() => {
+                const tokens = fileMetadataCache?.[node.path]?.token_count || 0;
+                if (tokens === 0) return "...";
+                return tokens > 1000 ? (tokens / 1000).toFixed(1) + 'k tk' : tokens + ' tk';
+              })()}
+            </span>
+          )}
+
           <div className="ml-auto flex items-center gap-1 pl-2">
             <span
               className={cn(

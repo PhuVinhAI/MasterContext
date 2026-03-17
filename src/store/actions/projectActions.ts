@@ -22,6 +22,7 @@ export interface ProjectActions {
   _setScanComplete: (payload: CachedProjectData) => void;
   _setScanError: (error: string) => void;
   _updateFileMetadata: (filePath: string, newMetadata: FileMetadata) => void;
+  _updateFileTokenBatch: (updates: Record<string, number>) => void;
   exportProject: () => void;
   copyProjectToClipboard: () => Promise<void>;
   deleteCurrentProjectData: () => Promise<void>;
@@ -244,6 +245,30 @@ export const createProjectActions: StateCreator<
       };
       return {
         fileMetadataCache: newCache,
+      };
+    });
+  },
+  _updateFileTokenBatch: (updates) => {
+    set((state) => {
+      const cache = state.fileMetadataCache || {};
+      let totalTokenDiff = 0;
+      const newCache = { ...cache };
+
+      for (const [filePath, tokens] of Object.entries(updates)) {
+        const oldMeta = newCache[filePath];
+        if (oldMeta) {
+          const oldTokens = oldMeta.token_count || 0;
+          totalTokenDiff += (tokens - oldTokens);
+          newCache[filePath] = { ...oldMeta, token_count: tokens };
+        }
+      }
+
+      return {
+        fileMetadataCache: newCache,
+        projectStats: state.projectStats ? {
+          ...state.projectStats,
+          total_tokens: state.projectStats.total_tokens + totalTokenDiff
+        } : null
       };
     });
   },

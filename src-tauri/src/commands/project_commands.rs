@@ -42,19 +42,8 @@ pub fn scan_project(
                 user_non_analyzable_extensions: app_settings.non_analyzable_extensions,
             },
         ) {
-            Ok((new_data, is_first_scan)) => {
-                // <-- Nhận thêm cờ is_first_scan
-                if let Err(e) = file_cache::save_project_data(&app, &path, &profile_name, &new_data)
-                {
-                    let _ = window.emit("scan_error", e);
-                    return;
-                }
-
-                if new_data.sync_enabled.unwrap_or(false) && new_data.sync_path.is_some() {
-                    perform_auto_export(&app, &path, &profile_name, &new_data);
-                }
-
-                // --- GỬI PAYLOAD MỚI VỀ FRONTEND ---
+            Ok((mut new_data, is_first_scan, files_to_analyze)) => {
+                // Trả về giao diện ngay lập tức cấu trúc cây để user thao tác
                 let _ = window.emit(
                     "scan_complete",
                     serde_json::json!({
@@ -62,6 +51,22 @@ pub fn scan_project(
                         "isFirstScan": is_first_scan
                     }),
                 );
+
+                if !files_to_analyze.is_empty() {
+                    // Chạy background đếm token các file chưa có trong cache
+                    project_scanner::run_background_analysis(&window, &path, files_to_analyze, &mut new_data);
+                    let _ = window.emit("analysis_completed", ());
+                }
+
+                // Lưu lại cache cuối cùng sau khi phân tích background xong (nếu có)
+                if let Err(e) = file_cache::save_project_data(&app, &path, &profile_name, &new_data) {
+                    let _ = window.emit("scan_error", e);
+                    return;
+                }
+
+                if new_data.sync_enabled.unwrap_or(false) && new_data.sync_path.is_some() {
+                    perform_auto_export(&app, &path, &profile_name, &new_data);
+                }
 
                 if should_start_watching {
                     if let Err(e) = start_file_watching(window_clone, path_clone) {

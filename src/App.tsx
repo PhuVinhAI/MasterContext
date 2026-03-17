@@ -509,6 +509,18 @@ function App() {
       })
     );
 
+    unlistenFuncs.push(
+      listen<{ updates: Record<string, number> }>("file_token_update_batch", (event) => {
+        useAppStore.getState().actions._updateFileTokenBatch(event.payload.updates);
+      })
+    );
+
+    unlistenFuncs.push(
+      listen<void>("analysis_completed", () => {
+        useAppStore.setState({ scanProgress: { currentFile: null, currentPhase: "scanning" } });
+      })
+    );
+
     // Lắng nghe logs từ Kilo Server (Rust)
     unlistenFuncs.push(
       listen<string>("kilo_log", async (event) => {
