@@ -105,6 +105,7 @@ export interface AppSettings {
   geminiThinkingLevel?: "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
   selectedKiloModel?: string;
   kiloPort?: number;
+  patchPort?: number;
   discordWebhookUrl?: string;
 }
 
@@ -305,4 +306,7 @@ export interface AppState {
   selectedAiModel: string;
   editingMessageIndex: number | null;
   aiAttachedFiles: AttachedItem[];
+  kiloPort: number;
+  patchPort: number;
+  discordWebhookUrl: string;
 }

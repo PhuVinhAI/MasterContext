@@ -11,15 +11,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface KiloTabProps {
   kiloPort: number;
+  patchPort: number;
   selectedKiloModel: string;
   discordWebhookUrl: string;
   kiloAvailableModels: KiloModelInfo[];
   onRefreshModels: () => Promise<void>;
-  onSave: (settings: { kiloPort: number; selectedKiloModel: string; discordWebhookUrl: string }) => Promise<void>;
+  onSave: (settings: { kiloPort: number; patchPort: number; selectedKiloModel: string; discordWebhookUrl: string }) => Promise<void>;
 }
 
 export function KiloTab({
   kiloPort,
+  patchPort,
   selectedKiloModel,
   discordWebhookUrl,
   kiloAvailableModels,
@@ -28,6 +30,7 @@ export function KiloTab({
 }: KiloTabProps) {
   const { t } = useTranslation();
   const [localKiloPort, setLocalKiloPort] = useState(kiloPort);
+  const [localPatchPort, setLocalPatchPort] = useState(patchPort);
   const [localKiloModel, setLocalKiloModel] = useState(selectedKiloModel);
   const [localDiscordUrl, setLocalDiscordUrl] = useState(discordWebhookUrl);
   const [isSaving, setIsSaving] = useState(false);
@@ -36,14 +39,16 @@ export function KiloTab({
 
   useEffect(() => {
     setLocalKiloPort(kiloPort);
+    setLocalPatchPort(patchPort);
     setLocalKiloModel(selectedKiloModel);
     setLocalDiscordUrl(discordWebhookUrl);
-  }, [kiloPort, selectedKiloModel, discordWebhookUrl]);
+  }, [kiloPort, patchPort, selectedKiloModel, discordWebhookUrl]);
 
   const handleSave = async () => {
     setIsSaving(true);
     await onSave({
       kiloPort: localKiloPort,
+      patchPort: localPatchPort,
       selectedKiloModel: localKiloModel,
       discordWebhookUrl: localDiscordUrl,
     });
@@ -79,7 +84,7 @@ export function KiloTab({
     }
   };
 
-  const isChanged = localKiloPort !== kiloPort || localKiloModel !== selectedKiloModel || localDiscordUrl !== discordWebhookUrl;
+  const isChanged = localKiloPort !== kiloPort || localPatchPort !== patchPort || localKiloModel !== selectedKiloModel || localDiscordUrl !== discordWebhookUrl;
 
   return (
     <div className="space-y-6">
@@ -93,17 +98,29 @@ export function KiloTab({
       </div>
 
       <div className="space-y-4 rounded-lg border p-4">
-        <div className="space-y-2">
-          <Label htmlFor="kilo-port-input">{t("settings.kilo.port")}</Label>
-          <Input
-            id="kilo-port-input"
-            type="number"
-            value={localKiloPort}
-            onChange={(e) => setLocalKiloPort(parseInt(e.target.value, 10) || 9999)}
-            className="font-mono max-w-[200px]"
-          />
-          <p className="text-xs text-muted-foreground">{t("settings.kilo.description")}</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="kilo-port-input">{t("settings.kilo.port")}</Label>
+            <Input
+              id="kilo-port-input"
+              type="number"
+              value={localKiloPort}
+              onChange={(e) => setLocalKiloPort(parseInt(e.target.value, 10) || 9999)}
+              className="font-mono"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="patch-port-input">{t("settings.kilo.patchPort")}</Label>
+            <Input
+              id="patch-port-input"
+              type="number"
+              value={localPatchPort}
+              onChange={(e) => setLocalPatchPort(parseInt(e.target.value, 10) || 9998)}
+              className="font-mono"
+            />
+          </div>
         </div>
+        <p className="text-xs text-muted-foreground">{t("settings.kilo.description")}</p>
 
         <div className="space-y-2 pt-4 border-t">
           <Label htmlFor="discord-webhook">{t("settings.kilo.discordWebhook")}</Label>

@@ -402,12 +402,13 @@
       }
     },
     "kilo": {
-      "title": "Cài đặt Kilo Agent",
-      "port": "Cổng (Port) Kilo Server",
+      "title": "Cài đặt Agent & Patch",
+      "port": "Cổng Kilo Server",
+      "patchPort": "Cổng Auto-Patch",
       "model": "Kilo Model Mặc định",
-      "description": "Port này phải khớp với cấu hình Port trong AI Studio Archiver Extension. Mặc định là 9999.",
+      "description": "Các cổng này phải khớp với cấu hình trong AI Studio Archiver Extension.",
       "discordWebhook": "Discord Webhook URL",
-      "discordWebhookDesc": "Nhận thông báo qua Discord khi Kilo Agent hoàn thành tác vụ.",
+      "discordWebhookDesc": "Nhận thông báo qua Discord khi Kilo Agent hoặc Auto-Patch hoàn thành tác vụ.",
       "testWebhook": "Kiểm tra",
       "testWebhookSuccess": "Gửi tin nhắn test thành công! Vui lòng kiểm tra Discord.",
       "testWebhookError": "Lỗi khi gửi test: {{error}}",

@@ -289,6 +289,7 @@ export const createSettingsActions: StateCreator<
       geminiThinkingLevel: newSettings.geminiThinkingLevel ?? geminiThinkingLevel,
       selectedKiloModel: newSettings.selectedKiloModel ?? get().selectedKiloModel,
       kiloPort: newSettings.kiloPort ?? get().kiloPort,
+      patchPort: newSettings.patchPort ?? get().patchPort,
       discordWebhookUrl: newSettings.discordWebhookUrl ?? get().discordWebhookUrl,
     };
 
@@ -333,6 +334,7 @@ export const createSettingsActions: StateCreator<
         // Đảm bảo Kilo Model cũng được cập nhật vào state khi load/update settings
         selectedKiloModel: fullSettings.selectedKiloModel,
         kiloPort: fullSettings.kiloPort,
+        patchPort: fullSettings.patchPort,
         discordWebhookUrl: fullSettings.discordWebhookUrl ?? "",
       });
     } catch (e) {

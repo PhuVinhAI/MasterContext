@@ -620,9 +620,25 @@ function App() {
       })
     );
     unlistenFuncs.push(
-      listen("patch_task_success", () => {
+      listen("patch_task_success", async () => {
         const state = useAppStore.getState();
         state.actions.setPatchTaskStatus("success");
+
+        if (state.discordWebhookUrl) {
+          const projectName = state.rootPath ? state.rootPath.split(/[/\\]/).pop() : "Dự án";
+          try {
+            await fetch(state.discordWebhookUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                content: `@everyone 🔧 **Auto-Patch** đã áp dụng thành công mã nguồn trong dự án \`${projectName}\`.\n*🕒 ${new Date().toLocaleString('vi-VN')} | ID: ${Math.random().toString(36).substring(7)}*`,
+              }),
+            });
+          } catch (e) {
+            console.error("Lỗi khi gửi Discord webhook:", e);
+          }
+        }
+
         if (!state.isScanning) {
           state.actions.rescanProject();
         }

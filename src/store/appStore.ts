@@ -127,6 +127,7 @@ export interface AppState {
   kiloAvailableModels: KiloModelInfo[];
   kiloTaskStatus: "idle" | "running" | "success" | "error";
   kiloPort: number;
+  patchPort: number;
   discordWebhookUrl: string;
 
   // Patch Panel

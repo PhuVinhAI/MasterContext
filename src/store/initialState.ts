@@ -98,6 +98,7 @@ export const initialState = {
   editingMessageIndex: null,
   aiAttachedFiles: [] as AttachedItem[],
   kiloPort: 9999,
+  patchPort: 9998,
   discordWebhookUrl: "",
 };
 

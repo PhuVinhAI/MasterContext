@@ -130,6 +130,7 @@ pub struct AppSettings {
     pub max_tokens: Option<u32>,
     pub selected_kilo_model: Option<String>,
     pub kilo_port: Option<u16>,
+    pub patch_port: Option<u16>,
     pub discord_webhook_url: Option<String>,
 }
 // --- KẾT THÚC PHẦN THÊM MỚI ---

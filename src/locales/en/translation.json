@@ -402,12 +402,13 @@
       }
     },
     "kilo": {
-      "title": "Kilo Agent Settings",
+      "title": "Agent & Patch Settings",
       "port": "Kilo Server Port",
+      "patchPort": "Auto-Patch Port",
       "model": "Default Kilo Model",
-      "description": "This port must match the Port configured in the AI Studio Archiver Extension. Default is 9999.",
+      "description": "These ports must match the configuration in the AI Studio Archiver Extension.",
       "discordWebhook": "Discord Webhook URL",
-      "discordWebhookDesc": "Receive a Discord notification when Kilo Agent successfully completes a task.",
+      "discordWebhookDesc": "Receive a Discord notification when Kilo Agent or Auto-Patch successfully completes a task.",
       "testWebhook": "Test",
       "testWebhookSuccess": "Test message sent successfully! Please check Discord.",
       "testWebhookError": "Failed to send test: {{error}}",

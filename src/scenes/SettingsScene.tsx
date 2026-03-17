@@ -61,6 +61,7 @@ export function SettingsScene() {
     maxTokens,
     streamResponse,
     kiloPort,
+    patchPort,
     selectedKiloModel,
     discordWebhookUrl,
     updateAppSettings,
@@ -197,6 +198,7 @@ export function SettingsScene() {
         return (
           <KiloTab
             kiloPort={kiloPort}
+            patchPort={patchPort}
             selectedKiloModel={selectedKiloModel}
             discordWebhookUrl={discordWebhookUrl}
             kiloAvailableModels={kiloAvailableModels}
@@ -204,6 +206,7 @@ export function SettingsScene() {
             onSave={async (newSettings) => {
               await updateAppSettings({
                 kiloPort: newSettings.kiloPort,
+                patchPort: newSettings.patchPort,
                 selectedKiloModel: newSettings.selectedKiloModel,
                 discordWebhookUrl: newSettings.discordWebhookUrl,
               });

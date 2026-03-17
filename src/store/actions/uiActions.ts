@@ -161,9 +161,9 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
   },
   startPatchServer: async () => {
     try {
-      // Run on port 9998 (or configure if needed)
+      const { patchPort } = _get();
       set({ patchOperations: [] });
-      await invoke("start_patch_server", { port: 9998 });
+      await invoke("start_patch_server", { port: patchPort });
     } catch (e) {
       console.error("Failed to start Patch Server", e);
     }

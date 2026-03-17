@@ -44,6 +44,7 @@ export function useSettingsScene() {
     maxTokens,
     streamResponse,
     kiloPort,
+    patchPort,
     selectedKiloModel,
     discordWebhookUrl,
   } = useAppStore(
@@ -78,6 +79,7 @@ export function useSettingsScene() {
       maxTokens: state.maxTokens,
       streamResponse: state.streamResponse,
       kiloPort: state.kiloPort,
+      patchPort: state.patchPort,
       selectedKiloModel: state.selectedKiloModel,
       discordWebhookUrl: state.discordWebhookUrl,
     }))
@@ -192,6 +194,7 @@ export function useSettingsScene() {
     maxTokens,
     streamResponse,
     kiloPort,
+    patchPort,
     selectedKiloModel,
     discordWebhookUrl,
     updateAppSettings,

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Play, Square, Trash2, Wrench, Loader2, CheckCircle2, XCircle, Activity } from "lucide-react";
+import { Play, Square, Trash2, Wrench, Loader2, CheckCircle2, XCircle, Activity, Puzzle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { invoke } from "@tauri-apps/api/core";
 
 interface PatchHeaderProps {
   isPatchServerRunning: boolean;
@@ -37,6 +38,9 @@ export function PatchHeader({ isPatchServerRunning, onStart, onStop, onClearLogs
         </div>
       </div>
       <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={() => invoke("open_extension_folder")} className="h-8">
+          <Puzzle className="h-3.5 w-3.5 mr-1.5 text-orange-500" /> Cài Extension
+        </Button>
         {isPatchServerRunning ? (
           <Button variant="destructive" size="sm" onClick={onStop} className="h-8">
             <Square className="h-3.5 w-3.5 mr-1.5" /> Dừng
