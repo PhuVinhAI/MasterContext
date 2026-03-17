@@ -539,6 +539,7 @@ export function AITab({
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground mt-1">Nếu để mặc định, Sub-Agent sẽ tự động lấy Model đang chat làm LLM phân tích.</p>
                 </div>
               </>
             )}
