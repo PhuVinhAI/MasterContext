@@ -246,8 +246,9 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
         format!("[SYSTEM] Bắt đầu thực thi {} tác vụ...", operations.len()),
     );
 
-    for op in operations {
-        let op_id = op.file.clone();
+    for (idx, op) in operations.into_iter().enumerate() {
+        // Tạo ID duy nhất bằng cách kết hợp tên file và index để tránh việc UI ghi đè lên nhau
+        let op_id = format!("{}_{}", op.file, idx);
         let emit_event =
             |app: &AppHandle, id: &str, file: &str, op_type: &str, status: &str, msg: &str| {
                 let _ = app.emit(
@@ -265,7 +266,6 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
         match op.op_type {
             PatchOpType::Commit => {
                 let msg = op.file.clone();
-                let op_id = format!("commit-{}", msg.len());
 
                 emit_event(
                     app_handle,
@@ -288,83 +288,90 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
                     continue;
                 }
 
-                let is_windows = cfg!(target_os = "windows");
-                let mut cmd = if is_windows {
-                    let mut c = std::process::Command::new("cmd");
-                    let escaped_msg = msg.replace("\"", "\\\"");
-                    let full_cmd = format!(
-                        "chcp 65001 > nul & git add . && git commit -m \"{}\" && git push",
-                        escaped_msg
-                    );
-                    c.args(&["/C", &full_cmd]);
+                let run_cmd = |cmd_name: &str, args: &[&str]| -> Result<String, String> {
+                    let mut c = std::process::Command::new(cmd_name);
+                    c.current_dir(root_dir).args(args);
                     #[cfg(target_os = "windows")]
-                    use std::os::windows::process::CommandExt;
-                    #[cfg(target_os = "windows")]
-                    c.creation_flags(0x08000000);
-                    c
-                } else {
-                    let mut c = std::process::Command::new("sh");
-                    let escaped_msg = msg.replace("\"", "\\\"");
-                    let full_cmd =
-                        format!("git add . && git commit -m \"{}\" && git push", escaped_msg);
-                    c.arg("-c").arg(&full_cmd);
-                    c
+                    {
+                        use std::os::windows::process::CommandExt;
+                        c.creation_flags(0x08000000);
+                    }
+                    
+                    match c.output() {
+                        Ok(output) => {
+                            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+                            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+                            let mut full_output = String::new();
+                            if !stdout.trim().is_empty() {
+                                full_output.push_str(&stdout);
+                            }
+                            if !stderr.trim().is_empty() {
+                                if !full_output.is_empty() {
+                                    full_output.push_str("\n");
+                                }
+                                full_output.push_str("--- STDERR ---\n");
+                                full_output.push_str(&stderr);
+                            }
+                            if output.status.success() {
+                                Ok(full_output)
+                            } else {
+                                Err(full_output)
+                            }
+                        }
+                        Err(e) => Err(format!("Lỗi chạy {}: {}", cmd_name, e)),
+                    }
                 };
 
-                cmd.current_dir(root_dir);
+                let mut success = true;
+                let mut err_msg = String::new();
 
-                match cmd.output() {
-                    Ok(output) => {
-                        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-                        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-                        let mut full_output = String::new();
-                        if !stdout.trim().is_empty() {
-                            full_output.push_str(&stdout);
-                        }
-                        if !stderr.trim().is_empty() {
-                            if !full_output.is_empty() {
-                                full_output.push_str("\n\n");
+                // 1. git add .
+                if let Err(e) = run_cmd("git", &["add", "."]) {
+                    success = false;
+                    err_msg.push_str(&format!("Git Add Failed:\n{}\n", e));
+                }
+
+                // 2. git commit
+                if success {
+                    match run_cmd("git", &["commit", "-m", &msg]) {
+                        Ok(_) => {},
+                        Err(e) => {
+                            // Bỏ qua lỗi nếu không có thay đổi (working tree clean)
+                            if !e.contains("nothing to commit") && !e.contains("working tree clean") {
+                                success = false;
+                                err_msg.push_str(&format!("Git Commit Failed:\n{}\n", e));
                             }
-                            full_output.push_str("--- STDERR ---\n");
-                            full_output.push_str(&stderr);
                         }
+                    }
+                }
 
-                        if output.status.success() {
-                            emit_event(
-                                app_handle,
-                                &op_id,
-                                "Git Auto-Commit",
-                                "command",
-                                "success",
-                                "Đã Commit & Push thành công!",
-                            );
-                        } else {
-                            emit_event(
-                                app_handle,
-                                &op_id,
-                                "Git Auto-Commit",
-                                "command",
-                                "error",
-                                &format!(
-                                    "Mã lỗi git ({}):\n{}",
-                                    output.status.code().unwrap_or(-1),
-                                    full_output
-                                ),
-                            );
-                            total_ops_failed += 1;
-                        }
+                // 3. git push
+                if success {
+                    if let Err(e) = run_cmd("git", &["push"]) {
+                        success = false;
+                        err_msg.push_str(&format!("Git Push Failed:\n{}\n", e));
                     }
-                    Err(e) => {
-                        emit_event(
-                            app_handle,
-                            &op_id,
-                            "Git Auto-Commit",
-                            "command",
-                            "error",
-                            &format!("Không thể khởi chạy process Git: {}", e),
-                        );
-                        total_ops_failed += 1;
-                    }
+                }
+
+                if success {
+                    emit_event(
+                        app_handle,
+                        &op_id,
+                        "Git Auto-Commit",
+                        "command",
+                        "success",
+                        "Đã Commit & Push thành công!",
+                    );
+                } else {
+                    emit_event(
+                        app_handle,
+                        &op_id,
+                        "Git Auto-Commit",
+                        "command",
+                        "error",
+                        &err_msg,
+                    );
+                    total_ops_failed += 1;
                 }
             }
             PatchOpType::Command => {
@@ -528,7 +535,6 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
                 if let (Some(old_f), Some(new_f)) = (&op.old_file, &op.new_file) {
                     let old_path = root_dir.join(old_f);
                     let new_path = root_dir.join(new_f);
-                    let rid = old_f.clone();
                     if old_path.exists() {
                         if let Some(parent) = new_path.parent() {
                             let _ = fs::create_dir_all(parent);
@@ -537,7 +543,7 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
                             Ok(_) => {
                                 emit_event(
                                     app_handle,
-                                    &rid,
+                                    &op_id,
                                     &format!("{} -> {}", old_f, new_f),
                                     "rename",
                                     "success",
@@ -548,7 +554,7 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
                             Err(e) => {
                                 emit_event(
                                     app_handle,
-                                    &rid,
+                                    &op_id,
                                     old_f,
                                     "rename",
                                     "error",
@@ -560,7 +566,7 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
                     } else {
                         emit_event(
                             app_handle,
-                            &rid,
+                            &op_id,
                             old_f,
                             "rename",
                             "error",
@@ -676,6 +682,7 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
                                     &format!("Chỉ khớp {}/{} block", applied, op.patches.len()),
                                 );
                                 total_files_updated += 1;
+                                total_ops_failed += 1;
                             }
                         } else {
                             emit_event(
@@ -686,6 +693,7 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
                                 "error",
                                 "Lỗi so khớp: Không tìm thấy block SEARCH nào",
                             );
+                            total_ops_failed += 1;
                         }
                     }
                     Err(e) => {
