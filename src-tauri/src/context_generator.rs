@@ -11,74 +11,123 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
     let extension = std::path::Path::new(file_rel_path)
         .extension()
         .and_then(std::ffi::OsStr::to_str)
-        .unwrap_or("");
+        .unwrap_or("")
+        .to_lowercase();
 
+    let ui_extensions = ["tsx", "jsx", "vue", "svelte", "html"];
     let c_style = [
-        "cs", "java", "ts", "tsx", "js", "jsx", "cpp", "c", "h", "hpp", "rs", "go", "php", "swift",
-        "kt",
+        "cs", "java", "ts", "js", "cpp", "c", "h", "hpp", "rs", "go", "php", "swift", "kt",
     ];
-    if !c_style.contains(&extension) {
-        return content.to_string(); // Trả về nguyên gốc nếu không phải ngôn ngữ C-style
+
+    let is_ui = ui_extensions.contains(&extension.as_str());
+    let is_c_style = c_style.contains(&extension.as_str());
+
+    if !is_ui && !is_c_style {
+        return content.to_string(); // Trả về nguyên gốc nếu không hỗ trợ
     }
 
-    let mut result = String::with_capacity(content.len());
+    // Bước 1: Nén các đoạn UI tốn nhiều token (class, className, svg)
+    let mut processed_content = content.to_string();
+    if is_ui {
+        processed_content = CLASSNAME_REGEX
+            .replace_all(&processed_content, "className=\"...\"")
+            .to_string();
+        processed_content = CLASSNAME_TPL_REGEX
+            .replace_all(&processed_content, "className={/*...*/}")
+            .to_string();
+        processed_content = CLASS_REGEX
+            .replace_all(&processed_content, "class=\"...\"")
+            .to_string();
+        processed_content = SVG_REGEX
+            .replace_all(&processed_content, "<svg>/* svg omitted */</svg>")
+            .to_string();
+    }
+
+    // Bước 2: Thuật toán đếm ngoặc nhọn
+    // UI components lồng nhau sâu hơn do JSX, cần visible_depth = 4. C-style thông thường = 2.
+    let visible_depth = if is_ui { 4 } else { 2 };
+
+    let mut result = String::with_capacity(processed_content.len());
     let mut brace_depth = 0;
     let mut in_string = false;
     let mut string_char = ' ';
     let mut escape = false;
+    let mut prev_char = ' ';
 
-    for c in content.chars() {
+    for c in processed_content.chars() {
         if escape {
-            if brace_depth <= 2 {
+            if brace_depth <= visible_depth {
                 result.push(c);
             }
             escape = false;
+            prev_char = c;
             continue;
         }
 
         if c == '\\' && in_string {
             escape = true;
-            if brace_depth <= 2 {
+            if brace_depth <= visible_depth {
                 result.push(c);
             }
+            prev_char = c;
             continue;
         }
 
         if (c == '"' || c == '\'' || c == '`') && !in_string {
-            in_string = true;
-            string_char = c;
+            // Heuristic tránh lỗi parse chuỗi trong JSX text (vd: don't, It's)
+            if c == '\'' && prev_char.is_alphanumeric() {
+                if brace_depth <= visible_depth {
+                    result.push(c);
+                }
+            } else {
+                in_string = true;
+                string_char = c;
+                if brace_depth <= visible_depth {
+                    result.push(c);
+                }
+            }
+            prev_char = c;
+            continue;
         } else if c == string_char && in_string {
             in_string = false;
+            if brace_depth <= visible_depth {
+                result.push(c);
+            }
+            prev_char = c;
+            continue;
         }
 
         if !in_string {
             if c == '{' {
                 brace_depth += 1;
-                if brace_depth <= 3 {
+                if brace_depth <= visible_depth + 1 {
                     result.push(c);
                 }
-                if brace_depth == 3 {
+                if brace_depth == visible_depth + 1 {
                     result.push_str(" /* logic omitted */ ");
                 }
+                prev_char = c;
                 continue;
             } else if c == '}' {
                 let old_depth = brace_depth;
                 if brace_depth > 0 {
                     brace_depth -= 1;
                 }
-                if old_depth <= 3 {
+                if old_depth <= visible_depth + 1 {
                     result.push(c);
                 }
+                prev_char = c;
                 continue;
             }
         }
 
-        // Giữ lại cấu trúc namespace (độ sâu 1) và class (độ sâu 2)
-        // Bỏ qua phần "ruột" của các method/function (độ sâu >= 3)
-        if brace_depth <= 2 {
+        // Các ký tự bình thường
+        if brace_depth <= visible_depth {
             result.push(c);
         }
+        prev_char = c;
     }
+
     result
 }
 
@@ -106,6 +155,12 @@ lazy_static! {
         r")\s*\r?\n?"
     )).unwrap();
     static ref WHITESPACE_REGEX: Regex = Regex::new(r"\s+").unwrap();
+
+    // Regexes for UI compression
+    static ref CLASSNAME_REGEX: Regex = Regex::new(r#"className="[^"]*""#).unwrap();
+    static ref CLASSNAME_TPL_REGEX: Regex = Regex::new(r#"className=\{`[^`]*`\}"#).unwrap();
+    static ref CLASS_REGEX: Regex = Regex::new(r#"class="[^"]*""#).unwrap();
+    static ref SVG_REGEX: Regex = Regex::new(r#"(?s)<svg.*?>.*?</svg>"#).unwrap();
 }
 
 fn remove_comments_from_content(content: &str, file_rel_path: &str) -> String {
