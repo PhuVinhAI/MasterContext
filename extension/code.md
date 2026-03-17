@@ -52,6 +52,18 @@ Example:
 # Terminal: npx tsc --noEmit
 # Terminal: cargo check
 
+### AUTO-COMMIT & PUSH
+If you want the system to automatically commit and push the changes (ONLY if all patches and terminal verifications succeed), you MUST add the following directive at the very end of your block:
+`# Commit: [Your descriptive commit message]`
+
+Example:
+# Terminal: npm install axios
+# File: src/App.tsx
+... (modifications) ...
+# Terminal: npx tsc --noEmit
+# Terminal: cargo check
+# Commit: refactor: implement axios and apply architectural changes
+
 ### STRICT FILE OPERATION FORMAT FOR IDE AGENT (CRITICAL)
 When applying changes to the project, you MUST use the precise operation syntax below. The downstream Agent relies on this exact formatting.
 

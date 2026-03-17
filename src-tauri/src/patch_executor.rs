@@ -10,6 +10,7 @@ pub enum PatchOpType {
     Rename,
     Mkdir,
     Command,
+    Commit,
 }
 
 #[derive(Debug, Clone)]
@@ -155,6 +156,23 @@ pub fn parse_patch_file(content: &str) -> Vec<PatchOperation> {
             state = State::Idle;
             continue;
         }
+        if line.to_lowercase().starts_with("# commit:") {
+            if let Some(op) = current_op.take() {
+                operations.push(op);
+            }
+            let msg = line[9..].trim().to_string();
+            operations.push(PatchOperation {
+                op_type: PatchOpType::Commit,
+                file: msg,
+                old_file: None,
+                new_file: None,
+                content: vec![],
+                patches: vec![],
+            });
+            current_op = None;
+            state = State::Idle;
+            continue;
+        }
 
         if line.starts_with("<<<<<<< SEARCH") {
             if let Some(ref op) = current_op {
@@ -245,6 +263,110 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
             };
 
         match op.op_type {
+            PatchOpType::Commit => {
+                let msg = op.file.clone();
+                let op_id = format!("commit-{}", msg.len());
+
+                emit_event(
+                    app_handle,
+                    &op_id,
+                    "Git Auto-Commit",
+                    "command",
+                    "pending",
+                    &format!("Đang thực thi Git Commit: {}", msg),
+                );
+
+                if total_patches_failed > 0 || total_ops_failed > 0 {
+                    emit_event(
+                        app_handle,
+                        &op_id,
+                        "Git Auto-Commit",
+                        "command",
+                        "error",
+                        "Đã bỏ qua Git Commit & Push vì có lỗi trong các bước trước (patch hỏng hoặc lệnh terminal thất bại).",
+                    );
+                    continue;
+                }
+
+                let is_windows = cfg!(target_os = "windows");
+                let mut cmd = if is_windows {
+                    let mut c = std::process::Command::new("cmd");
+                    let escaped_msg = msg.replace("\"", "\\\"");
+                    let full_cmd = format!(
+                        "chcp 65001 > nul & git add . && git commit -m \"{}\" && git push",
+                        escaped_msg
+                    );
+                    c.args(&["/C", &full_cmd]);
+                    #[cfg(target_os = "windows")]
+                    use std::os::windows::process::CommandExt;
+                    #[cfg(target_os = "windows")]
+                    c.creation_flags(0x08000000);
+                    c
+                } else {
+                    let mut c = std::process::Command::new("sh");
+                    let escaped_msg = msg.replace("\"", "\\\"");
+                    let full_cmd =
+                        format!("git add . && git commit -m \"{}\" && git push", escaped_msg);
+                    c.arg("-c").arg(&full_cmd);
+                    c
+                };
+
+                cmd.current_dir(root_dir);
+
+                match cmd.output() {
+                    Ok(output) => {
+                        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+                        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+                        let mut full_output = String::new();
+                        if !stdout.trim().is_empty() {
+                            full_output.push_str(&stdout);
+                        }
+                        if !stderr.trim().is_empty() {
+                            if !full_output.is_empty() {
+                                full_output.push_str("\n\n");
+                            }
+                            full_output.push_str("--- STDERR ---\n");
+                            full_output.push_str(&stderr);
+                        }
+
+                        if output.status.success() {
+                            emit_event(
+                                app_handle,
+                                &op_id,
+                                "Git Auto-Commit",
+                                "command",
+                                "success",
+                                "Đã Commit & Push thành công!",
+                            );
+                        } else {
+                            emit_event(
+                                app_handle,
+                                &op_id,
+                                "Git Auto-Commit",
+                                "command",
+                                "error",
+                                &format!(
+                                    "Mã lỗi git ({}):\n{}",
+                                    output.status.code().unwrap_or(-1),
+                                    full_output
+                                ),
+                            );
+                            total_ops_failed += 1;
+                        }
+                    }
+                    Err(e) => {
+                        emit_event(
+                            app_handle,
+                            &op_id,
+                            "Git Auto-Commit",
+                            "command",
+                            "error",
+                            &format!("Không thể khởi chạy process Git: {}", e),
+                        );
+                        total_ops_failed += 1;
+                    }
+                }
+            }
             PatchOpType::Command => {
                 let cmd_str = op.file.clone();
                 emit_event(

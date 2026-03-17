@@ -31,6 +31,14 @@ function parsePatchFile(patchFilePath) {
     const renameMatch = line.match(/^#\s*Rename:\s*(.+?)\s*->\s*(.+)$/i);
     const mkdirMatch = line.match(/^#\s*Mkdir:\s*(.+)$/i);
     const terminalMatch = line.match(/^#\s*Terminal:\s*(.+)$/i);
+    const commitMatch = line.match(/^#\s*Commit:\s*(.+)$/i);
+
+    if (commitMatch) {
+      operations.push({ type: 'COMMIT', message: commitMatch[1].trim() });
+      currentOp = null;
+      state = 'IDLE';
+      continue;
+    }
 
     if (terminalMatch) {
       operations.push({ type: 'COMMAND', command: terminalMatch[1].trim() });
@@ -121,7 +129,22 @@ function applyOperations(operations) {
 
   for (const op of operations) {
     try {
-      if (op.type === 'COMMAND') {
+      if (op.type === 'COMMIT') {
+        if (totalPatchesFailed > 0 || totalOpsFailed > 0) {
+          console.log(`\x1b[33m[BỎ QUA] Git Commit: Bị hủy vì có lỗi trong các bước trước (patch hỏng hoặc lệnh terminal thất bại).\x1b[0m`);
+        } else {
+          console.log(`\x1b[36m[GIT COMMIT]\x1b[0m ${op.message}`);
+          try {
+            execSync('git add .', { cwd: process.cwd(), encoding: 'utf8', stdio: 'inherit' });
+            execSync(`git commit -m "${op.message.replace(/"/g, '\\"')}"`, { cwd: process.cwd(), encoding: 'utf8', stdio: 'inherit' });
+            execSync('git push', { cwd: process.cwd(), encoding: 'utf8', stdio: 'inherit' });
+            console.log(`\x1b[32m[THÀNH CÔNG] Đã commit và push.\x1b[0m`);
+          } catch (e) {
+            console.error(`\x1b[31m[LỖI GIT]\x1b[0m ${e.message}`);
+            totalOpsFailed++;
+          }
+        }
+      } else if (op.type === 'COMMAND') {
         console.log(`\x1b[36m[THỰC THI LỆNH]\x1b[0m ${op.command}`);
         try {
           execSync(op.command, { cwd: process.cwd(), encoding: 'utf8', stdio: 'inherit' });
