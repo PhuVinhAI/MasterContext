@@ -616,13 +616,14 @@ function App() {
     unlistenFuncs.push(
       listen("patch_task_start", () => {
         useAppStore.getState().actions.setPatchTaskStatus("running");
-        useAppStore.setState({ patchOperations: [] });
+        useAppStore.getState().actions.startNewPatchTask();
       })
     );
     unlistenFuncs.push(
       listen("patch_task_success", async () => {
         const state = useAppStore.getState();
         state.actions.setPatchTaskStatus("success");
+        state.actions.updateCurrentPatchTaskStatus("success");
 
         if (state.discordWebhookUrl) {
           const projectName = state.rootPath ? state.rootPath.split(/[/\\]/).pop() : "Dự án";
@@ -647,6 +648,7 @@ function App() {
     unlistenFuncs.push(
       listen("patch_task_error", () => {
         useAppStore.getState().actions.setPatchTaskStatus("error");
+        useAppStore.getState().actions.updateCurrentPatchTaskStatus("error");
       })
     );
     unlistenFuncs.push(

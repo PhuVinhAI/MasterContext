@@ -25,6 +25,8 @@ export interface UIActions {
   setPatchTaskStatus: (status: "idle" | "running" | "success" | "error") => void;
   addPatchLog: (log: string) => void;
   clearPatchLogs: () => void;
+  startNewPatchTask: () => void;
+  updateCurrentPatchTaskStatus: (status: "idle" | "running" | "success" | "error") => void;
   addOrUpdatePatchOperation: (op: import("../types").PatchOpUI) => void;
   startPatchServer: () => Promise<void>;
   stopPatchServer: () => Promise<void>;
@@ -147,22 +149,51 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
       return { patchLogs: newLogs };
     });
   },
-  clearPatchLogs: () => set({ patchLogs: [], patchOperations: [] }),
+  clearPatchLogs: () => set({ patchLogs: [], patchTasks: [] }),
+  startNewPatchTask: () => {
+    set((state) => {
+      const newTask: import("../types").PatchTaskUI = {
+        id: Date.now().toString(),
+        timestamp: Date.now(),
+        status: 'running',
+        operations: []
+      };
+      return { patchTasks: [...state.patchTasks, newTask] };
+    });
+  },
+  updateCurrentPatchTaskStatus: (status) => {
+    set((state) => {
+      if (state.patchTasks.length === 0) return state;
+      const newTasks = [...state.patchTasks];
+      const lastIndex = newTasks.length - 1;
+      newTasks[lastIndex] = { ...newTasks[lastIndex], status };
+      return { patchTasks: newTasks };
+    });
+  },
   addOrUpdatePatchOperation: (op) => {
     set((state) => {
-      const exists = state.patchOperations.findIndex(o => o.id === op.id);
+      if (state.patchTasks.length === 0) return state;
+      const newTasks = [...state.patchTasks];
+      const lastTaskIndex = newTasks.length - 1;
+      const lastTask = { ...newTasks[lastTaskIndex] };
+      
+      const exists = lastTask.operations.findIndex(o => o.id === op.id);
       if (exists >= 0) {
-        const newOps = [...state.patchOperations];
+        const newOps = [...lastTask.operations];
         newOps[exists] = op;
-        return { patchOperations: newOps };
+        lastTask.operations = newOps;
+      } else {
+        lastTask.operations = [...lastTask.operations, op];
       }
-      return { patchOperations: [...state.patchOperations, op] };
+      
+      newTasks[lastTaskIndex] = lastTask;
+      return { patchTasks: newTasks };
     });
   },
   startPatchServer: async () => {
     try {
       const { patchPort } = _get();
-      set({ patchOperations: [] });
+      set({ patchTasks: [] });
       await invoke("start_patch_server", { port: patchPort });
     } catch (e) {
       console.error("Failed to start Patch Server", e);

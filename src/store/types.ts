@@ -172,6 +172,13 @@ export interface PatchOpUI {
   message: string;
 }
 
+export interface PatchTaskUI {
+  id: string;
+  timestamp: number;
+  status: 'idle' | 'running' | 'success' | 'error';
+  operations: PatchOpUI[];
+}
+
 export interface AIChatSessionHeader {
   id: string;
   title: string;

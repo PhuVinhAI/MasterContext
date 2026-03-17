@@ -72,7 +72,7 @@ export const initialState = {
   isPatchPanelVisible: false,
   isPatchServerRunning: false,
   patchLogs: [],
-  patchOperations: [] as import("./types").PatchOpUI[],
+  patchTasks: [] as import("./types").PatchTaskUI[],
   patchTaskStatus: "idle" as const,
   isAiPanelVisible: false,
   aiChatMode: "ask" as "ask" | "context" | "mc",
