@@ -50,6 +50,7 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
 
     let mut result = String::with_capacity(clean_content.len());
     let mut brace_depth = 0;
+    let mut paren_depth = 0; // Thêm theo dõi ngoặc tròn
     let mut in_string = false;
     let mut string_char = ' ';
     let mut escape = false;
@@ -57,7 +58,6 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
     let mut collapsed_stack = vec![false];
     let mut current_block_collapsed = false;
     let mut recent_chars = String::new();
-    let mut prev_char = ' ';
 
     for c in clean_content.chars() {
         if escape {
@@ -66,7 +66,6 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
                 recent_chars.push(c);
             }
             escape = false;
-            prev_char = c;
             continue;
         }
 
@@ -76,26 +75,16 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
                 result.push(c);
                 recent_chars.push(c);
             }
-            prev_char = c;
             continue;
         }
 
         if (c == '"' || c == '\'' || c == '`') && !in_string {
-            // Heuristic tránh lỗi parse chuỗi trong JSX text (vd: don't, It's)
-            if c == '\'' && prev_char.is_alphanumeric() {
-                if !current_block_collapsed {
-                    result.push(c);
-                    recent_chars.push(c);
-                }
-            } else {
-                in_string = true;
-                string_char = c;
-                if !current_block_collapsed {
-                    result.push(c);
-                    recent_chars.push(c);
-                }
+            in_string = true;
+            string_char = c;
+            if !current_block_collapsed {
+                result.push(c);
+                recent_chars.push(c);
             }
-            prev_char = c;
             continue;
         } else if c == string_char && in_string {
             in_string = false;
@@ -103,44 +92,56 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
                 result.push(c);
                 recent_chars.push(c);
             }
-            prev_char = c;
             continue;
         }
 
         if !in_string {
-            if c == '{' {
-                let pre_text = recent_chars.trim_end();
+            if c == '(' {
+                paren_depth += 1;
+            } else if c == ')' {
+                if paren_depth > 0 {
+                    paren_depth -= 1;
+                }
+            }
 
-                let should_collapse =
-                    if pre_text.ends_with("import") || pre_text.contains("import ") {
-                        false
-                    } else if (pre_text.ends_with("export") || pre_text.contains("export "))
-                        && !pre_text.contains("=")
-                        && !pre_text.contains(" default ")
-                    {
-                        false
-                    } else if pre_text.contains("interface ")
-                        || pre_text.contains("class ")
-                        || pre_text.contains("struct ")
-                        || pre_text.contains("enum ")
-                        || pre_text.contains("trait ")
-                        || pre_text.contains("impl ")
-                        || pre_text.contains("namespace ")
-                        || pre_text.contains("module ")
-                        || pre_text.contains("type ")
-                        || pre_text.contains("mod ")
-                    {
-                        false
-                    } else if pre_text.ends_with(":")
-                        || pre_text.ends_with("<")
-                        || pre_text.ends_with("|")
-                        || pre_text.ends_with("&")
-                    {
-                        false
-                    } else {
-                        // Mặc định ẩn để tiết kiệm token tối đa (chủ yếu là function body, object literal, v.v.)
-                        true
-                    };
+            if c == '{' {
+                // Normalize newlines để dễ bắt keyword hơn
+                let normalized_recent = recent_chars.replace('\n', " ");
+                let pre_text = normalized_recent.trim_end();
+
+                let should_collapse = if paren_depth > 0 {
+                    // Đang trong tham số hàm (destructuring/inline type), giữ nguyên cấu trúc
+                    false
+                } else if pre_text.ends_with("import") || pre_text.contains("import ") {
+                    false
+                } else if (pre_text.ends_with("export") || pre_text.contains("export "))
+                    && !pre_text.contains("=")
+                    && !pre_text.contains(" default ")
+                {
+                    false
+                } else if pre_text.contains("interface ")
+                    || pre_text.contains("class ")
+                    || pre_text.contains("struct ")
+                    || pre_text.contains("enum ")
+                    || pre_text.contains("trait ")
+                    || pre_text.contains("impl ")
+                    || pre_text.contains("namespace ")
+                    || pre_text.contains("module ")
+                    || pre_text.contains("type ")
+                    || pre_text.contains("mod ")
+                    || pre_text.contains("declare ")
+                {
+                    false
+                } else if pre_text.ends_with(":")
+                    || pre_text.ends_with("<")
+                    || pre_text.ends_with("|")
+                    || pre_text.ends_with("&")
+                {
+                    false
+                } else {
+                    // Mặc định ẩn để tiết kiệm token tối đa (chủ yếu là function body, object literal, v.v.)
+                    true
+                };
 
                 let will_collapse = current_block_collapsed || should_collapse;
                 collapsed_stack.push(will_collapse);
@@ -162,7 +163,6 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
                 }
 
                 recent_chars.clear();
-                prev_char = c;
                 continue;
             } else if c == '}' {
                 let parent_collapsed = if collapsed_stack.len() >= 2 {
@@ -183,14 +183,12 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
                 }
 
                 recent_chars.clear();
-                prev_char = c;
                 continue;
             } else if c == ';' {
                 if !current_block_collapsed {
                     result.push(c);
                 }
                 recent_chars.clear(); // Reset ngữ cảnh keyword
-                prev_char = c;
                 continue;
             }
         }
@@ -198,12 +196,12 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
         if !current_block_collapsed {
             result.push(c);
             recent_chars.push(c);
-            if recent_chars.len() > 150 {
-                let drained: String = recent_chars.chars().skip(50).collect();
+            // Tăng bộ nhớ đệm lên để các định nghĩa class cực dài không làm trôi mất keyword 'class'
+            if recent_chars.len() > 2000 {
+                let drained: String = recent_chars.chars().skip(1000).collect();
                 recent_chars = drained;
             }
         }
-        prev_char = c;
     }
 
     // Xóa bớt khoảng trắng thừa sinh ra do lược bỏ code
