@@ -167,7 +167,7 @@ export interface ToolCall {
 export interface PatchOpUI {
   id: string;
   file: string;
-  opType: 'modify' | 'create' | 'delete' | 'rename' | 'mkdir';
+  opType: 'modify' | 'create' | 'delete' | 'rename' | 'mkdir' | 'command';
   status: 'pending' | 'success' | 'error';
   message: string;
 }

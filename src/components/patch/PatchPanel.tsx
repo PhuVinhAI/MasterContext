@@ -1,8 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAppStore, useAppActions } from "@/store/appStore";
 import { useShallow } from "zustand/react/shallow";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Code, CheckCircle2, XCircle, FileEdit, FilePlus, FileMinus, FolderPlus, Replace } from "lucide-react";
+import { Code, CheckCircle2, XCircle, FileEdit, FilePlus, FileMinus, FolderPlus, Replace, TerminalSquare, ChevronDown, ChevronUp } from "lucide-react";
 import { PatchHeader } from "./PatchHeader";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -19,6 +19,11 @@ export function PatchPanel() {
   );
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [expandedOps, setExpandedOps] = useState<Record<string, boolean>>({});
+
+  const toggleExpand = (id: string) => {
+    setExpandedOps(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -37,6 +42,7 @@ export function PatchPanel() {
       case 'delete': return <FileMinus className={cn("h-4 w-4 text-rose-500")} />;
       case 'rename': return <Replace className={cn("h-4 w-4 text-purple-500")} />;
       case 'mkdir': return <FolderPlus className={cn("h-4 w-4 text-emerald-500")} />;
+      case 'command': return <TerminalSquare className={cn("h-4 w-4 text-orange-500")} />;
       default: return <Code className="h-4 w-4" />;
     }
   };
@@ -72,29 +78,53 @@ export function PatchPanel() {
              </div>
           ) : (
             <div className="grid gap-2">
-              {patchOperations.map((op, i) => (
-                <Card key={`${op.id}-${i}`} className="p-3 flex flex-col gap-2 bg-card shadow-xs">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0 font-mono text-sm">
-                      {renderOpIcon(op.opType, op.status)}
-                      <span className="truncate flex-1 font-semibold">{op.file}</span>
+              {patchOperations.map((op, i) => {
+                const isExpanded = expandedOps[`${op.id}-${i}`];
+                const isCommand = op.opType === 'command';
+                const hasLongOutput = op.message.includes('\n') || op.message.length > 100;
+                
+                return (
+                  <Card key={`${op.id}-${i}`} className="p-3 flex flex-col gap-2 bg-card shadow-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0 font-mono text-sm">
+                        {renderOpIcon(op.opType, op.status)}
+                        <span className="truncate flex-1 font-semibold">{op.file}</span>
+                      </div>
+                      {op.status === 'success' ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                      ) : op.status === 'error' ? (
+                        <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
+                      )}
                     </div>
-                    {op.status === 'success' ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                    ) : op.status === 'error' ? (
-                      <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                    
+                    {isCommand || hasLongOutput ? (
+                      <div className="px-6 pb-1">
+                        <div 
+                          className="text-[11px] font-semibold text-muted-foreground/80 hover:text-foreground cursor-pointer flex items-center gap-1 mb-1 transition-colors select-none"
+                          onClick={() => toggleExpand(`${op.id}-${i}`)}
+                        >
+                          {isExpanded ? <ChevronUp className="h-3 w-3"/> : <ChevronDown className="h-3 w-3"/>}
+                          {isExpanded ? "Ẩn chi tiết output" : "Hiển thị chi tiết output"}
+                        </div>
+                        {isExpanded && (
+                          <pre className="text-[11px] bg-muted/40 border border-border/50 p-2 rounded-md overflow-x-auto whitespace-pre-wrap max-h-80 font-mono text-muted-foreground custom-scrollbar">
+                            {op.message}
+                          </pre>
+                        )}
+                      </div>
                     ) : (
-                      <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
+                      <div className={cn(
+                        "text-xs px-6",
+                        op.status === 'error' ? "text-destructive font-medium" : "text-muted-foreground"
+                      )}>
+                        {op.message}
+                      </div>
                     )}
-                  </div>
-                  <div className={cn(
-                    "text-xs px-6",
-                    op.status === 'error' ? "text-destructive font-medium" : "text-muted-foreground"
-                  )}>
-                    {op.message}
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>

@@ -37,14 +37,12 @@ When introducing new packages, frameworks, libraries, or setting up projects, DO
 
 <workflow_rules>
 ### TERMINAL COMMANDS FOR SETUP & DEPENDENCIES
-If your solution requires installing new packages or running setup scripts, you MUST include the exact commands inside a standard `bash` code block.
-CRITICAL: This `bash` block MUST be placed INSIDE the `<<<START OF DIFF>>>` and `<<<END OF DIFF>>>` markers, and MUST be preceded by the header `# Terminal`.
+If your solution requires installing new packages or running terminal commands (e.g., npm install, cargo add, pip install), you MUST use the `# Terminal: ` directive.
+These commands will be executed sequentially by the Agent.
 
 Example:
-```bash
-# Terminal
-npm install axios @tanstack/react-query
-```
+# Terminal: npm install axios @tanstack/react-query
+# Terminal: npx prisma generate
 
 ### STRICT FILE OPERATION FORMAT FOR IDE AGENT (CRITICAL)
 When applying changes to the project, you MUST use the precise operation syntax below. The downstream Agent relies on this exact formatting.

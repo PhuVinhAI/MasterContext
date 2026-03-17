@@ -70,9 +70,9 @@ CRITICAL: At the very end of your final response, when all tasks and commits are
 
 <directive name="terminal_command_handling" priority="absolute">
 When processing `<<<START_OF_DIFF>>>` / `<<<END_OF_DIFF>>>` blocks, you MUST:
-1. FIRST, scan for any `# Terminal` code blocks inside the diff markers.
+1. FIRST, scan for any `# Terminal: <command>` directives.
 2. If found, execute each terminal command using the `bash` tool BEFORE applying any file changes.
-3. Terminal commands are identified by a `bash` code block with `# Terminal` header inside the diff markers.
+3. Terminal commands are executed sequentially, waiting for one to finish before starting the next.
 4. Store the output of terminal commands for reference but do not output them to the user.
 </directive>
 </core_directives>
@@ -81,9 +81,9 @@ When processing `<<<START_OF_DIFF>>>` / `<<<END_OF_DIFF>>>` blocks, you MUST:
 When you receive one or more file operation blocks (Modify, Create, Delete, Rename, Mkdir):
 
 **PHASE 0: TERMINAL COMMAND EXECUTION (CRITICAL)**
-0. Scan the entire `<<<START_OF_DIFF>>>` / `<<<END_OF_DIFF>>>` block for any `# Terminal` sections.
+0. Scan the entire `<<<START_OF_DIFF>>>` / `<<<END_OF_DIFF>>>` block for any `# Terminal: <command>` lines.
 1. If terminal commands are found:
-   - Extract ALL `bash` code blocks that start with `# Terminal` header.
+   - Extract ALL commands.
    - Execute each terminal command in order using the `bash` tool.
    - Wait for each command to complete before proceeding to the next.
    - Continue to Phase 1 only after ALL terminal commands have been executed.

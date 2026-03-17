@@ -9,6 +9,7 @@ pub enum PatchOpType {
     Delete,
     Rename,
     Mkdir,
+    Command,
 }
 
 #[derive(Debug, Clone)]
@@ -34,55 +35,122 @@ fn normalize_line_endings(s: &str) -> String {
 pub fn parse_patch_file(content: &str) -> Vec<PatchOperation> {
     let normalized = normalize_line_endings(content);
     let lines: Vec<&str> = normalized.split('\n').collect();
-    
+
     let mut operations: Vec<PatchOperation> = Vec::new();
     let mut current_op: Option<PatchOperation> = None;
-    
+
     #[derive(PartialEq)]
-    enum State { Idle, Search, Replace, Content }
+    enum State {
+        Idle,
+        Search,
+        Replace,
+        Content,
+    }
     let mut state = State::Idle;
-    
+
     let mut search_block: Vec<String> = Vec::new();
     let mut replace_block: Vec<String> = Vec::new();
 
     for line in lines {
         // Regex equivalents
         if line.to_lowercase().starts_with("# file:") {
-            if let Some(op) = current_op.take() { operations.push(op); }
+            if let Some(op) = current_op.take() {
+                operations.push(op);
+            }
             let file = line[7..].trim().to_string();
-            current_op = Some(PatchOperation { op_type: PatchOpType::Modify, file, old_file: None, new_file: None, content: vec![], patches: vec![] });
+            current_op = Some(PatchOperation {
+                op_type: PatchOpType::Modify,
+                file,
+                old_file: None,
+                new_file: None,
+                content: vec![],
+                patches: vec![],
+            });
             state = State::Idle;
             continue;
         }
         if line.to_lowercase().starts_with("# create:") {
-            if let Some(op) = current_op.take() { operations.push(op); }
+            if let Some(op) = current_op.take() {
+                operations.push(op);
+            }
             let file = line[9..].trim().to_string();
-            current_op = Some(PatchOperation { op_type: PatchOpType::Create, file, old_file: None, new_file: None, content: vec![], patches: vec![] });
+            current_op = Some(PatchOperation {
+                op_type: PatchOpType::Create,
+                file,
+                old_file: None,
+                new_file: None,
+                content: vec![],
+                patches: vec![],
+            });
             state = State::Idle;
             continue;
         }
         if line.to_lowercase().starts_with("# delete:") {
-            if let Some(op) = current_op.take() { operations.push(op); }
+            if let Some(op) = current_op.take() {
+                operations.push(op);
+            }
             let file = line[9..].trim().to_string();
-            operations.push(PatchOperation { op_type: PatchOpType::Delete, file, old_file: None, new_file: None, content: vec![], patches: vec![] });
+            operations.push(PatchOperation {
+                op_type: PatchOpType::Delete,
+                file,
+                old_file: None,
+                new_file: None,
+                content: vec![],
+                patches: vec![],
+            });
             current_op = None;
             state = State::Idle;
             continue;
         }
         if line.to_lowercase().starts_with("# rename:") {
-            if let Some(op) = current_op.take() { operations.push(op); }
+            if let Some(op) = current_op.take() {
+                operations.push(op);
+            }
             let parts: Vec<&str> = line[9..].split("->").collect();
             if parts.len() == 2 {
-                operations.push(PatchOperation { op_type: PatchOpType::Rename, file: String::new(), old_file: Some(parts[0].trim().to_string()), new_file: Some(parts[1].trim().to_string()), content: vec![], patches: vec![] });
+                operations.push(PatchOperation {
+                    op_type: PatchOpType::Rename,
+                    file: String::new(),
+                    old_file: Some(parts[0].trim().to_string()),
+                    new_file: Some(parts[1].trim().to_string()),
+                    content: vec![],
+                    patches: vec![],
+                });
             }
             current_op = None;
             state = State::Idle;
             continue;
         }
         if line.to_lowercase().starts_with("# mkdir:") {
-            if let Some(op) = current_op.take() { operations.push(op); }
+            if let Some(op) = current_op.take() {
+                operations.push(op);
+            }
             let file = line[8..].trim().to_string();
-            operations.push(PatchOperation { op_type: PatchOpType::Mkdir, file, old_file: None, new_file: None, content: vec![], patches: vec![] });
+            operations.push(PatchOperation {
+                op_type: PatchOpType::Mkdir,
+                file,
+                old_file: None,
+                new_file: None,
+                content: vec![],
+                patches: vec![],
+            });
+            current_op = None;
+            state = State::Idle;
+            continue;
+        }
+        if line.to_lowercase().starts_with("# terminal:") {
+            if let Some(op) = current_op.take() {
+                operations.push(op);
+            }
+            let cmd = line[11..].trim().to_string();
+            operations.push(PatchOperation {
+                op_type: PatchOpType::Command,
+                file: cmd,
+                old_file: None,
+                new_file: None,
+                content: vec![],
+                patches: vec![],
+            });
             current_op = None;
             state = State::Idle;
             continue;
@@ -155,30 +223,137 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
     let mut total_patches_failed = 0;
     let mut total_ops_failed = 0;
 
-    let _ = app_handle.emit("patch_log", format!("[SYSTEM] Bắt đầu thực thi {} tác vụ...", operations.len()));
+    let _ = app_handle.emit(
+        "patch_log",
+        format!("[SYSTEM] Bắt đầu thực thi {} tác vụ...", operations.len()),
+    );
 
     for op in operations {
         let op_id = op.file.clone();
-        let emit_event = |app: &AppHandle, id: &str, file: &str, op_type: &str, status: &str, msg: &str| {
-            let _ = app.emit("patch_file_event", serde_json::json!({
-                "id": id,
-                "file": file,
-                "opType": op_type,
-                "status": status,
-                "message": msg
-            }));
-        };
+        let emit_event =
+            |app: &AppHandle, id: &str, file: &str, op_type: &str, status: &str, msg: &str| {
+                let _ = app.emit(
+                    "patch_file_event",
+                    serde_json::json!({
+                        "id": id,
+                        "file": file,
+                        "opType": op_type,
+                        "status": status,
+                        "message": msg
+                    }),
+                );
+            };
 
         match op.op_type {
+            PatchOpType::Command => {
+                let cmd_str = op.file.clone();
+                emit_event(
+                    app_handle,
+                    &op_id,
+                    &cmd_str,
+                    "command",
+                    "pending",
+                    "Đang thực thi lệnh...",
+                );
+
+                let is_windows = cfg!(target_os = "windows");
+                let mut cmd = if is_windows {
+                    let mut c = std::process::Command::new("cmd");
+                    c.args(&["/C", &cmd_str]);
+                    #[cfg(target_os = "windows")]
+                    use std::os::windows::process::CommandExt;
+                    #[cfg(target_os = "windows")]
+                    c.creation_flags(0x08000000);
+                    c
+                } else {
+                    let mut c = std::process::Command::new("sh");
+                    c.arg("-c").arg(&cmd_str);
+                    c
+                };
+
+                cmd.current_dir(root_dir);
+
+                match cmd.output() {
+                    Ok(output) => {
+                        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+                        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+                        let mut full_output = String::new();
+                        if !stdout.trim().is_empty() {
+                            full_output.push_str(&stdout);
+                        }
+                        if !stderr.trim().is_empty() {
+                            if !full_output.is_empty() {
+                                full_output.push_str("\n\n");
+                            }
+                            full_output.push_str("--- STDERR ---\n");
+                            full_output.push_str(&stderr);
+                        }
+                        if full_output.trim().is_empty() {
+                            full_output =
+                                "Lệnh đã chạy thành công (Không có output trả về)".to_string();
+                        }
+
+                        if output.status.success() {
+                            emit_event(
+                                app_handle,
+                                &op_id,
+                                &cmd_str,
+                                "command",
+                                "success",
+                                &full_output,
+                            );
+                        } else {
+                            emit_event(
+                                app_handle,
+                                &op_id,
+                                &cmd_str,
+                                "command",
+                                "error",
+                                &format!(
+                                    "Mã lỗi ({}):\n{}",
+                                    output.status.code().unwrap_or(-1),
+                                    full_output
+                                ),
+                            );
+                            total_ops_failed += 1;
+                        }
+                    }
+                    Err(e) => {
+                        emit_event(
+                            app_handle,
+                            &op_id,
+                            &cmd_str,
+                            "command",
+                            "error",
+                            &format!("Không thể khởi chạy process: {}", e),
+                        );
+                        total_ops_failed += 1;
+                    }
+                }
+            }
             PatchOpType::Mkdir => {
                 let absolute_path = root_dir.join(&op.file);
                 match fs::create_dir_all(&absolute_path) {
                     Ok(_) => {
-                        emit_event(app_handle, &op_id, &op.file, "mkdir", "success", "Tạo thư mục thành công");
+                        emit_event(
+                            app_handle,
+                            &op_id,
+                            &op.file,
+                            "mkdir",
+                            "success",
+                            "Tạo thư mục thành công",
+                        );
                         total_dirs_created += 1;
                     }
                     Err(e) => {
-                        emit_event(app_handle, &op_id, &op.file, "mkdir", "error", &e.to_string());
+                        emit_event(
+                            app_handle,
+                            &op_id,
+                            &op.file,
+                            "mkdir",
+                            "error",
+                            &e.to_string(),
+                        );
                         total_ops_failed += 1;
                     }
                 }
@@ -193,16 +368,37 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
                     };
                     match res {
                         Ok(_) => {
-                            emit_event(app_handle, &op_id, &op.file, "delete", "success", "Xóa thành công");
+                            emit_event(
+                                app_handle,
+                                &op_id,
+                                &op.file,
+                                "delete",
+                                "success",
+                                "Xóa thành công",
+                            );
                             total_files_deleted += 1;
                         }
                         Err(e) => {
-                            emit_event(app_handle, &op_id, &op.file, "delete", "error", &e.to_string());
+                            emit_event(
+                                app_handle,
+                                &op_id,
+                                &op.file,
+                                "delete",
+                                "error",
+                                &e.to_string(),
+                            );
                             total_ops_failed += 1;
                         }
                     }
                 } else {
-                    emit_event(app_handle, &op_id, &op.file, "delete", "success", "Bỏ qua (Không tìm thấy)");
+                    emit_event(
+                        app_handle,
+                        &op_id,
+                        &op.file,
+                        "delete",
+                        "success",
+                        "Bỏ qua (Không tìm thấy)",
+                    );
                 }
             }
             PatchOpType::Rename => {
@@ -216,16 +412,37 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
                         }
                         match fs::rename(&old_path, &new_path) {
                             Ok(_) => {
-                                emit_event(app_handle, &rid, &format!("{} -> {}", old_f, new_f), "rename", "success", "Đổi tên thành công");
+                                emit_event(
+                                    app_handle,
+                                    &rid,
+                                    &format!("{} -> {}", old_f, new_f),
+                                    "rename",
+                                    "success",
+                                    "Đổi tên thành công",
+                                );
                                 total_files_renamed += 1;
                             }
                             Err(e) => {
-                                emit_event(app_handle, &rid, old_f, "rename", "error", &e.to_string());
+                                emit_event(
+                                    app_handle,
+                                    &rid,
+                                    old_f,
+                                    "rename",
+                                    "error",
+                                    &e.to_string(),
+                                );
                                 total_ops_failed += 1;
                             }
                         }
                     } else {
-                        emit_event(app_handle, &rid, old_f, "rename", "error", "Không tìm thấy file gốc");
+                        emit_event(
+                            app_handle,
+                            &rid,
+                            old_f,
+                            "rename",
+                            "error",
+                            "Không tìm thấy file gốc",
+                        );
                         total_ops_failed += 1;
                     }
                 }
@@ -238,11 +455,25 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
                 let content_str = op.content.join("\n");
                 match fs::write(&absolute_path, content_str) {
                     Ok(_) => {
-                        emit_event(app_handle, &op_id, &op.file, "create", "success", "Tạo file thành công");
+                        emit_event(
+                            app_handle,
+                            &op_id,
+                            &op.file,
+                            "create",
+                            "success",
+                            "Tạo file thành công",
+                        );
                         total_files_created += 1;
                     }
                     Err(e) => {
-                        emit_event(app_handle, &op_id, &op.file, "create", "error", &e.to_string());
+                        emit_event(
+                            app_handle,
+                            &op_id,
+                            &op.file,
+                            "create",
+                            "error",
+                            &e.to_string(),
+                        );
                         total_ops_failed += 1;
                     }
                 }
@@ -250,7 +481,14 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
             PatchOpType::Modify => {
                 let absolute_path = root_dir.join(&op.file);
                 if !absolute_path.exists() {
-                    emit_event(app_handle, &op_id, &op.file, "modify", "error", "File không tồn tại");
+                    emit_event(
+                        app_handle,
+                        &op_id,
+                        &op.file,
+                        "modify",
+                        "error",
+                        "File không tồn tại",
+                    );
                     total_patches_failed += op.patches.len();
                     total_ops_failed += 1;
                     continue;
@@ -273,27 +511,69 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
 
                         if applied > 0 && applied == op.patches.len() {
                             if let Err(e) = fs::write(&absolute_path, file_content) {
-                                emit_event(app_handle, &op_id, &op.file, "modify", "error", &format!("Lỗi ghi file: {}", e));
+                                emit_event(
+                                    app_handle,
+                                    &op_id,
+                                    &op.file,
+                                    "modify",
+                                    "error",
+                                    &format!("Lỗi ghi file: {}", e),
+                                );
                                 total_ops_failed += 1;
                             } else {
-                                emit_event(app_handle, &op_id, &op.file, "modify", "success", &format!("Đã cập nhật {} block", applied));
+                                emit_event(
+                                    app_handle,
+                                    &op_id,
+                                    &op.file,
+                                    "modify",
+                                    "success",
+                                    &format!("Đã cập nhật {} block", applied),
+                                );
                                 total_files_updated += 1;
                             }
                         } else if applied > 0 {
                             // Partial apply
                             if let Err(e) = fs::write(&absolute_path, file_content) {
-                                emit_event(app_handle, &op_id, &op.file, "modify", "error", &format!("Lỗi ghi file: {}", e));
+                                emit_event(
+                                    app_handle,
+                                    &op_id,
+                                    &op.file,
+                                    "modify",
+                                    "error",
+                                    &format!("Lỗi ghi file: {}", e),
+                                );
                                 total_ops_failed += 1;
                             } else {
-                                emit_event(app_handle, &op_id, &op.file, "modify", "error", &format!("Chỉ khớp {}/{} block", applied, op.patches.len()));
+                                emit_event(
+                                    app_handle,
+                                    &op_id,
+                                    &op.file,
+                                    "modify",
+                                    "error",
+                                    &format!("Chỉ khớp {}/{} block", applied, op.patches.len()),
+                                );
                                 total_files_updated += 1;
                             }
                         } else {
-                            emit_event(app_handle, &op_id, &op.file, "modify", "error", "Lỗi so khớp: Không tìm thấy block SEARCH nào");
+                            emit_event(
+                                app_handle,
+                                &op_id,
+                                &op.file,
+                                "modify",
+                                "error",
+                                "Lỗi so khớp: Không tìm thấy block SEARCH nào",
+                            );
                         }
                     }
                     Err(e) => {
-                        emit_event(app_handle, &op_id, &op.file, "modify", "error", &format!("Lỗi đọc file: {}", e));
+                        emit_event(
+                            app_handle,
+                            &op_id,
+                            &op.file,
+                            "modify",
+                            "error",
+                            &format!("Lỗi đọc file: {}", e),
+                        );
                         total_ops_failed += 1;
                     }
                 }
@@ -302,9 +582,27 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
     }
 
     let _ = app_handle.emit("patch_log", "=== TỔNG KẾT BẢN VÁ ===".to_string());
-    let _ = app_handle.emit("patch_log", format!("Tạo mới: {} files, {} thư mục", total_files_created, total_dirs_created));
-    let _ = app_handle.emit("patch_log", format!("Cập nhật: {} files ({} patch thành công)", total_files_updated, total_patches_applied));
-    let _ = app_handle.emit("patch_log", format!("Đổi tên: {} files | Xóa: {} mục", total_files_renamed, total_files_deleted));
+    let _ = app_handle.emit(
+        "patch_log",
+        format!(
+            "Tạo mới: {} files, {} thư mục",
+            total_files_created, total_dirs_created
+        ),
+    );
+    let _ = app_handle.emit(
+        "patch_log",
+        format!(
+            "Cập nhật: {} files ({} patch thành công)",
+            total_files_updated, total_patches_applied
+        ),
+    );
+    let _ = app_handle.emit(
+        "patch_log",
+        format!(
+            "Đổi tên: {} files | Xóa: {} mục",
+            total_files_renamed, total_files_deleted
+        ),
+    );
 
     if total_patches_failed > 0 || total_ops_failed > 0 {
         let _ = app_handle.emit("patch_task_error", ());

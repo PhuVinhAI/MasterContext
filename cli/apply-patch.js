@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 
 const normalizeLineEndings = (str) => str.replace(/\r\n|\r/g, '\n');
 
@@ -29,6 +30,14 @@ function parsePatchFile(patchFilePath) {
     const deleteMatch = line.match(/^#\s*Delete:\s*(.+)$/i);
     const renameMatch = line.match(/^#\s*Rename:\s*(.+?)\s*->\s*(.+)$/i);
     const mkdirMatch = line.match(/^#\s*Mkdir:\s*(.+)$/i);
+    const terminalMatch = line.match(/^#\s*Terminal:\s*(.+)$/i);
+
+    if (terminalMatch) {
+      operations.push({ type: 'COMMAND', command: terminalMatch[1].trim() });
+      currentOp = null;
+      state = 'IDLE';
+      continue;
+    }
 
     if (fileMatch) {
       currentOp = { type: 'MODIFY', file: fileMatch[1].trim(), patches: [] };
@@ -112,7 +121,16 @@ function applyOperations(operations) {
 
   for (const op of operations) {
     try {
-      if (op.type === 'MKDIR') {
+      if (op.type === 'COMMAND') {
+        console.log(`\x1b[36m[THỰC THI LỆNH]\x1b[0m ${op.command}`);
+        try {
+          execSync(op.command, { cwd: process.cwd(), encoding: 'utf8', stdio: 'inherit' });
+          console.log(`\x1b[32m[THÀNH CÔNG] Lệnh chạy xong.\x1b[0m`);
+        } catch (e) {
+          console.error(`\x1b[31m[LỖI LỆNH]\x1b[0m ${e.message}`);
+          totalOpsFailed++;
+        }
+      } else if (op.type === 'MKDIR') {
         const absolutePath = path.resolve(process.cwd(), op.file);
         fs.mkdirSync(absolutePath, { recursive: true });
         console.log(`\x1b[32m[THÀNH CÔNG] Đã tạo thư mục: ${op.file}\x1b[0m`);
