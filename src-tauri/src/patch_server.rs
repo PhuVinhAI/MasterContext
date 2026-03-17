@@ -161,14 +161,8 @@ async fn handle_patch(
 
     apply_operations(&app_handle, current_path, operations);
 
-    let _ = app_handle.notification()
-        .builder()
-        .title("Auto-Patch")
-        .body("Đã áp dụng các thay đổi mã nguồn!")
-        .show();
-
     Ok(Json(ResultResponse {
         success: true,
-        message: "Patch đã được áp dụng thành công".into(),
+        message: "Yêu cầu Patch đã được đưa vào luồng thực thi".into(),
     }))
 }

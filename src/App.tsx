@@ -588,7 +588,24 @@ function App() {
 
     unlistenFuncs.push(
       listen("kilo_task_error", async () => {
-        useAppStore.getState().actions.setKiloTaskStatus("error");
+        const state = useAppStore.getState();
+        state.actions.setKiloTaskStatus("error");
+
+        if (state.discordWebhookUrl) {
+          const projectName = state.rootPath ? state.rootPath.split(/[/\\]/).pop() : "Dự án";
+          try {
+            await fetch(state.discordWebhookUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                content: `@everyone ❌ **Kilo Agent** đã GẶP LỖI trong dự án \`${projectName}\`. Vui lòng kiểm tra log trên ứng dụng.\n*🕒 ${new Date().toLocaleString('vi-VN')} | ID: ${Math.random().toString(36).substring(7)}*`,
+              }),
+            });
+          } catch (e) {
+            console.error("Lỗi khi gửi Discord webhook:", e);
+          }
+        }
+
         await message(t("Kilo Agent gặp lỗi hoặc đã bị dừng. Vui lòng xem log ở Kilo Panel."), {
           title: "Lỗi Kilo Agent",
           kind: "error",
@@ -640,15 +657,60 @@ function App() {
           }
         }
 
+        let permissionGranted = await isPermissionGranted();
+        if (!permissionGranted) {
+          const permission = await requestPermission();
+          permissionGranted = permission === "granted";
+        }
+        if (permissionGranted) {
+          sendNotification({
+            title: "Auto-Patch (Thành công)",
+            body: "Đã áp dụng các thay đổi mã nguồn!",
+          });
+        }
+
         if (!state.isScanning) {
           state.actions.rescanProject();
         }
       })
     );
     unlistenFuncs.push(
-      listen("patch_task_error", () => {
-        useAppStore.getState().actions.setPatchTaskStatus("error");
-        useAppStore.getState().actions.updateCurrentPatchTaskStatus("error");
+      listen("patch_task_error", async () => {
+        const state = useAppStore.getState();
+        state.actions.setPatchTaskStatus("error");
+        state.actions.updateCurrentPatchTaskStatus("error");
+
+        if (state.discordWebhookUrl) {
+          const projectName = state.rootPath ? state.rootPath.split(/[/\\]/).pop() : "Dự án";
+          try {
+            await fetch(state.discordWebhookUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                content: `@everyone ❌ **Auto-Patch** đã GẶP LỖI khi áp dụng bản vá trong dự án \`${projectName}\`. Vui lòng kiểm tra màn hình ứng dụng.\n*🕒 ${new Date().toLocaleString('vi-VN')} | ID: ${Math.random().toString(36).substring(7)}*`,
+              }),
+            });
+          } catch (e) {
+            console.error("Lỗi khi gửi Discord webhook:", e);
+          }
+        }
+
+        let permissionGranted = await isPermissionGranted();
+        if (!permissionGranted) {
+          const permission = await requestPermission();
+          permissionGranted = permission === "granted";
+        }
+        if (permissionGranted) {
+          sendNotification({
+            title: "Auto-Patch (Lỗi)",
+            body: "Có lỗi xảy ra khi áp dụng bản vá!",
+          });
+        }
+
+        await message(t("Auto-Patch báo lỗi hoặc không thể khớp mã nguồn. Vui lòng kiểm tra Patch Panel."), {
+          title: "Lỗi Auto-Patch",
+          kind: "error",
+        });
       })
     );
     unlistenFuncs.push(
