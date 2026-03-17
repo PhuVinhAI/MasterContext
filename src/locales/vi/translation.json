@@ -58,10 +58,13 @@
   },
   "analysisSettings": {
     "title": "Cài đặt Phân tích Nội dung",
-    "description": "Các tệp có phần mở rộng dưới đây sẽ không được đọc nội dung để đếm token hoặc phân tích liên kết, giúp tăng tốc độ quét.",
+    "description": "Các tệp có phần mở rộng và thuộc thư mục dưới đây sẽ không được đọc nội dung để đếm token (vẫn hiển thị ở cây thư mục), giúp tăng tốc độ quét cực mạnh.",
     "extensionsLabel": "Các phần mở rộng cần bỏ qua",
     "extensionsPlaceholder": "png, svg, lock, jpg...",
-    "extensionsHint": "Phân cách các phần mở rộng bằng dấu phẩy (,)."
+    "extensionsHint": "Phân cách các phần mở rộng bằng dấu phẩy (,).",
+    "foldersLabel": "Thư mục cần bỏ qua",
+    "foldersPlaceholder": "dist, build, node_modules, .git...",
+    "foldersHint": "Phân cách tên thư mục bằng dấu phẩy (,)."
   },
   "editorPanel": {
     "excludeSelection": "Loại trừ vùng đã chọn",

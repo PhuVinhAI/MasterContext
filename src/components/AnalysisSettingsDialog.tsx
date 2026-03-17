@@ -17,31 +17,40 @@ interface AnalysisSettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   initialExtensions: string[];
-  onSave: (extensions: string[]) => void;
+  initialFolders: string[];
+  onSave: (extensions: string[], folders: string[]) => void;
 }
 
 export function AnalysisSettingsDialog({
   isOpen,
   onClose,
   initialExtensions,
+  initialFolders,
   onSave,
 }: AnalysisSettingsDialogProps) {
   const { t } = useTranslation();
   const [extensionsText, setExtensionsText] = useState("");
+  const [foldersText, setFoldersText] = useState("");
 
   useEffect(() => {
     if (isOpen) {
       setExtensionsText(initialExtensions.join(", "));
+      setFoldersText((initialFolders || []).join(", "));
     }
-  }, [isOpen, initialExtensions]);
+  }, [isOpen, initialExtensions, initialFolders]);
 
   const handleSave = () => {
     const extensions = extensionsText
       .split(",")
       .map((s) => s.trim().toLowerCase())
-      .filter(Boolean); // Lọc bỏ các chuỗi rỗng
-    // Sử dụng Set để loại bỏ các extension trùng lặp
-    onSave([...new Set(extensions)]);
+      .filter(Boolean); 
+    
+    const folders = foldersText
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    onSave([...new Set(extensions)], [...new Set(folders)]);
     onClose();
   };
 
@@ -65,8 +74,22 @@ export function AnalysisSettingsDialog({
               value={extensionsText}
               onChange={(e) => setExtensionsText(e.target.value)}
             />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {t("analysisSettings.extensionsHint")}
+            </p>
+          </div>
+          <div className="grid w-full gap-1.5 mt-2">
+            <Label htmlFor="folders">
+              {t("analysisSettings.foldersLabel")}
+            </Label>
+            <Input
+              id="folders"
+              placeholder={t("analysisSettings.foldersPlaceholder")}
+              value={foldersText}
+              onChange={(e) => setFoldersText(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              {t("analysisSettings.foldersHint")}
             </p>
           </div>
         </div>

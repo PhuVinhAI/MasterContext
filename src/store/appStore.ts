@@ -105,6 +105,7 @@ export interface AppState {
   isSidebarVisible: boolean;
   recentPaths: string[];
   nonAnalyzableExtensions: string[];
+  nonAnalyzableFolders: string[];
 
   // Git Panel
   isGitPanelVisible: boolean;

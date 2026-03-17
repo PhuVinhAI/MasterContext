@@ -91,6 +91,7 @@ export interface AIModel {
 export interface AppSettings {
   recentPaths: string[];
   nonAnalyzableExtensions?: string[];
+  nonAnalyzableFolders?: string[];
   openRouterApiKey?: string;
   aiModels?: string[];
   googleApiKey?: string;
@@ -244,6 +245,7 @@ export interface AppState {
   isSidebarVisible: boolean;
   recentPaths: string[];
   nonAnalyzableExtensions: string[];
+  nonAnalyzableFolders: string[];
 
   // Git Panel
   isGitPanelVisible: boolean;

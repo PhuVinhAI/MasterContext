@@ -188,6 +188,7 @@ function App() {
         // Dùng set thay vì updateAppSettings để không ghi lại file
         useAppStore.setState({
           nonAnalyzableExtensions: settings.nonAnalyzableExtensions ?? [],
+          nonAnalyzableFolders: settings.nonAnalyzableFolders ?? [],
           openRouterApiKey: settings.openRouterApiKey ?? "",
           googleApiKey: settings.googleApiKey ?? "",
           nvidiaApiKey: settings.nvidiaApiKey ?? "",

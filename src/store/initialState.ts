@@ -52,6 +52,7 @@ export const initialState = {
   isSidebarVisible: true,
   recentPaths: [],
   nonAnalyzableExtensions: [],
+  nonAnalyzableFolders: [],
   isGitPanelVisible: false,
   gitRepoInfo: null,
   gitStatus: null,

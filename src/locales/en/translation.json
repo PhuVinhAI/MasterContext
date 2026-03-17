@@ -58,10 +58,13 @@
   },
   "analysisSettings": {
     "title": "Content Analysis Settings",
-    "description": "Files with the extensions below will not have their content read for token counting or link analysis, which speeds up scanning.",
+    "description": "Files with the extensions and folders below will not have their content read for token counting (they still show up in tree), which dramatically speeds up scanning.",
     "extensionsLabel": "Extensions to skip",
     "extensionsPlaceholder": "png, svg, lock, jpg...",
-    "extensionsHint": "Separate extensions with a comma (,)."
+    "extensionsHint": "Separate extensions with a comma (,).",
+    "foldersLabel": "Folders to skip",
+    "foldersPlaceholder": "dist, build, node_modules, .git...",
+    "foldersHint": "Separate folder names with a comma (,)."
   },
   "editorPanel": {
     "excludeSelection": "Exclude selection",

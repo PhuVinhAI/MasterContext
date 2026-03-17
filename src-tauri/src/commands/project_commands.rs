@@ -40,6 +40,7 @@ pub fn scan_project(
             old_data,
             project_scanner::ScanOptions {
                 user_non_analyzable_extensions: app_settings.non_analyzable_extensions,
+                user_non_analyzable_folders: app_settings.non_analyzable_folders,
             },
         ) {
             Ok((mut new_data, is_first_scan, files_to_analyze)) => {

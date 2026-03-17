@@ -22,10 +22,11 @@ export function WelcomeScene() {
   const { t } = useTranslation();
   const { selectRootPath, cloneAndOpenProject, updateAppSettings } =
     useAppActions();
-  const { recentPaths, nonAnalyzableExtensions } = useAppStore(
+  const { recentPaths, nonAnalyzableExtensions, nonAnalyzableFolders } = useAppStore(
     useShallow((state) => ({
       recentPaths: state.recentPaths,
       nonAnalyzableExtensions: state.nonAnalyzableExtensions,
+      nonAnalyzableFolders: state.nonAnalyzableFolders,
     }))
   );
   const isScanning = useAppStore((state) => state.isScanning);
@@ -54,8 +55,11 @@ export function WelcomeScene() {
     }
   };
 
-  const handleSaveSettings = (extensions: string[]) => {
-    updateAppSettings({ nonAnalyzableExtensions: extensions });
+  const handleSaveSettings = (extensions: string[], folders: string[]) => {
+    updateAppSettings({ 
+      nonAnalyzableExtensions: extensions,
+      nonAnalyzableFolders: folders
+    });
   };
 
   return (
@@ -187,6 +191,7 @@ export function WelcomeScene() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         initialExtensions={nonAnalyzableExtensions}
+        initialFolders={nonAnalyzableFolders}
         onSave={handleSaveSettings}
       />
     </div>

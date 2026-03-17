@@ -25,6 +25,7 @@ lazy_static! {
 
 pub struct ScanOptions {
     pub user_non_analyzable_extensions: Option<Vec<String>>,
+    pub user_non_analyzable_folders: Option<Vec<String>>,
 }
 
 pub fn perform_smart_scan_and_rebuild(
@@ -49,6 +50,14 @@ pub fn perform_smart_scan_and_rebuild(
         .user_non_analyzable_extensions
         .unwrap_or_default()
         .into_iter()
+        .collect();
+
+    let final_non_analyzable_folders: Vec<String> = options
+        .user_non_analyzable_folders
+        .unwrap_or_default()
+        .into_iter()
+        .map(|s| s.trim().trim_matches('/').to_string()) // Xóa dấu gạch chéo dư thừa
+        .filter(|s| !s.is_empty())
         .collect();
     // --- KẾT THÚC THAY ĐỔI ---
 
@@ -110,8 +119,19 @@ pub fn perform_smart_scan_and_rebuild(
                         .and_then(|s| s.to_str())
                         .unwrap_or("");
 
-                    let should_skip_analysis = NON_ANALYZABLE_FILENAMES.contains(filename)
+                    let mut should_skip_analysis = NON_ANALYZABLE_FILENAMES.contains(filename)
                         || final_non_analyzable_extensions.contains(extension);
+
+                    // Kiểm tra xem file có nằm trong thư mục cần bỏ qua phân tích không
+                    if !should_skip_analysis {
+                        let path_parts: Vec<&str> = relative_path_str.split('/').collect();
+                        for folder in &final_non_analyzable_folders {
+                            if path_parts.contains(&folder.as_str()) {
+                                should_skip_analysis = true;
+                                break;
+                            }
+                        }
+                    }
 
                     let current_mtime = metadata
                         .modified()

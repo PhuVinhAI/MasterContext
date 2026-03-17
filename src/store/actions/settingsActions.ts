@@ -256,6 +256,7 @@ export const createSettingsActions: StateCreator<
     const {
       recentPaths,
       nonAnalyzableExtensions,
+      nonAnalyzableFolders,
       openRouterApiKey,
       googleApiKey,
       nvidiaApiKey,
@@ -273,6 +274,8 @@ export const createSettingsActions: StateCreator<
       recentPaths: newSettings.recentPaths ?? recentPaths,
       nonAnalyzableExtensions:
         newSettings.nonAnalyzableExtensions ?? nonAnalyzableExtensions,
+      nonAnalyzableFolders:
+        newSettings.nonAnalyzableFolders ?? nonAnalyzableFolders,
       openRouterApiKey: newSettings.openRouterApiKey ?? openRouterApiKey,
       googleApiKey: newSettings.googleApiKey ?? googleApiKey,
       nvidiaApiKey: newSettings.nvidiaApiKey ?? nvidiaApiKey,
@@ -306,6 +309,7 @@ export const createSettingsActions: StateCreator<
       set({
         recentPaths: fullSettings.recentPaths,
         nonAnalyzableExtensions: fullSettings.nonAnalyzableExtensions,
+        nonAnalyzableFolders: fullSettings.nonAnalyzableFolders ?? [],
         openRouterApiKey: fullSettings.openRouterApiKey ?? "",
         googleApiKey: fullSettings.googleApiKey ?? "",
         nvidiaApiKey: fullSettings.nvidiaApiKey ?? "",

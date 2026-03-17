@@ -117,6 +117,7 @@ pub struct AttachedItem {
 pub struct AppSettings {
     pub recent_paths: Vec<String>,
     pub non_analyzable_extensions: Option<Vec<String>>,
+    pub non_analyzable_folders: Option<Vec<String>>,
     pub open_router_api_key: Option<String>,
     pub google_api_key: Option<String>,
     pub nvidia_api_key: Option<String>,
