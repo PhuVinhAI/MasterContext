@@ -479,14 +479,14 @@ export function AITab({
           <div className="space-y-2 mt-4 pt-4 border-t">
             <Label>Sub-Agent Model (Dùng tự động sửa lỗi Auto-Patch)</Label>
             <Select
-              value={localSubAgentModel}
-              onValueChange={(val) => setLocalSubAgentModel(val)}
+              value={localSubAgentModel || "__default__"}
+              onValueChange={(val) => setLocalSubAgentModel(val === "__default__" ? "" : val)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Mặc định (Dùng Model Chat)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Mặc định (Dùng Model Chat)</SelectItem>
+                <SelectItem value="__default__">Mặc định (Dùng Model Chat)</SelectItem>
                 {allAvailableModels.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
                     {m.provider === "google" ? "Google" : m.provider === "nvidia" ? "NVIDIA" : "OpenRouter"} / {m.name}
