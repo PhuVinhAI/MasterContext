@@ -267,6 +267,12 @@ export interface AppState {
   kiloAvailableModels: KiloModelInfo[];
   kiloTaskStatus: "idle" | "running" | "success" | "error";
 
+  // Patch Panel
+  isPatchPanelVisible: boolean;
+  isPatchServerRunning: boolean;
+  patchLogs: string[];
+  patchTaskStatus: "idle" | "running" | "success" | "error";
+
   // AI Panel
   isAiPanelVisible: boolean;
   aiChatMode: AiChatMode;

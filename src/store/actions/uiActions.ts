@@ -13,6 +13,7 @@ export interface UIActions {
   toggleGroupEditorPanelVisibility: () => void;
   toggleAiPanelVisibility: () => void;
   toggleKiloPanelVisibility: () => void;
+  togglePatchPanelVisibility: () => void;
   toggleEditorPanelVisibility: () => void;
   setKiloServerStatus: (isRunning: boolean) => void;
   setKiloTaskStatus: (status: "idle" | "running" | "success" | "error") => void;
@@ -20,6 +21,12 @@ export interface UIActions {
   clearKiloLogs: () => void;
   startKiloServer: () => Promise<void>;
   stopKiloServer: () => Promise<void>;
+  setPatchServerStatus: (isRunning: boolean) => void;
+  setPatchTaskStatus: (status: "idle" | "running" | "success" | "error") => void;
+  addPatchLog: (log: string) => void;
+  clearPatchLogs: () => void;
+  startPatchServer: () => Promise<void>;
+  stopPatchServer: () => Promise<void>;
   checkKiloInstalled: () => Promise<void>;
   installKiloCli: () => Promise<void>;
   fetchKiloModels: () => Promise<void>;
@@ -84,6 +91,11 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
       isKiloPanelVisible: !state.isKiloPanelVisible,
     }));
   },
+  togglePatchPanelVisibility: () => {
+    set((state) => ({
+      isPatchPanelVisible: !state.isPatchPanelVisible,
+    }));
+  },
   setKiloServerStatus: (isRunning) => {
     set({ isKiloServerRunning: isRunning });
   },
@@ -119,6 +131,36 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
       set({ kiloTaskStatus: "idle" });
     } catch (e) {
       console.error("Failed to stop Kilo Server", e);
+    }
+  },
+  setPatchServerStatus: (isRunning) => {
+    set({ isPatchServerRunning: isRunning });
+  },
+  setPatchTaskStatus: (status) => {
+    set({ patchTaskStatus: status });
+  },
+  addPatchLog: (log) => {
+    set((state) => {
+      const newLogs = [...state.patchLogs, log];
+      if (newLogs.length > 500) return { patchLogs: newLogs.slice(newLogs.length - 500) };
+      return { patchLogs: newLogs };
+    });
+  },
+  clearPatchLogs: () => set({ patchLogs: [] }),
+  startPatchServer: async () => {
+    try {
+      // Run on port 9998 (or configure if needed)
+      await invoke("start_patch_server", { port: 9998 });
+    } catch (e) {
+      console.error("Failed to start Patch Server", e);
+    }
+  },
+  stopPatchServer: async () => {
+    try {
+      await invoke("stop_patch_server");
+      set({ patchTaskStatus: "idle" });
+    } catch (e) {
+      console.error("Failed to stop Patch Server", e);
     }
   },
   checkKiloInstalled: async () => {

@@ -33,6 +33,7 @@ import { SidebarPanel } from "./scenes/SidebarPanel";
 import { GitPanel } from "./components/GitPanel";
 import { AIPanel } from "./components/AIPanel"; // THÊM IMPORT
 import { KiloPanel } from "./components/KiloPanel"; // THÊM IMPORT KILO PANEL
+import { PatchPanel } from "./components/patch/PatchPanel";
 import { MainPanel } from "./scenes/MainPanel";
 import { googleModels, nvidiaModels } from "@/lib/aiModels";
 import { StatusBar } from "./components/StatusBar";
@@ -59,6 +60,7 @@ function App() {
     isGroupEditorPanelVisible,
     isAiPanelVisible,
     isKiloPanelVisible,
+    isPatchPanelVisible,
   } = useAppStore(
     // --- SỬA LỖI TẠI ĐÂY ---
     useShallow((state) => ({
@@ -74,6 +76,7 @@ function App() {
       isGroupEditorPanelVisible: state.isGroupEditorPanelVisible,
       isAiPanelVisible: state.isAiPanelVisible, // THÊM STATE
       isKiloPanelVisible: state.isKiloPanelVisible,
+      isPatchPanelVisible: state.isPatchPanelVisible,
     }))
   );
 
@@ -97,8 +100,11 @@ function App() {
     toggleGroupEditorPanelVisibility,
     toggleAiPanelVisibility, // THÊM ACTION
     toggleKiloPanelVisibility,
+    togglePatchPanelVisibility,
     addKiloLog,
     setKiloServerStatus,
+    addPatchLog,
+    setPatchServerStatus,
   } = useAppActions();
 
   const { t } = useTranslation();
@@ -325,6 +331,12 @@ function App() {
               action: toggleKiloPanelVisibility,
               checked: isKiloPanelVisible,
             }),
+            await CheckMenuItem.new({
+              id: "toggle_patch_panel",
+              text: "Auto-Patch Panel",
+              action: togglePatchPanelVisibility,
+              checked: isPatchPanelVisible,
+            }),
           ],
         });
 
@@ -384,6 +396,7 @@ function App() {
     toggleGroupEditorPanelVisibility,
     toggleAiPanelVisibility,
     toggleKiloPanelVisibility,
+    togglePatchPanelVisibility,
     _setRecentPaths,
     reset,
   ]);
@@ -425,6 +438,10 @@ function App() {
   useEffect(() => {
     updateMenuCheckedState("toggle_kilo_panel", isKiloPanelVisible);
   }, [isKiloPanelVisible]);
+
+  useEffect(() => {
+    updateMenuCheckedState("toggle_patch_panel", isPatchPanelVisible);
+  }, [isPatchPanelVisible]);
 
   const throttledSetScanProgress = useMemo(
     () => throttle((file: string) => _setScanProgress(file), 10),
@@ -584,6 +601,38 @@ function App() {
         setKiloServerStatus(event.payload);
       })
     );
+
+    // Lắng nghe sự kiện từ Auto-Patch Server
+    unlistenFuncs.push(
+      listen<string>("patch_log", (event) => {
+        addPatchLog(event.payload);
+      })
+    );
+    unlistenFuncs.push(
+      listen("patch_task_start", () => {
+        useAppStore.getState().actions.setPatchTaskStatus("running");
+      })
+    );
+    unlistenFuncs.push(
+      listen("patch_task_success", () => {
+        const state = useAppStore.getState();
+        state.actions.setPatchTaskStatus("success");
+        if (!state.isScanning) {
+          state.actions.rescanProject();
+        }
+      })
+    );
+    unlistenFuncs.push(
+      listen("patch_task_error", () => {
+        useAppStore.getState().actions.setPatchTaskStatus("error");
+      })
+    );
+    unlistenFuncs.push(
+      listen<boolean>("patch_status_changed", (event) => {
+        setPatchServerStatus(event.payload);
+      })
+    );
+
     // Listener cho sự kiện xuất dự án (để hiển thị toast)
     unlistenFuncs.push(
       listen<string>("project_export_complete", async (event) => {
@@ -698,20 +747,37 @@ function App() {
             <style>{`[data-slot="resizable-handle"] { display: none; }`}</style>
           )}
           <ResizablePanel id="center-container" order={3} defaultSize={40}>
-            {isKiloPanelVisible ? (
+            {(isKiloPanelVisible || isPatchPanelVisible) ? (
               <ResizablePanelGroup direction="vertical">
                 <ResizablePanel id="main-panel" order={1} defaultSize={70}>
                   <MainPanel />
                 </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel
-                  id="kilo-panel"
-                  order={2}
-                  defaultSize={30}
-                  minSize={15}
-                >
-                  <KiloPanel />
-                </ResizablePanel>
+                {isKiloPanelVisible && (
+                  <>
+                    <ResizableHandle withHandle />
+                    <ResizablePanel
+                      id="kilo-panel"
+                      order={2}
+                      defaultSize={30}
+                      minSize={15}
+                    >
+                      <KiloPanel />
+                    </ResizablePanel>
+                  </>
+                )}
+                {isPatchPanelVisible && (
+                  <>
+                    <ResizableHandle withHandle />
+                    <ResizablePanel
+                      id="patch-panel"
+                      order={3}
+                      defaultSize={30}
+                      minSize={15}
+                    >
+                      <PatchPanel />
+                    </ResizablePanel>
+                  </>
+                )}
               </ResizablePanelGroup>
             ) : (
               <MainPanel />

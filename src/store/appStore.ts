@@ -129,6 +129,12 @@ export interface AppState {
   kiloPort: number;
   discordWebhookUrl: string;
 
+  // Patch Panel
+  isPatchPanelVisible: boolean;
+  isPatchServerRunning: boolean;
+  patchLogs: string[];
+  patchTaskStatus: "idle" | "running" | "success" | "error";
+
   // AI Panel
   isAiPanelVisible: boolean;
   aiChatMode: AiChatMode;

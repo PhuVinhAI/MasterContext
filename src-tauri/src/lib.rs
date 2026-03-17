@@ -9,6 +9,8 @@ mod file_cache;
 mod models;
 mod project_scanner;
 mod kilo_server;
+mod patch_server;
+mod patch_executor;
 
 use std::sync::{Arc, Mutex};
 use tauri::Manager;
@@ -19,18 +21,22 @@ pub struct KiloServerHandle(pub Arc<Mutex<Option<tokio::sync::oneshot::Sender<()
 pub struct KiloModelState(pub Arc<Mutex<String>>);
 pub struct KiloAbortSignal(pub Arc<std::sync::Mutex<Option<tokio::sync::oneshot::Sender<()>>>>);
 
+pub struct PatchServerHandle(pub Arc<Mutex<Option<tokio::sync::oneshot::Sender<()>>>>);
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let active_project = Arc::new(Mutex::new(None));
     let kilo_handle = Arc::new(Mutex::new(None));
     let kilo_model = Arc::new(Mutex::new(String::new()));
     let kilo_abort = Arc::new(std::sync::Mutex::new(None));
+    let patch_handle = Arc::new(Mutex::new(None));
 
     tauri::Builder::default()
         .manage(ActiveProjectState(active_project))
         .manage(KiloServerHandle(kilo_handle))
         .manage(KiloModelState(kilo_model))
         .manage(KiloAbortSignal(kilo_abort))
+        .manage(PatchServerHandle(patch_handle))
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -122,7 +128,11 @@ pub fn run() {
             kilo_server::get_kilo_models,
             kilo_server::init_kilo_config,
             kilo_server::open_extension_folder,
-            kilo_server::set_kilo_model
+            kilo_server::set_kilo_model,
+            // Patch Server Commands
+            patch_server::start_patch_server,
+            patch_server::stop_patch_server,
+            patch_server::get_patch_server_status
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
@@ -135,6 +145,11 @@ pub fn run() {
                 
                 let state = app_handle.state::<KiloServerHandle>();
                 if let Some(tx) = state.0.lock().unwrap().take() {
+                    let _ = tx.send(());
+                };
+
+                let patch_state = app_handle.state::<PatchServerHandle>();
+                if let Some(tx) = patch_state.0.lock().unwrap().take() {
                     let _ = tx.send(());
                 };
             }
