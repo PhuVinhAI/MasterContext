@@ -5,7 +5,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Code, CheckCircle2, XCircle, FileEdit, FilePlus, FileMinus, FolderPlus, Replace, TerminalSquare, ChevronDown, ChevronUp, Copy, Check, Clock } from "lucide-react";
 import { PatchHeader } from "./PatchHeader";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
@@ -58,7 +57,7 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
   const timeStr = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
   return (
-    <Card className={cn("overflow-hidden border shadow-xs transition-colors", hasError ? "border-destructive/30" : "border-border")}>
+    <div className={cn("flex flex-col rounded-lg overflow-hidden border shadow-xs transition-colors", hasError ? "border-destructive/30" : "border-border")}>
       <div 
         className={cn(
           "flex items-center justify-between p-3 cursor-pointer select-none transition-colors",
@@ -156,7 +155,7 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
           Đang khởi tạo các tác vụ...
         </div>
       )}
-    </Card>
+    </div>
   );
 };
 
@@ -193,7 +192,7 @@ export function PatchPanel() {
         onStart={startPatchServer}
         onStop={stopPatchServer}
         onClearLogs={clearPatchLogs}
-        status={isPatchServerRunning ? patchTaskStatus : 'error'}
+        status={isPatchServerRunning ? patchTaskStatus : 'idle'}
       />
       
       <ScrollArea className="flex-1 min-h-0" viewportRef={scrollRef}>
