@@ -22,8 +22,6 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
     let is_c_style = c_style.contains(&extension.as_str());
 
     if !is_c_style {
-        // Đối với Python, Ruby, HTML thuần... thuật toán ngoặc nhọn không áp dụng tốt
-        // Tạm thời trả về nguyên gốc để tránh phá hỏng code
         return content.to_string();
     }
 
@@ -31,17 +29,18 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
     let is_ui = ["tsx", "jsx", "vue", "svelte"].contains(&extension.as_str());
     let mut processed_content = content.to_string();
     if is_ui {
+        // Thay thế bằng ... thay vì /*...*/ để tránh bị xóa ở bước sau
         processed_content = CLASSNAME_REGEX
             .replace_all(&processed_content, "className=\"...\"")
             .to_string();
         processed_content = CLASSNAME_TPL_REGEX
-            .replace_all(&processed_content, "className={/*...*/}")
+            .replace_all(&processed_content, "className={`...`}")
             .to_string();
         processed_content = CLASS_REGEX
             .replace_all(&processed_content, "class=\"...\"")
             .to_string();
         processed_content = SVG_REGEX
-            .replace_all(&processed_content, "<svg>/* svg omitted */</svg>")
+            .replace_all(&processed_content, "<svg>...</svg>")
             .to_string();
     }
 
@@ -50,7 +49,7 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
 
     let mut result = String::with_capacity(clean_content.len());
     let mut brace_depth = 0;
-    let mut paren_depth = 0; // Thêm theo dõi ngoặc tròn
+    let mut paren_depth = 0;
     let mut in_string = false;
     let mut string_char = ' ';
     let mut escape = false;
@@ -59,22 +58,30 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
     let mut current_block_collapsed = false;
     let mut recent_chars = String::new();
 
-    for c in clean_content.chars() {
+    let chars: Vec<char> = clean_content.chars().collect();
+    let len = chars.len();
+    let mut i = 0;
+
+    while i < len {
+        let c = chars[i];
+
         if escape {
             if !current_block_collapsed {
                 result.push(c);
                 recent_chars.push(c);
             }
             escape = false;
+            i += 1;
             continue;
         }
 
-        if c == '\\' && in_string {
+        if c == '\\' {
             escape = true;
             if !current_block_collapsed {
                 result.push(c);
                 recent_chars.push(c);
             }
+            i += 1;
             continue;
         }
 
@@ -85,6 +92,7 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
                 result.push(c);
                 recent_chars.push(c);
             }
+            i += 1;
             continue;
         } else if c == string_char && in_string {
             in_string = false;
@@ -92,7 +100,44 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
                 result.push(c);
                 recent_chars.push(c);
             }
+            i += 1;
             continue;
+        }
+
+        // Heuristic skip Regex Literal (chỉ áp dụng cho file C-style)
+        if !in_string && c == '/' && is_c_style {
+            let prev_char = recent_chars.trim_end().chars().last().unwrap_or(' ');
+            // Nếu ký tự trước đó ngụ ý đây là regex chứ không phải phép chia
+            if "(=!?:;,(&|{[".contains(prev_char) {
+                let mut is_regex = false;
+                let mut j = i + 1;
+                let mut rx_escape = false;
+                while j < len {
+                    if rx_escape {
+                        rx_escape = false;
+                        j += 1;
+                        continue;
+                    }
+                    if chars[j] == '\\' {
+                        rx_escape = true;
+                    } else if chars[j] == '\n' {
+                        break;
+                    } else if chars[j] == '/' {
+                        is_regex = true;
+                        break;
+                    }
+                    j += 1;
+                }
+                if is_regex {
+                    if !current_block_collapsed {
+                        let rx_str: String = chars[i..=j].iter().collect();
+                        result.push_str(&rx_str);
+                        recent_chars.push_str(&rx_str);
+                    }
+                    i = j + 1;
+                    continue;
+                }
+            }
         }
 
         if !in_string {
@@ -105,12 +150,10 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
             }
 
             if c == '{' {
-                // Normalize newlines để dễ bắt keyword hơn
                 let normalized_recent = recent_chars.replace('\n', " ");
                 let pre_text = normalized_recent.trim_end();
 
                 let should_collapse = if paren_depth > 0 {
-                    // Đang trong tham số hàm (destructuring/inline type), giữ nguyên cấu trúc
                     false
                 } else if pre_text.ends_with("import") || pre_text.contains("import ") {
                     false
@@ -145,7 +188,6 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
                 {
                     false
                 } else {
-                    // Mặc định ẩn để tiết kiệm token tối đa (chủ yếu là function body, v.v.)
                     true
                 };
 
@@ -154,7 +196,6 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
                 current_block_collapsed = will_collapse;
                 brace_depth += 1;
 
-                // Nếu block này bị ẩn, NHƯNG cha của nó KHÔNG bị ẩn, thì ta in ra `{ /* logic omitted */ `
                 let parent_collapsed = if collapsed_stack.len() >= 2 {
                     collapsed_stack[collapsed_stack.len() - 2]
                 } else {
@@ -164,11 +205,13 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
                 if !parent_collapsed {
                     result.push(c);
                     if current_block_collapsed {
-                        result.push_str(" /* logic omitted */ ");
+                        // Dùng " ... " thay vì "/* logic omitted */" để không bị xóa bởi remove_comments
+                        result.push_str(" ... ");
                     }
                 }
 
                 recent_chars.clear();
+                i += 1;
                 continue;
             } else if c == '}' {
                 let parent_collapsed = if collapsed_stack.len() >= 2 {
@@ -183,18 +226,19 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
                     brace_depth -= 1;
                 }
 
-                // Chỉ in ra `}` nếu cha không bị ẩn
                 if !parent_collapsed {
                     result.push(c);
                 }
 
                 recent_chars.clear();
+                i += 1;
                 continue;
             } else if c == ';' {
                 if !current_block_collapsed {
                     result.push(c);
                 }
-                recent_chars.clear(); // Reset ngữ cảnh keyword
+                recent_chars.clear();
+                i += 1;
                 continue;
             }
         }
@@ -202,12 +246,12 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
         if !current_block_collapsed {
             result.push(c);
             recent_chars.push(c);
-            // Tăng bộ nhớ đệm lên để các định nghĩa class cực dài không làm trôi mất keyword 'class'
             if recent_chars.len() > 2000 {
                 let drained: String = recent_chars.chars().skip(1000).collect();
                 recent_chars = drained;
             }
         }
+        i += 1;
     }
 
     // Xóa bớt khoảng trắng thừa sinh ra do lược bỏ code
@@ -215,9 +259,6 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
 }
 
 lazy_static! {
-    // Tránh match nhầm URL protocol (http://, https://, file://) bằng cách bắt đầu dòng hoặc ký tự không phải ':'
-    static ref C_STYLE_SINGLE_LINE_COMMENT: Regex = Regex::new(r"(^|[^:])//.*").unwrap();
-    static ref C_STYLE_MULTI_LINE_COMMENT: Regex = Regex::new(r"(?s)/\*.*?\*/").unwrap();
     static ref HASH_COMMENT: Regex = Regex::new(r"#.*").unwrap();
     static ref HTML_XML_COMMENT: Regex = Regex::new(r"(?s)<!--.*?-->").unwrap();
     static ref SQL_LUA_COMMENT: Regex = Regex::new(r"--.*").unwrap();
@@ -240,14 +281,92 @@ lazy_static! {
     )).unwrap();
     static ref WHITESPACE_REGEX: Regex = Regex::new(r"\s+").unwrap();
 
-    // Regexes for UI compression
-    static ref CLASSNAME_REGEX: Regex = Regex::new(r#"className="[^"]*""#).unwrap();
-    static ref CLASSNAME_TPL_REGEX: Regex = Regex::new(r#"className=\{`[^`]*`\}"#).unwrap();
-    static ref CLASS_REGEX: Regex = Regex::new(r#"class="[^"]*""#).unwrap();
-    static ref SVG_REGEX: Regex = Regex::new(r#"(?s)<svg.*?>.*?</svg>"#).unwrap();
+    // Bớt aggressive: Chỉ nén class quá dài (>30 ký tự) để giữ lại context cơ bản
+    static ref CLASSNAME_REGEX: Regex = Regex::new(r#"className="([^"]{30,})""#).unwrap();
+    static ref CLASSNAME_TPL_REGEX: Regex = Regex::new(r#"className=\{`([^`]{30,})`\}"#).unwrap();
+    static ref CLASS_REGEX: Regex = Regex::new(r#"class="([^"]{30,})""#).unwrap();
+    static ref SVG_REGEX: Regex = Regex::new(r#"(?s)<svg[^>]*>.*?</svg>"#).unwrap();
 
     // Nén các dòng trống
     static ref EMPTY_LINES_REGEX: Regex = Regex::new(r"\n\s*\n\s*\n+").unwrap();
+}
+
+fn remove_c_style_comments(content: &str) -> String {
+    let mut result = String::with_capacity(content.len());
+    let chars: Vec<char> = content.chars().collect();
+    let len = chars.len();
+    let mut i = 0;
+    let mut in_string = false;
+    let mut string_char = ' ';
+    let mut in_single_comment = false;
+    let mut in_multi_comment = false;
+    let mut escape = false;
+
+    while i < len {
+        let c = chars[i];
+        let next_c = if i + 1 < len { chars[i + 1] } else { '\0' };
+
+        if in_single_comment {
+            if c == '\n' {
+                in_single_comment = false;
+                result.push(c);
+            }
+            i += 1;
+            continue;
+        }
+
+        if in_multi_comment {
+            if c == '*' && next_c == '/' {
+                in_multi_comment = false;
+                i += 2;
+            } else {
+                i += 1;
+            }
+            continue;
+        }
+
+        if escape {
+            result.push(c);
+            escape = false;
+            i += 1;
+            continue;
+        }
+
+        if c == '\\' && in_string {
+            escape = true;
+            result.push(c);
+            i += 1;
+            continue;
+        }
+
+        if c == '"' || c == '\'' || c == '`' {
+            if !in_string {
+                in_string = true;
+                string_char = c;
+            } else if c == string_char {
+                in_string = false;
+            }
+            result.push(c);
+            i += 1;
+            continue;
+        }
+
+        if c == '/' && !in_string {
+            if next_c == '/' {
+                in_single_comment = true;
+                i += 2;
+                continue;
+            } else if next_c == '*' {
+                in_multi_comment = true;
+                i += 2;
+                continue;
+            }
+        }
+
+        result.push(c);
+        i += 1;
+    }
+    result
 }
 
 fn remove_comments_from_content(content: &str, file_rel_path: &str) -> String {
@@ -257,13 +376,10 @@ fn remove_comments_from_content(content: &str, file_rel_path: &str) -> String {
         .unwrap_or("");
 
     let processed_content = match extension {
-        // Chú thích kiểu C (// và /* */)
+        // Chú thích kiểu C (// và /* */) được xử lý bằng State Machine
         "js" | "jsx" | "ts" | "tsx" | "rs" | "go" | "c" | "cpp" | "h" | "java" | "cs" | "swift"
         | "kt" | "css" | "scss" | "less" | "jsonc" | "glsl" | "dart" | "gd" => {
-            let temp = C_STYLE_SINGLE_LINE_COMMENT.replace_all(content, "$1");
-            C_STYLE_MULTI_LINE_COMMENT
-                .replace_all(&temp, "")
-                .to_string()
+            remove_c_style_comments(content)
         }
         // Chú thích bằng dấu thăng (#)
         "py" | "rb" | "sh" | "yml" | "yaml" | "toml" | "dockerfile" | "gitignore" | "r" | "pl"
@@ -280,16 +396,12 @@ fn remove_comments_from_content(content: &str, file_rel_path: &str) -> String {
         "vb" | "vbs" => VBNET_COMMENT.replace_all(content, "").to_string(),
         // Ngôn ngữ hỗn hợp
         "php" => {
-            let temp1 = C_STYLE_MULTI_LINE_COMMENT.replace_all(content, "");
-            let temp2 = C_STYLE_SINGLE_LINE_COMMENT.replace_all(&temp1, "$1");
-            HASH_COMMENT.replace_all(&temp2, "").to_string()
+            let temp = remove_c_style_comments(content);
+            HASH_COMMENT.replace_all(&temp, "").to_string()
         }
         "vue" | "astro" => {
             let temp = HTML_XML_COMMENT.replace_all(content, "");
-            let temp2 = C_STYLE_MULTI_LINE_COMMENT.replace_all(&temp, "");
-            C_STYLE_SINGLE_LINE_COMMENT
-                .replace_all(&temp2, "$1")
-                .to_string()
+            remove_c_style_comments(&temp)
         }
         _ => content.to_string(),
     };
