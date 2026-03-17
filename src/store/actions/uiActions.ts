@@ -25,6 +25,7 @@ export interface UIActions {
   setPatchTaskStatus: (status: "idle" | "running" | "success" | "error") => void;
   addPatchLog: (log: string) => void;
   clearPatchLogs: () => void;
+  addOrUpdatePatchOperation: (op: import("../types").PatchOpUI) => void;
   startPatchServer: () => Promise<void>;
   stopPatchServer: () => Promise<void>;
   checkKiloInstalled: () => Promise<void>;
@@ -146,10 +147,22 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
       return { patchLogs: newLogs };
     });
   },
-  clearPatchLogs: () => set({ patchLogs: [] }),
+  clearPatchLogs: () => set({ patchLogs: [], patchOperations: [] }),
+  addOrUpdatePatchOperation: (op) => {
+    set((state) => {
+      const exists = state.patchOperations.findIndex(o => o.id === op.id);
+      if (exists >= 0) {
+        const newOps = [...state.patchOperations];
+        newOps[exists] = op;
+        return { patchOperations: newOps };
+      }
+      return { patchOperations: [...state.patchOperations, op] };
+    });
+  },
   startPatchServer: async () => {
     try {
       // Run on port 9998 (or configure if needed)
+      set({ patchOperations: [] });
       await invoke("start_patch_server", { port: 9998 });
     } catch (e) {
       console.error("Failed to start Patch Server", e);

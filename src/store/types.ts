@@ -163,6 +163,14 @@ export interface ToolCall {
   result?: string; // Store result text for terminal UI
 }
 
+export interface PatchOpUI {
+  id: string;
+  file: string;
+  opType: 'modify' | 'create' | 'delete' | 'rename' | 'mkdir';
+  status: 'pending' | 'success' | 'error';
+  message: string;
+}
+
 export interface AIChatSessionHeader {
   id: string;
   title: string;

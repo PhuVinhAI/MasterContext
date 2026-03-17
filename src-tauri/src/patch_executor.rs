@@ -158,16 +158,27 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
     let _ = app_handle.emit("patch_log", format!("[SYSTEM] Bắt đầu thực thi {} tác vụ...", operations.len()));
 
     for op in operations {
+        let op_id = op.file.clone();
+        let emit_event = |app: &AppHandle, id: &str, file: &str, op_type: &str, status: &str, msg: &str| {
+            let _ = app.emit("patch_file_event", serde_json::json!({
+                "id": id,
+                "file": file,
+                "opType": op_type,
+                "status": status,
+                "message": msg
+            }));
+        };
+
         match op.op_type {
             PatchOpType::Mkdir => {
                 let absolute_path = root_dir.join(&op.file);
                 match fs::create_dir_all(&absolute_path) {
                     Ok(_) => {
-                        let _ = app_handle.emit("patch_log", format!("✅ Đã tạo thư mục: {}", op.file));
+                        emit_event(app_handle, &op_id, &op.file, "mkdir", "success", "Tạo thư mục thành công");
                         total_dirs_created += 1;
                     }
                     Err(e) => {
-                        let _ = app_handle.emit("patch_log", format!("❌ Lỗi tạo thư mục {}: {}", op.file, e));
+                        emit_event(app_handle, &op_id, &op.file, "mkdir", "error", &e.to_string());
                         total_ops_failed += 1;
                     }
                 }
@@ -182,38 +193,39 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
                     };
                     match res {
                         Ok(_) => {
-                            let _ = app_handle.emit("patch_log", format!("✅ Đã xóa: {}", op.file));
+                            emit_event(app_handle, &op_id, &op.file, "delete", "success", "Xóa thành công");
                             total_files_deleted += 1;
                         }
                         Err(e) => {
-                            let _ = app_handle.emit("patch_log", format!("❌ Lỗi xóa {}: {}", op.file, e));
+                            emit_event(app_handle, &op_id, &op.file, "delete", "error", &e.to_string());
                             total_ops_failed += 1;
                         }
                     }
                 } else {
-                    let _ = app_handle.emit("patch_log", format!("⚠️ Bỏ qua xóa (Không tìm thấy): {}", op.file));
+                    emit_event(app_handle, &op_id, &op.file, "delete", "success", "Bỏ qua (Không tìm thấy)");
                 }
             }
             PatchOpType::Rename => {
                 if let (Some(old_f), Some(new_f)) = (&op.old_file, &op.new_file) {
                     let old_path = root_dir.join(old_f);
                     let new_path = root_dir.join(new_f);
+                    let rid = old_f.clone();
                     if old_path.exists() {
                         if let Some(parent) = new_path.parent() {
                             let _ = fs::create_dir_all(parent);
                         }
                         match fs::rename(&old_path, &new_path) {
                             Ok(_) => {
-                                let _ = app_handle.emit("patch_log", format!("✅ Đã đổi tên: {} -> {}", old_f, new_f));
+                                emit_event(app_handle, &rid, &format!("{} -> {}", old_f, new_f), "rename", "success", "Đổi tên thành công");
                                 total_files_renamed += 1;
                             }
                             Err(e) => {
-                                let _ = app_handle.emit("patch_log", format!("❌ Lỗi đổi tên {}: {}", old_f, e));
+                                emit_event(app_handle, &rid, old_f, "rename", "error", &e.to_string());
                                 total_ops_failed += 1;
                             }
                         }
                     } else {
-                        let _ = app_handle.emit("patch_log", format!("❌ Lỗi: Không tìm thấy file gốc để đổi tên: {}", old_f));
+                        emit_event(app_handle, &rid, old_f, "rename", "error", "Không tìm thấy file gốc");
                         total_ops_failed += 1;
                     }
                 }
@@ -226,11 +238,11 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
                 let content_str = op.content.join("\n");
                 match fs::write(&absolute_path, content_str) {
                     Ok(_) => {
-                        let _ = app_handle.emit("patch_log", format!("✅ Đã tạo file: {}", op.file));
+                        emit_event(app_handle, &op_id, &op.file, "create", "success", "Tạo file thành công");
                         total_files_created += 1;
                     }
                     Err(e) => {
-                        let _ = app_handle.emit("patch_log", format!("❌ Lỗi tạo file {}: {}", op.file, e));
+                        emit_event(app_handle, &op_id, &op.file, "create", "error", &e.to_string());
                         total_ops_failed += 1;
                     }
                 }
@@ -238,7 +250,7 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
             PatchOpType::Modify => {
                 let absolute_path = root_dir.join(&op.file);
                 if !absolute_path.exists() {
-                    let _ = app_handle.emit("patch_log", format!("❌ Lỗi: File không tồn tại để sửa: {}", op.file));
+                    emit_event(app_handle, &op_id, &op.file, "modify", "error", "File không tồn tại");
                     total_patches_failed += op.patches.len();
                     total_ops_failed += 1;
                     continue;
@@ -255,24 +267,33 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
                                 applied += 1;
                                 total_patches_applied += 1;
                             } else {
-                                let _ = app_handle.emit("patch_log", format!("❌ LỖI SO KHỚP: Không tìm thấy block SEARCH trong file: {}", op.file));
-                                let _ = app_handle.emit("patch_log", format!("--- ĐOẠN TÌM KIẾM ---\n{}\n-------------------", patch.search));
                                 total_patches_failed += 1;
                             }
                         }
 
-                        if applied > 0 {
+                        if applied > 0 && applied == op.patches.len() {
                             if let Err(e) = fs::write(&absolute_path, file_content) {
-                                let _ = app_handle.emit("patch_log", format!("❌ Lỗi ghi file sau khi sửa {}: {}", op.file, e));
+                                emit_event(app_handle, &op_id, &op.file, "modify", "error", &format!("Lỗi ghi file: {}", e));
                                 total_ops_failed += 1;
                             } else {
-                                let _ = app_handle.emit("patch_log", format!("✅ Đã cập nhật {} ({} thay đổi)", op.file, applied));
+                                emit_event(app_handle, &op_id, &op.file, "modify", "success", &format!("Đã cập nhật {} block", applied));
                                 total_files_updated += 1;
                             }
+                        } else if applied > 0 {
+                            // Partial apply
+                            if let Err(e) = fs::write(&absolute_path, file_content) {
+                                emit_event(app_handle, &op_id, &op.file, "modify", "error", &format!("Lỗi ghi file: {}", e));
+                                total_ops_failed += 1;
+                            } else {
+                                emit_event(app_handle, &op_id, &op.file, "modify", "error", &format!("Chỉ khớp {}/{} block", applied, op.patches.len()));
+                                total_files_updated += 1;
+                            }
+                        } else {
+                            emit_event(app_handle, &op_id, &op.file, "modify", "error", "Lỗi so khớp: Không tìm thấy block SEARCH nào");
                         }
                     }
                     Err(e) => {
-                        let _ = app_handle.emit("patch_log", format!("❌ Lỗi đọc file để sửa {}: {}", op.file, e));
+                        emit_event(app_handle, &op_id, &op.file, "modify", "error", &format!("Lỗi đọc file: {}", e));
                         total_ops_failed += 1;
                     }
                 }
@@ -286,13 +307,6 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
     let _ = app_handle.emit("patch_log", format!("Đổi tên: {} files | Xóa: {} mục", total_files_renamed, total_files_deleted));
 
     if total_patches_failed > 0 || total_ops_failed > 0 {
-        let _ = app_handle.emit("patch_log", "⚠️ CẢNH BÁO LỖI:".to_string());
-        if total_patches_failed > 0 {
-            let _ = app_handle.emit("patch_log", format!("- Patch thất bại: {} (Kiểm tra lại format block SEARCH)", total_patches_failed));
-        }
-        if total_ops_failed > 0 {
-            let _ = app_handle.emit("patch_log", format!("- Tác vụ thất bại: {}", total_ops_failed));
-        }
         let _ = app_handle.emit("patch_task_error", ());
     } else {
         let _ = app_handle.emit("patch_task_success", ());

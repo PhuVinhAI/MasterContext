@@ -133,6 +133,7 @@ export interface AppState {
   isPatchPanelVisible: boolean;
   isPatchServerRunning: boolean;
   patchLogs: string[];
+  patchOperations: import("./types").PatchOpUI[];
   patchTaskStatus: "idle" | "running" | "success" | "error";
 
   // AI Panel

@@ -609,8 +609,14 @@ function App() {
       })
     );
     unlistenFuncs.push(
+      listen<import("@/store/types").PatchOpUI>("patch_file_event", (event) => {
+        useAppStore.getState().actions.addOrUpdatePatchOperation(event.payload);
+      })
+    );
+    unlistenFuncs.push(
       listen("patch_task_start", () => {
         useAppStore.getState().actions.setPatchTaskStatus("running");
+        useAppStore.setState({ patchOperations: [] });
       })
     );
     unlistenFuncs.push(

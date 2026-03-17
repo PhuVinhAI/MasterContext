@@ -2,17 +2,18 @@ import { useEffect, useRef } from "react";
 import { useAppStore, useAppActions } from "@/store/appStore";
 import { useShallow } from "zustand/react/shallow";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Code, CheckCircle2, XCircle } from "lucide-react";
+import { Code, CheckCircle2, XCircle, FileEdit, FilePlus, FileMinus, FolderPlus, Replace } from "lucide-react";
 import { PatchHeader } from "./PatchHeader";
-import Ansi from "ansi-to-react";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export function PatchPanel() {
   const { startPatchServer, stopPatchServer, clearPatchLogs } = useAppActions();
-  const { isPatchServerRunning, patchLogs, patchTaskStatus } = useAppStore(
+  const { isPatchServerRunning, patchOperations, patchTaskStatus } = useAppStore(
     useShallow((state) => ({
       isPatchServerRunning: state.isPatchServerRunning,
-      patchLogs: state.patchLogs,
+      patchOperations: state.patchOperations,
       patchTaskStatus: state.patchTaskStatus,
     }))
   );
@@ -26,7 +27,22 @@ export function PatchPanel() {
         element.scrollTop = element.scrollHeight;
       }, 50);
     }
-  }, [patchLogs]);
+  }, [patchOperations]);
+
+  const renderOpIcon = (opType: string, status: string) => {
+    const className = status === 'error' ? "text-destructive" : "text-primary";
+    switch (opType) {
+      case 'modify': return <FileEdit className={cn("h-4 w-4", className)} />;
+      case 'create': return <FilePlus className={cn("h-4 w-4 text-emerald-500")} />;
+      case 'delete': return <FileMinus className={cn("h-4 w-4 text-rose-500")} />;
+      case 'rename': return <Replace className={cn("h-4 w-4 text-purple-500")} />;
+      case 'mkdir': return <FolderPlus className={cn("h-4 w-4 text-emerald-500")} />;
+      default: return <Code className="h-4 w-4" />;
+    }
+  };
+
+  const successCount = patchOperations.filter(o => o.status === 'success').length;
+  const errorCount = patchOperations.filter(o => o.status === 'error').length;
 
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
@@ -38,27 +54,48 @@ export function PatchPanel() {
         status={isPatchServerRunning ? patchTaskStatus : 'error'}
       />
       
-      <ScrollArea className="flex-1 min-h-0 bg-[#0c0c0e]" viewportRef={scrollRef}>
-        <div className="p-4 space-y-2 w-full min-w-0 font-mono text-[13px] leading-relaxed text-gray-300">
-          {patchLogs.length === 0 ? (
-             <div className="flex flex-col items-center justify-center py-10 text-muted-foreground/50 space-y-3">
+      <ScrollArea className="flex-1 min-h-0" viewportRef={scrollRef}>
+        <div className="p-4 space-y-4 w-full min-w-0">
+          
+          {patchOperations.length > 0 && (
+            <div className="flex items-center gap-2 mb-4 text-xs font-semibold">
+              <Badge variant="outline" className="bg-muted">Tổng cộng: {patchOperations.length}</Badge>
+              {successCount > 0 && <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Thành công: {successCount}</Badge>}
+              {errorCount > 0 && <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Lỗi: {errorCount}</Badge>}
+            </div>
+          )}
+
+          {patchOperations.length === 0 ? (
+             <div className="flex flex-col items-center justify-center py-10 text-muted-foreground/50 space-y-3 border-2 border-dashed rounded-xl">
                <Code className="h-8 w-8 opacity-50" />
-               <span className="text-sm">Hãy đổi Port trong Chrome Extension sang 9998 và gọi Kilo để xem ma thuật!</span>
+               <span className="text-sm text-center px-4">Hãy chọn Target Engine là "Auto-Patch" trong Extension và gọi AI để xem cập nhật UI tại đây!</span>
              </div>
           ) : (
-            patchLogs.map((log, i) => {
-              let lineClass = "";
-              if (log.includes("✅")) lineClass = "text-emerald-400";
-              if (log.includes("❌") || log.includes("LỖI") || log.includes("⚠️")) lineClass = "text-rose-400";
-              if (log.includes("[SYSTEM]")) lineClass = "text-blue-400 font-bold";
-              if (log.includes("===")) lineClass = "text-purple-400 font-bold mt-2";
-
-              return (
-                <div key={i} className={cn("break-words", lineClass)}>
-                  <Ansi>{log}</Ansi>
-                </div>
-              );
-            })
+            <div className="grid gap-2">
+              {patchOperations.map((op, i) => (
+                <Card key={`${op.id}-${i}`} className="p-3 flex flex-col gap-2 bg-card shadow-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 font-mono text-sm">
+                      {renderOpIcon(op.opType, op.status)}
+                      <span className="truncate flex-1 font-semibold">{op.file}</span>
+                    </div>
+                    {op.status === 'success' ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                    ) : op.status === 'error' ? (
+                      <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                    ) : (
+                      <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
+                    )}
+                  </div>
+                  <div className={cn(
+                    "text-xs px-6",
+                    op.status === 'error' ? "text-destructive font-medium" : "text-muted-foreground"
+                  )}>
+                    {op.message}
+                  </div>
+                </Card>
+              ))}
+            </div>
           )}
         </div>
       </ScrollArea>

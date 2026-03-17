@@ -160,9 +160,11 @@ async function executeKiloWorkflow(url: string, tabId?: number, isManual: boolea
     return;
   }
 
-  const result = await chrome.storage.local.get(['driveToken', 'kiloPort']) as { driveToken?: string, kiloPort?: string };
+  const result = await chrome.storage.local.get(['driveToken', 'kiloPort', 'patchPort', 'targetEngine']) as { driveToken?: string, kiloPort?: string, patchPort?: string, targetEngine?: string };
   const driveToken = result.driveToken;
-  const kiloPort = result.kiloPort || '9999';
+  const targetEngine = result.targetEngine || 'kilo';
+  const targetPort = targetEngine === 'patch' ? (result.patchPort || '9998') : (result.kiloPort || '9999');
+  const targetEndpoint = targetEngine === 'patch' ? '/api/patch' : '/api/kilo';
   if (!driveToken) {
     showNotification(`Lỗi ${prefix}`, 'Chưa cấu hình Drive Token. Hãy mở Popup extension.', 'error', tabId);
     return;
@@ -200,8 +202,8 @@ async function executeKiloWorkflow(url: string, tabId?: number, isManual: boolea
     // Thông báo bắt đầu chạy
     showNotification(`${prefix} Đang Chạy`, 'Đang gửi mã nguồn xuống cho Kilo CLI xử lý...', 'info', tabId);
 
-    // Đợi Kilo process kết thúc (Local server trả về HTTP 200 hoặc HTTP 500)
-    const response = await fetch(`http://127.0.0.1:${kiloPort}/api/kilo`, {
+    // Đợi process kết thúc (Local server trả về HTTP 200 hoặc HTTP 500)
+    const response = await fetch(`http://127.0.0.1:${targetPort}${targetEndpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt })
@@ -210,13 +212,13 @@ async function executeKiloWorkflow(url: string, tabId?: number, isManual: boolea
     const data = await response.json().catch(() => ({}));
 
     if (response.ok) {
-      showNotification(`${prefix} Hoàn Thành`, 'Kilo CLI đã xử lý và áp dụng mã nguồn xong!', 'success', tabId);
+      showNotification(`${prefix} Hoàn Thành`, 'Đã xử lý và áp dụng mã nguồn xong!', 'success', tabId);
     } else {
-      const errorMsg = data.error || 'Kilo CLI gặp lỗi khi thực thi. Hãy kiểm tra terminal.';
+      const errorMsg = data.error || 'Gặp lỗi khi thực thi. Hãy kiểm tra ứng dụng.';
       showNotification(`${prefix} Thất Bại`, errorMsg, 'error', tabId);
     }
   } catch (error) {
-    console.error(`Lỗi khi execute Kilo (${prefix}):`, error);
-    showNotification(`${prefix} Lỗi Kết Nối`, `Không kết nối được Cổng ${kiloPort}. Hãy chắc chắn bạn đã Bật Server trong Kilo Panel của Master Context.`, 'error', tabId);
+    console.error(`Lỗi khi execute (${prefix}):`, error);
+    showNotification(`${prefix} Lỗi Kết Nối`, `Không kết nối được Cổng ${targetPort}. Hãy chắc chắn bạn đã Bật Server tương ứng trong Master Context.`, 'error', tabId);
   }
 }

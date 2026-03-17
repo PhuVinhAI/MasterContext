@@ -10,6 +10,8 @@ import { Switch } from '@/components/ui/switch';
 export default function Popup() {
   const [driveToken, setDriveToken] = useState('');
   const [kiloPort, setKiloPort] = useState('9999');
+  const [patchPort, setPatchPort] = useState('9998');
+  const [targetEngine, setTargetEngine] = useState<'kilo' | 'patch'>('kilo');
   const [showTokenInput, setShowTokenInput] = useState(false);
   const [currentUrl, setCurrentUrl] = useState('');
   const [saved, setSaved] = useState(false);
@@ -35,10 +37,12 @@ export default function Popup() {
   }, []);
 
   const loadData = async () => {
-    const result = await chrome.storage.local.get(['driveToken', 'autoWatchKilo', 'kiloPort']);
+    const result = await chrome.storage.local.get(['driveToken', 'autoWatchKilo', 'kiloPort', 'patchPort', 'targetEngine']);
     setDriveToken((result.driveToken as string) || '');
     setAutoWatch(!!result.autoWatchKilo);
     setKiloPort((result.kiloPort as string) || '9999');
+    setPatchPort((result.patchPort as string) || '9998');
+    setTargetEngine((result.targetEngine as 'kilo' | 'patch') || 'kilo');
   };
 
   const getCurrentTabUrl = async () => {
@@ -47,7 +51,7 @@ export default function Popup() {
   };
 
   const handleSaveToken = async () => {
-    await chrome.storage.local.set({ driveToken, kiloPort });
+    await chrome.storage.local.set({ driveToken, kiloPort, patchPort, targetEngine });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -103,16 +107,37 @@ export default function Popup() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {/* Kilo Port Section */}
+        {/* Engine Selection Section */}
         <div className="space-y-3">
-          <div className="space-y-2">
-            <Label htmlFor="kilo-port" className="text-[10px] uppercase font-bold tracking-widest">CỔNG KILO SERVER (PORT)</Label>
+          <Label className="text-[10px] uppercase font-bold tracking-widest">TARGET ENGINE</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <Button 
+              variant={targetEngine === 'kilo' ? 'default' : 'outline'}
+              className="text-xs"
+              onClick={() => setTargetEngine('kilo')}
+            >
+              Kilo Agent
+            </Button>
+            <Button 
+              variant={targetEngine === 'patch' ? 'default' : 'outline'}
+              className="text-xs"
+              onClick={() => setTargetEngine('patch')}
+            >
+              Auto-Patch
+            </Button>
+          </div>
+          
+          <div className="space-y-2 mt-3">
+            <Label htmlFor="kilo-port" className="text-[10px] uppercase font-bold tracking-widest">CỔNG GIAO TIẾP (PORT)</Label>
             <Input
               id="kilo-port"
               type="number"
-              value={kiloPort}
-              onChange={(e) => setKiloPort(e.target.value)}
-              placeholder="9999"
+              value={targetEngine === 'kilo' ? kiloPort : patchPort}
+              onChange={(e) => {
+                if (targetEngine === 'kilo') setKiloPort(e.target.value);
+                else setPatchPort(e.target.value);
+              }}
+              placeholder={targetEngine === 'kilo' ? "9999" : "9998"}
               className="text-sm font-mono"
             />
           </div>
@@ -165,13 +190,13 @@ export default function Popup() {
         </Button>
 
         <div className="space-y-4">
-          {/* Call Kilo Button */}
+          {/* Call Engine Button */}
           <button
             onClick={handleCallKilo}
             disabled={!isAIStudioPage}
             className="w-full bg-foreground text-background py-4 px-4 font-black uppercase text-sm flex items-center justify-between hover:bg-muted-foreground transition-all disabled:opacity-20 group tracking-widest"
           >
-            <span>CHẠY TIẾN TRÌNH KILO</span>
+            <span>CHẠY {targetEngine === 'kilo' ? 'KILO AGENT' : 'AUTO-PATCH'}</span>
             <Cpu className="h-4 w-4 group-hover:scale-110 transition-transform" />
           </button>
 
@@ -185,10 +210,10 @@ export default function Popup() {
             <ExternalLink className="h-4 w-4" />
           </button>
           
-          {/* Auto Watch Kilo Feature */}
+          {/* Auto Watch Feature */}
           <div className="pt-4 border-t-2 border-border mt-6">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-widest">THEO DÕI TỰ ĐỘNG (KILO)</span>
+              <span className="text-xs font-black uppercase tracking-widest">THEO DÕI TỰ ĐỘNG</span>
               <Switch
                 checked={autoWatch}
                 onCheckedChange={async (checked) => {
@@ -198,7 +223,7 @@ export default function Popup() {
               />
             </div>
             <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed font-bold tracking-wider">
-              HỆ THỐNG ĐANG THEO DÕI NGẦM. KILO SẼ TỰ ĐỘNG BẮT MÃ NGUỒN (DIFF) VÀ CẬP NHẬT NGAY KHI AI TRẢ LỜI XONG MÀ KHÔNG CẦN BẠN BẤM NÚT.
+              HỆ THỐNG ĐANG THEO DÕI NGẦM. SẼ TỰ ĐỘNG BẮT MÃ NGUỒN VÀ ĐẨY VỀ ENGINE NGAY KHI AI TRẢ LỜI XONG.
             </p>
           </div>
         </div>
