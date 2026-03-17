@@ -519,7 +519,7 @@ export function AITab({
                     min={1}
                     max={10}
                   />
-                  <p className="text-xs text-muted-foreground">Giới hạn số lần AI được thử lại trước khi bỏ qua block lỗi.</p>
+                  <p className="text-xs text-muted-foreground">Giới hạn số lần AI được phép gọi API để thử lại trước khi bỏ qua block lỗi.</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Model xử lý riêng cho Sub-Agent</Label>
