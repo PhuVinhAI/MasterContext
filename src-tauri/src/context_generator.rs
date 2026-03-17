@@ -14,19 +14,21 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
         .unwrap_or("")
         .to_lowercase();
 
-    let ui_extensions = ["tsx", "jsx", "vue", "svelte", "html"];
     let c_style = [
-        "cs", "java", "ts", "js", "cpp", "c", "h", "hpp", "rs", "go", "php", "swift", "kt",
+        "ts", "js", "tsx", "jsx", "vue", "svelte", "cs", "java", "cpp", "c", "h", "hpp", "rs",
+        "go", "php", "swift", "kt",
     ];
 
-    let is_ui = ui_extensions.contains(&extension.as_str());
     let is_c_style = c_style.contains(&extension.as_str());
 
-    if !is_ui && !is_c_style {
-        return content.to_string(); // Trả về nguyên gốc nếu không hỗ trợ
+    if !is_c_style {
+        // Đối với Python, Ruby, HTML thuần... thuật toán ngoặc nhọn không áp dụng tốt
+        // Tạm thời trả về nguyên gốc để tránh phá hỏng code
+        return content.to_string();
     }
 
-    // Bước 1: Nén các đoạn UI tốn nhiều token (class, className, svg)
+    // Nén các đoạn UI tốn nhiều token nếu là file frontend
+    let is_ui = ["tsx", "jsx", "vue", "svelte"].contains(&extension.as_str());
     let mut processed_content = content.to_string();
     if is_ui {
         processed_content = CLASSNAME_REGEX
@@ -43,21 +45,25 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
             .to_string();
     }
 
-    // Bước 2: Thuật toán đếm ngoặc nhọn
-    // UI components lồng nhau sâu hơn do JSX, cần visible_depth = 4. C-style thông thường = 2.
-    let visible_depth = if is_ui { 4 } else { 2 };
+    // Loại bỏ comment trước khi phân tích để tránh ngoặc nhọn trong comment gây nhiễu trạng thái
+    let clean_content = remove_comments_from_content(&processed_content, file_rel_path);
 
-    let mut result = String::with_capacity(processed_content.len());
+    let mut result = String::with_capacity(clean_content.len());
     let mut brace_depth = 0;
     let mut in_string = false;
     let mut string_char = ' ';
     let mut escape = false;
+
+    let mut collapsed_stack = vec![false];
+    let mut current_block_collapsed = false;
+    let mut recent_chars = String::new();
     let mut prev_char = ' ';
 
-    for c in processed_content.chars() {
+    for c in clean_content.chars() {
         if escape {
-            if brace_depth <= visible_depth {
+            if !current_block_collapsed {
                 result.push(c);
+                recent_chars.push(c);
             }
             escape = false;
             prev_char = c;
@@ -66,8 +72,9 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
 
         if c == '\\' && in_string {
             escape = true;
-            if brace_depth <= visible_depth {
+            if !current_block_collapsed {
                 result.push(c);
+                recent_chars.push(c);
             }
             prev_char = c;
             continue;
@@ -76,22 +83,25 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
         if (c == '"' || c == '\'' || c == '`') && !in_string {
             // Heuristic tránh lỗi parse chuỗi trong JSX text (vd: don't, It's)
             if c == '\'' && prev_char.is_alphanumeric() {
-                if brace_depth <= visible_depth {
+                if !current_block_collapsed {
                     result.push(c);
+                    recent_chars.push(c);
                 }
             } else {
                 in_string = true;
                 string_char = c;
-                if brace_depth <= visible_depth {
+                if !current_block_collapsed {
                     result.push(c);
+                    recent_chars.push(c);
                 }
             }
             prev_char = c;
             continue;
         } else if c == string_char && in_string {
             in_string = false;
-            if brace_depth <= visible_depth {
+            if !current_block_collapsed {
                 result.push(c);
+                recent_chars.push(c);
             }
             prev_char = c;
             continue;
@@ -99,36 +109,102 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
 
         if !in_string {
             if c == '{' {
+                let pre_text = recent_chars.trim_end();
+
+                // Xác định xem block này có nên bị ẩn đi không (Dummy Logic)
+                // Giữ lại: class, interface, struct, enum, trait, impl, namespace
+                let should_collapse = if pre_text.ends_with(")")
+                    || pre_text.ends_with("=>")
+                    || pre_text.ends_with("else")
+                    || pre_text.ends_with("try")
+                    || pre_text.ends_with("do")
+                    || pre_text.ends_with("catch")
+                    || pre_text.ends_with("finally")
+                    || pre_text.ends_with("loop")
+                    || pre_text.ends_with("=")
+                {
+                    true
+                } else if pre_text.contains("class ")
+                    || pre_text.contains("interface ")
+                    || pre_text.contains("struct ")
+                    || pre_text.contains("enum ")
+                    || pre_text.contains("trait ")
+                    || pre_text.contains("impl ")
+                    || pre_text.contains("namespace ")
+                    || pre_text.contains("module ")
+                {
+                    false
+                } else {
+                    // Mặc định ẩn để tiết kiệm token tối đa (cho object literal, statements...)
+                    true
+                };
+
+                let will_collapse = current_block_collapsed || should_collapse;
+                collapsed_stack.push(will_collapse);
+                current_block_collapsed = will_collapse;
                 brace_depth += 1;
-                if brace_depth <= visible_depth + 1 {
+
+                // Nếu block này bị ẩn, NHƯNG cha của nó KHÔNG bị ẩn, thì ta in ra `{ /* logic omitted */ `
+                let parent_collapsed = if collapsed_stack.len() >= 2 {
+                    collapsed_stack[collapsed_stack.len() - 2]
+                } else {
+                    false
+                };
+
+                if !parent_collapsed {
                     result.push(c);
+                    if current_block_collapsed {
+                        result.push_str(" /* logic omitted */ ");
+                    }
                 }
-                if brace_depth == visible_depth + 1 {
-                    result.push_str(" /* logic omitted */ ");
-                }
+
+                recent_chars.clear();
                 prev_char = c;
                 continue;
             } else if c == '}' {
-                let old_depth = brace_depth;
+                let parent_collapsed = if collapsed_stack.len() >= 2 {
+                    collapsed_stack[collapsed_stack.len() - 2]
+                } else {
+                    false
+                };
+
                 if brace_depth > 0 {
+                    collapsed_stack.pop();
+                    current_block_collapsed = *collapsed_stack.last().unwrap_or(&false);
                     brace_depth -= 1;
                 }
-                if old_depth <= visible_depth + 1 {
+
+                // Chỉ in ra `}` nếu cha không bị ẩn
+                if !parent_collapsed {
                     result.push(c);
                 }
+
+                recent_chars.clear();
+                prev_char = c;
+                continue;
+            } else if c == ';' {
+                if !current_block_collapsed {
+                    result.push(c);
+                }
+                recent_chars.clear(); // Reset ngữ cảnh keyword
                 prev_char = c;
                 continue;
             }
         }
 
-        // Các ký tự bình thường
-        if brace_depth <= visible_depth {
+        if !current_block_collapsed {
             result.push(c);
+            recent_chars.push(c);
+            if recent_chars.len() > 150 {
+                let drained: String = recent_chars.chars().skip(50).collect();
+                recent_chars = drained;
+            }
         }
         prev_char = c;
     }
 
-    result
+    // Xóa bớt khoảng trắng thừa sinh ra do lược bỏ code
+    EMPTY_LINES_REGEX.replace_all(&result, "\n\n").to_string()
 }
 
 lazy_static! {
@@ -161,6 +237,9 @@ lazy_static! {
     static ref CLASSNAME_TPL_REGEX: Regex = Regex::new(r#"className=\{`[^`]*`\}"#).unwrap();
     static ref CLASS_REGEX: Regex = Regex::new(r#"class="[^"]*""#).unwrap();
     static ref SVG_REGEX: Regex = Regex::new(r#"(?s)<svg.*?>.*?</svg>"#).unwrap();
+
+    // Nén các dòng trống
+    static ref EMPTY_LINES_REGEX: Regex = Regex::new(r"\n\s*\n\s*\n+").unwrap();
 }
 
 fn remove_comments_from_content(content: &str, file_rel_path: &str) -> String {
