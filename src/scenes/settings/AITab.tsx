@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Save, Loader2, X, ChevronsUpDown } from "lucide-react";
+import { Save, Loader2, X, ChevronsUpDown, Bot } from "lucide-react";
 import { useAppStore } from "@/store/appStore";
 import {
   Select,
@@ -494,10 +494,10 @@ export function AITab({
           </div>
           <div className="space-y-4 mt-4 pt-4 border-t">
             <h3 className="font-semibold text-primary flex items-center gap-2">
-              🤖 Cấu hình Sub-Agent (Auto-Fix)
+              <Bot className="h-5 w-5" /> Cấu hình Sub-Agent (Auto-Fix)
             </h3>
             <div className="flex items-center justify-between">
-              <Label htmlFor="sub-agent-toggle" className="flex flex-col gap-1">
+              <Label htmlFor="sub-agent-toggle" className="flex flex-col items-start gap-1">
                 <span>Bật Sub-Agent</span>
                 <span className="text-xs text-muted-foreground font-normal">Tự động giao tiếp và sửa lỗi khi Patch không khớp mã nguồn.</span>
               </Label>
@@ -507,15 +507,15 @@ export function AITab({
                 onCheckedChange={setLocalSubAgentEnabled}
               />
             </div>
-            
+
             {localSubAgentEnabled && (
               <>
                 <div className="space-y-2">
                   <Label>Số lần thử tối đa (Retries)</Label>
-                  <Input 
-                    type="number" 
-                    value={localSubAgentMaxRetries} 
-                    onChange={(e) => setLocalSubAgentMaxRetries(parseInt(e.target.value) || 3)} 
+                  <Input
+                    type="number"
+                    value={localSubAgentMaxRetries}
+                    onChange={(e) => setLocalSubAgentMaxRetries(parseInt(e.target.value) || 3)}
                     min={1}
                     max={10}
                   />
