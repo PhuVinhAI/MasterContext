@@ -5,7 +5,6 @@ use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter};
-use tauri_plugin_notification::NotificationExt;
 
 use crate::patch_executor::{parse_patch_file, apply_operations};
 

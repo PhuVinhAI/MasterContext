@@ -1,6 +1,6 @@
 use std::fs;
 use std::path::Path;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PatchOpType {
