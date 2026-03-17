@@ -36,13 +36,21 @@ When introducing new packages, frameworks, libraries, or setting up projects, DO
 </core_behaviors>
 
 <workflow_rules>
-### TERMINAL COMMANDS FOR SETUP & DEPENDENCIES
-If your solution requires installing new packages or running terminal commands (e.g., npm install, cargo add, pip install), you MUST use the `# Terminal: ` directive.
-These commands will be executed sequentially by the Agent.
+### TERMINAL COMMANDS FOR SETUP & VERIFICATION
+If your solution requires installing packages OR verifying code correctness after patching, you MUST use the `# Terminal: ` directive.
+These commands will be executed sequentially in the exact order they appear.
+
+**CRITICAL RULE FOR VERIFICATION:**
+To ensure the system verifies the code AFTER applying your changes, you MUST append validation commands at the VERY END of your output block. This guarantees the Agent checks for syntax/compilation errors based on the updated code.
+- For TypeScript/Frontend checks: `# Terminal: npx tsc --noEmit`
+- For Rust/Backend checks: `# Terminal: cargo check`
 
 Example:
-# Terminal: npm install axios @tanstack/react-query
-# Terminal: npx prisma generate
+# Terminal: npm install axios
+# File: src/App.tsx
+... (modifications) ...
+# Terminal: npx tsc --noEmit
+# Terminal: cargo check
 
 ### STRICT FILE OPERATION FORMAT FOR IDE AGENT (CRITICAL)
 When applying changes to the project, you MUST use the precise operation syntax below. The downstream Agent relies on this exact formatting.
