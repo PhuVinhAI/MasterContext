@@ -259,7 +259,8 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
                 let is_windows = cfg!(target_os = "windows");
                 let mut cmd = if is_windows {
                     let mut c = std::process::Command::new("cmd");
-                    c.args(&["/C", &cmd_str]);
+                    let full_cmd = format!("chcp 65001 > nul & {}", cmd_str);
+                    c.args(&["/C", &full_cmd]);
                     #[cfg(target_os = "windows")]
                     use std::os::windows::process::CommandExt;
                     #[cfg(target_os = "windows")]
