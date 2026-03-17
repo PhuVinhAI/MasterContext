@@ -63,6 +63,7 @@ export function SettingsScene() {
     kiloPort,
     patchPort,
     selectedKiloModel,
+    subAgentModel,
     discordWebhookUrl,
     updateAppSettings,
     setGitExportMode,
@@ -177,6 +178,7 @@ export function SettingsScene() {
             topK={topK}
             maxTokens={maxTokens}
             geminiThinkingLevel={geminiThinkingLevel}
+            subAgentModel={subAgentModel}
             onSave={async (newSettings) => {
               await updateAppSettings({
                 openRouterApiKey: newSettings.apiKey,
@@ -190,6 +192,7 @@ export function SettingsScene() {
                 topK: newSettings.topK,
                 maxTokens: newSettings.maxTokens,
                 geminiThinkingLevel: newSettings.geminiThinkingLevel,
+                subAgentModel: newSettings.subAgentModel,
               });
             }}
           />

@@ -46,6 +46,7 @@ export function useSettingsScene() {
     kiloPort,
     patchPort,
     selectedKiloModel,
+    subAgentModel,
     discordWebhookUrl,
   } = useAppStore(
     useShallow((state) => ({
@@ -81,6 +82,7 @@ export function useSettingsScene() {
       kiloPort: state.kiloPort,
       patchPort: state.patchPort,
       selectedKiloModel: state.selectedKiloModel,
+      subAgentModel: state.subAgentModel,
       discordWebhookUrl: state.discordWebhookUrl,
     }))
   );
@@ -196,6 +198,7 @@ export function useSettingsScene() {
     kiloPort,
     patchPort,
     selectedKiloModel,
+    subAgentModel,
     discordWebhookUrl,
     updateAppSettings,
     setSyncSettings,

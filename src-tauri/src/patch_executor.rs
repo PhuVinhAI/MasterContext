@@ -19,6 +19,22 @@ pub struct SearchReplace {
     pub replace: String,
 }
 
+#[tauri::command]
+pub async fn submit_patch_fix(
+    fix_state: tauri::State<'_, crate::PatchFixState>,
+    search: Option<String>,
+    replace: Option<String>,
+) -> Result<(), String> {
+    if let Some(tx) = fix_state.0.lock().unwrap().take() {
+        if let (Some(s), Some(r)) = (search, replace) {
+            let _ = tx.send(Some(SearchReplace { search: s, replace: r }));
+        } else {
+            let _ = tx.send(None);
+        }
+    }
+    Ok(())
+}
+
 #[derive(Debug, Clone)]
 pub struct PatchOperation {
     pub op_type: PatchOpType,
@@ -231,7 +247,7 @@ pub fn parse_patch_file(content: &str) -> Vec<PatchOperation> {
     operations
 }
 
-pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec<PatchOperation>) {
+pub async fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec<PatchOperation>) {
     let mut total_files_updated = 0;
     let mut total_files_created = 0;
     let mut total_files_deleted = 0;
@@ -634,7 +650,38 @@ pub fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec
                                 applied += 1;
                                 total_patches_applied += 1;
                             } else {
-                                total_patches_failed += 1;
+                                let _ = app_handle.emit("patch_log", format!("[SUB-AGENT] 🤖 Đang gọi Sub-Agent tự động sửa lỗi Patch cho file: {}", op.file));
+                                
+                                let (tx, rx) = tokio::sync::oneshot::channel();
+                                {
+                                    let state = app_handle.state::<crate::PatchFixState>();
+                                    *state.0.lock().unwrap() = Some(tx);
+                                }
+
+                                let _ = app_handle.emit("patch_needs_fix", serde_json::json!({
+                                    "file": op.file,
+                                    "fileContent": file_content,
+                                    "failedSearch": patch.search,
+                                    "failedReplace": patch.replace
+                                }));
+
+                                match rx.await {
+                                    Ok(Some(fixed_patch)) => {
+                                        if file_content.contains(&fixed_patch.search) {
+                                            file_content = file_content.replace(&fixed_patch.search, &fixed_patch.replace);
+                                            applied += 1;
+                                            total_patches_applied += 1;
+                                            let _ = app_handle.emit("patch_log", format!("[SUB-AGENT] ✅ Sửa Patch thành công, tiếp tục ghi file: {}", op.file));
+                                        } else {
+                                            let _ = app_handle.emit("patch_log", format!("[SUB-AGENT] ❌ Sub-Agent đã cung cấp bản sửa nhưng vẫn không khớp với file gốc. Bỏ qua block này."));
+                                            total_patches_failed += 1;
+                                        }
+                                    },
+                                    _ => {
+                                        let _ = app_handle.emit("patch_log", format!("[SUB-AGENT] ❌ Tiến trình Sub-Agent thất bại. Chuyển sang block tiếp theo."));
+                                        total_patches_failed += 1;
+                                    }
+                                }
                             }
                         }
 

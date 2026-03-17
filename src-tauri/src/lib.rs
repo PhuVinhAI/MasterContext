@@ -22,6 +22,7 @@ pub struct KiloModelState(pub Arc<Mutex<String>>);
 pub struct KiloAbortSignal(pub Arc<std::sync::Mutex<Option<tokio::sync::oneshot::Sender<()>>>>);
 
 pub struct PatchServerHandle(pub Arc<Mutex<Option<tokio::sync::oneshot::Sender<()>>>>);
+pub struct PatchFixState(pub Arc<Mutex<Option<tokio::sync::oneshot::Sender<Option<patch_executor::SearchReplace>>>>>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -30,6 +31,7 @@ pub fn run() {
     let kilo_model = Arc::new(Mutex::new(String::new()));
     let kilo_abort = Arc::new(std::sync::Mutex::new(None));
     let patch_handle = Arc::new(Mutex::new(None));
+    let patch_fix_state = Arc::new(Mutex::new(None));
 
     tauri::Builder::default()
         .manage(ActiveProjectState(active_project))
@@ -37,6 +39,7 @@ pub fn run() {
         .manage(KiloModelState(kilo_model))
         .manage(KiloAbortSignal(kilo_abort))
         .manage(PatchServerHandle(patch_handle))
+        .manage(PatchFixState(patch_fix_state))
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -132,7 +135,8 @@ pub fn run() {
             // Patch Server Commands
             patch_server::start_patch_server,
             patch_server::stop_patch_server,
-            patch_server::get_patch_server_status
+            patch_server::get_patch_server_status,
+            patch_executor::submit_patch_fix
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

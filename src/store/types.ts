@@ -104,6 +104,7 @@ export interface AppSettings {
   maxTokens?: number;
   geminiThinkingLevel?: "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
   selectedKiloModel?: string;
+  subAgentModel?: string;
   kiloPort?: number;
   patchPort?: number;
   discordWebhookUrl?: string;
@@ -287,6 +288,7 @@ export interface AppState {
   isPatchPanelVisible: boolean;
   isPatchServerRunning: boolean;
   patchLogs: string[];
+  patchTasks: PatchTaskUI[];
   patchTaskStatus: "idle" | "running" | "success" | "error";
 
   // AI Panel
@@ -311,6 +313,7 @@ export interface AppState {
   systemPrompt: string;
   streamResponse: boolean;
   selectedAiModel: string;
+  subAgentModel: string;
   editingMessageIndex: number | null;
   aiAttachedFiles: AttachedItem[];
   kiloPort: number;

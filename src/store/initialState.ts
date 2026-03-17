@@ -95,6 +95,7 @@ export const initialState = {
   systemPrompt: "",
   streamResponse: true,
   selectedAiModel: "openai/gpt-3.5-turbo",
+  subAgentModel: "",
   editingMessageIndex: null,
   aiAttachedFiles: [] as AttachedItem[],
   kiloPort: 9999,

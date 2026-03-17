@@ -47,6 +47,7 @@ interface AITabProps {
   topK: number;
   maxTokens: number;
   geminiThinkingLevel: "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
+  subAgentModel: string;
   onSave: (settings: {
     apiKey: string;
     googleApiKey: string;
@@ -59,6 +60,7 @@ interface AITabProps {
     topK: number;
     maxTokens: number;
     geminiThinkingLevel: "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
+    subAgentModel: string;
   }) => Promise<void>;
 }
 
@@ -74,6 +76,7 @@ export function AITab({
   topK,
   maxTokens,
   geminiThinkingLevel,
+  subAgentModel,
   onSave,
 }: AITabProps) {
   const { t } = useTranslation();
@@ -94,6 +97,7 @@ export function AITab({
   const [localTopK, setLocalTopK] = useState(topK);
   const [localMaxTokens, setLocalMaxTokens] = useState(maxTokens);
   const [localGeminiThinkingLevel, setLocalGeminiThinkingLevel] = useState(geminiThinkingLevel);
+  const [localSubAgentModel, setLocalSubAgentModel] = useState(subAgentModel);
   const [isSaving, setIsSaving] = useState(false);
   const [isModelPickerOpen, setIsModelPickerOpen] = useState(false);
 
@@ -109,6 +113,7 @@ export function AITab({
     setLocalTopK(topK);
     setLocalMaxTokens(maxTokens);
     setLocalGeminiThinkingLevel(geminiThinkingLevel);
+    setLocalSubAgentModel(subAgentModel);
   }, [
     apiKey,
     googleApiKey,
@@ -121,6 +126,7 @@ export function AITab({
     topK,
     maxTokens,
     geminiThinkingLevel,
+    subAgentModel,
   ]);
 
   const handleSave = async () => {
@@ -137,6 +143,7 @@ export function AITab({
       topK: localTopK,
       maxTokens: localMaxTokens,
       geminiThinkingLevel: localGeminiThinkingLevel,
+      subAgentModel: localSubAgentModel,
     });
     setIsSaving(false);
   };
@@ -164,7 +171,8 @@ export function AITab({
     localTopP !== topP ||
     localTopK !== topK ||
     localMaxTokens !== maxTokens ||
-    localGeminiThinkingLevel !== geminiThinkingLevel;
+    localGeminiThinkingLevel !== geminiThinkingLevel ||
+    localSubAgentModel !== subAgentModel;
 
   return (
     <div className="space-y-6">
@@ -467,6 +475,26 @@ export function AITab({
                 <SelectItem value="HIGH">{t("settings.ai.parameters.thinkingLevels.HIGH")}</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2 mt-4 pt-4 border-t">
+            <Label>Sub-Agent Model (Dùng tự động sửa lỗi Auto-Patch)</Label>
+            <Select
+              value={localSubAgentModel}
+              onValueChange={(val) => setLocalSubAgentModel(val)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Mặc định (Dùng Model Chat)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Mặc định (Dùng Model Chat)</SelectItem>
+                {allAvailableModels.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.provider === "google" ? "Google" : m.provider === "nvidia" ? "NVIDIA" : "OpenRouter"} / {m.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">Model này sẽ chạy ngầm để sửa các đoạn code Patch bị sai lệch thay vì làm phiền bạn.</p>
           </div>
         </div>
 

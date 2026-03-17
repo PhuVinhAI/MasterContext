@@ -269,6 +269,7 @@ export const createSettingsActions: StateCreator<
       topK,
       maxTokens,
       geminiThinkingLevel,
+      subAgentModel,
     } = get();
     const fullSettings: AppSettings = {
       recentPaths: newSettings.recentPaths ?? recentPaths,
@@ -288,6 +289,7 @@ export const createSettingsActions: StateCreator<
       maxTokens: newSettings.maxTokens ?? maxTokens,
       geminiThinkingLevel: newSettings.geminiThinkingLevel ?? geminiThinkingLevel,
       selectedKiloModel: newSettings.selectedKiloModel ?? get().selectedKiloModel,
+      subAgentModel: newSettings.subAgentModel ?? subAgentModel,
       kiloPort: newSettings.kiloPort ?? get().kiloPort,
       patchPort: newSettings.patchPort ?? get().patchPort,
       discordWebhookUrl: newSettings.discordWebhookUrl ?? get().discordWebhookUrl,
@@ -331,6 +333,7 @@ export const createSettingsActions: StateCreator<
           projectAiModels.find((m) => m.id === get().selectedAiModel)?.id ||
           projectAiModels[0]?.id ||
           "",
+        subAgentModel: fullSettings.subAgentModel ?? "",
         // Đảm bảo Kilo Model cũng được cập nhật vào state khi load/update settings
         selectedKiloModel: fullSettings.selectedKiloModel,
         kiloPort: fullSettings.kiloPort,

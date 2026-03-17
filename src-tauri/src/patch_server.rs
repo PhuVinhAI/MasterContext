@@ -159,7 +159,7 @@ async fn handle_patch(
         }));
     }
 
-    apply_operations(&app_handle, current_path, operations);
+    apply_operations(&app_handle, current_path, operations).await;
 
     Ok(Json(ResultResponse {
         success: true,
