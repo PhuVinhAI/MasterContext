@@ -111,33 +111,36 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
             if c == '{' {
                 let pre_text = recent_chars.trim_end();
 
-                // Xác định xem block này có nên bị ẩn đi không (Dummy Logic)
-                // Giữ lại: class, interface, struct, enum, trait, impl, namespace
-                let should_collapse = if pre_text.ends_with(")")
-                    || pre_text.ends_with("=>")
-                    || pre_text.ends_with("else")
-                    || pre_text.ends_with("try")
-                    || pre_text.ends_with("do")
-                    || pre_text.ends_with("catch")
-                    || pre_text.ends_with("finally")
-                    || pre_text.ends_with("loop")
-                    || pre_text.ends_with("=")
-                {
-                    true
-                } else if pre_text.contains("class ")
-                    || pre_text.contains("interface ")
-                    || pre_text.contains("struct ")
-                    || pre_text.contains("enum ")
-                    || pre_text.contains("trait ")
-                    || pre_text.contains("impl ")
-                    || pre_text.contains("namespace ")
-                    || pre_text.contains("module ")
-                {
-                    false
-                } else {
-                    // Mặc định ẩn để tiết kiệm token tối đa (cho object literal, statements...)
-                    true
-                };
+                let should_collapse =
+                    if pre_text.ends_with("import") || pre_text.contains("import ") {
+                        false
+                    } else if (pre_text.ends_with("export") || pre_text.contains("export "))
+                        && !pre_text.contains("=")
+                        && !pre_text.contains(" default ")
+                    {
+                        false
+                    } else if pre_text.contains("interface ")
+                        || pre_text.contains("class ")
+                        || pre_text.contains("struct ")
+                        || pre_text.contains("enum ")
+                        || pre_text.contains("trait ")
+                        || pre_text.contains("impl ")
+                        || pre_text.contains("namespace ")
+                        || pre_text.contains("module ")
+                        || pre_text.contains("type ")
+                        || pre_text.contains("mod ")
+                    {
+                        false
+                    } else if pre_text.ends_with(":")
+                        || pre_text.ends_with("<")
+                        || pre_text.ends_with("|")
+                        || pre_text.ends_with("&")
+                    {
+                        false
+                    } else {
+                        // Mặc định ẩn để tiết kiệm token tối đa (chủ yếu là function body, object literal, v.v.)
+                        true
+                    };
 
                 let will_collapse = current_block_collapsed || should_collapse;
                 collapsed_stack.push(will_collapse);
