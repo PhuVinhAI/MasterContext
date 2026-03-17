@@ -160,6 +160,8 @@ export interface AppState {
   streamResponse: boolean;
   selectedAiModel: string;
   subAgentModel: string;
+  subAgentEnabled: boolean;
+  subAgentMaxRetries: number;
   editingMessageIndex: number | null;
   aiAttachedFiles: AttachedItem[];
 

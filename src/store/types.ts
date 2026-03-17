@@ -105,6 +105,8 @@ export interface AppSettings {
   geminiThinkingLevel?: "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
   selectedKiloModel?: string;
   subAgentModel?: string;
+  subAgentEnabled?: boolean;
+  subAgentMaxRetries?: number;
   kiloPort?: number;
   patchPort?: number;
   discordWebhookUrl?: string;
@@ -314,6 +316,8 @@ export interface AppState {
   streamResponse: boolean;
   selectedAiModel: string;
   subAgentModel: string;
+  subAgentEnabled: boolean;
+  subAgentMaxRetries: number;
   editingMessageIndex: number | null;
   aiAttachedFiles: AttachedItem[];
   kiloPort: number;

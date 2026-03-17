@@ -96,6 +96,8 @@ export const initialState = {
   streamResponse: true,
   selectedAiModel: "openai/gpt-3.5-turbo",
   subAgentModel: "",
+  subAgentEnabled: true,
+  subAgentMaxRetries: 3,
   editingMessageIndex: null,
   aiAttachedFiles: [] as AttachedItem[],
   kiloPort: 9999,

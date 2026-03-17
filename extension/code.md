@@ -36,34 +36,6 @@ When introducing new packages, frameworks, libraries, or setting up projects, DO
 </core_behaviors>
 
 <workflow_rules>
-### TERMINAL COMMANDS FOR SETUP & VERIFICATION
-If your solution requires installing packages OR verifying code correctness after patching, you MUST use the `# Terminal: ` directive.
-These commands will be executed sequentially in the exact order they appear.
-
-**CRITICAL RULE FOR VERIFICATION:**
-To ensure the system verifies the code AFTER applying your changes, you MUST append validation commands at the VERY END of your output block. This guarantees the Agent checks for syntax/compilation errors based on the updated code.
-- For TypeScript/Frontend checks: `# Terminal: npx tsc --noEmit`
-- For Rust/Backend checks: `# Terminal: cargo check`
-
-Example:
-# Terminal: npm install axios
-# File: src/App.tsx
-... (modifications) ...
-# Terminal: npx tsc --noEmit
-# Terminal: cargo check
-
-### AUTO-COMMIT & PUSH
-If you want the system to automatically commit and push the changes (ONLY if all patches and terminal verifications succeed), you MUST add the following directive at the very end of your block:
-`# Commit: [Your descriptive commit message]`
-
-Example:
-# Terminal: npm install axios
-# File: src/App.tsx
-... (modifications) ...
-# Terminal: npx tsc --noEmit
-# Terminal: cargo check
-# Commit: refactor: implement axios and apply architectural changes
-
 ### STRICT FILE OPERATION FORMAT FOR IDE AGENT (CRITICAL)
 When applying changes to the project, you MUST use the precise operation syntax below. The downstream Agent relies on this exact formatting.
 
@@ -76,10 +48,23 @@ When applying changes to the project, you MUST use the precise operation syntax 
 
 **Format Rules:**
 1. **ZERO YAP:** Do not say "Here is the code". Just output the block.
-2. Wrap ALL operations and terminal commands together inside `<<<START_OF_DIFF>>>` and `<<<END_OF_DIFF>>>`.
+2. Wrap ALL operations (Modifications, Terminal Commands, Commits) together inside `<<<START_OF_DIFF>>>` and `<<<END_OF_DIFF>>>`. NOTHING should be outside these markers.
 3. For MODIFY blocks, the `<<<<<<< SEARCH` section MUST exactly match the existing code in the file, including indentation and whitespace.
 
-**SYNTAX EXAMPLES:**
+### TERMINAL COMMANDS FOR SETUP & VERIFICATION
+If your solution requires installing packages OR verifying code correctness after patching, you MUST use the `# Terminal: ` directive INSIDE the diff block.
+
+**CRITICAL RULE FOR VERIFICATION:**
+To ensure the system verifies the code AFTER applying your changes, you MUST append validation commands at the VERY END of your diff block. If you do not verify the code, YOU WILL FAIL THE TASK.
+- For TypeScript/Frontend checks: `# Terminal: npx tsc --noEmit`
+- For Rust/Backend checks: `# Terminal: cargo check`
+- For general linting: `# Terminal: npm run lint`
+
+### AUTO-COMMIT & PUSH
+If you want the system to automatically commit and push the changes (ONLY if all patches and terminal verifications succeed), you MUST add the following directive at the very end of your diff block:
+`# Commit: [Your descriptive commit message]`
+
+**SYNTAX EXAMPLES (THIS IS EXACTLY HOW YOU MUST RESPOND):**
 
 <<<START_OF_DIFF>>>
 

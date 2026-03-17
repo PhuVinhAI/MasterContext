@@ -37,6 +37,7 @@ import { PatchPanel } from "./components/patch/PatchPanel";
 import { MainPanel } from "./scenes/MainPanel";
 import { googleModels, nvidiaModels } from "@/lib/aiModels";
 import { StatusBar } from "./components/StatusBar";
+import { useSubAgentListener } from "./hooks/useSubAgentListener";
 import { RescanIndicator } from "./components/RescanIndicator";
 import {
   ResizablePanelGroup,
@@ -110,6 +111,9 @@ function App() {
   const { t } = useTranslation();
 
   const appMenuRef = useRef<Menu | null>(null);
+
+  // Hook khởi chạy Sub-Agent ngầm
+  useSubAgentListener();
 
   // --- Effect áp dụng theme (giữ nguyên) ---
   useEffect(() => {
@@ -717,121 +721,6 @@ function App() {
       listen<boolean>("patch_status_changed", (event) => {
         setPatchServerStatus(event.payload);
       })
-    );
-
-    // Listener cho sự kiện Sub-Agent sửa lỗi Patch
-    unlistenFuncs.push(
-      listen<{ file: string; fileContent: string; failedSearch: string; failedReplace: string }>(
-        "patch_needs_fix",
-        async (event) => {
-          const { file: _file, fileContent, failedSearch, failedReplace } = event.payload;
-          const state = useAppStore.getState();
-
-          try {
-            const { openRouterApiKey, googleApiKey, nvidiaApiKey, subAgentModel, selectedAiModel, allAvailableModels } = state;
-            const targetModelId = subAgentModel || selectedAiModel;
-            const model = allAvailableModels.find((m) => m.id === targetModelId);
-
-            if (!model) throw new Error("Không có Model AI nào được cấu hình để Sub-Agent chạy.");
-
-            const actualApiKey =
-              model.provider === "google"
-                ? googleApiKey
-                : model.provider === "nvidia"
-                ? nvidiaApiKey
-                : openRouterApiKey;
-
-            if (!actualApiKey) throw new Error("Chưa cung cấp API Key cho Sub-Agent.");
-
-            const systemPrompt = `You are a strict, autonomous code-fixing agent.
-I tried to apply a SEARCH/REPLACE block to a file, but the SEARCH block did not exactly match the file's current content (indentation or minor changes might exist).
-
-FILE CONTENT:
-\`\`\`
-${fileContent}
-\`\`\`
-
-FAILED SEARCH BLOCK:
-\`\`\`
-${failedSearch}
-\`\`\`
-
-INTENDED REPLACE BLOCK:
-\`\`\`
-${failedReplace}
-\`\`\`
-
-YOUR TASK:
-1. Locate the correct lines in the FILE CONTENT that correspond to the FAILED SEARCH BLOCK.
-2. Output a NEW, perfectly matching SEARCH/REPLACE block that contains the exact lines from the FILE CONTENT in the SEARCH section, and the updated lines in the REPLACE section.
-3. Output ONLY the block. Do not add any markdown formatting, no explanations, no yapping.
-
-FORMAT REQUIRED:
-<<<<<<< SEARCH
-[exact matching lines from file]
-=======
-[new replaced lines]
->>>>>>> REPLACE`;
-
-            let fixResult = "";
-
-            if (model.provider === "google") {
-              const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model.id}:generateContent`;
-              const response = await tauriFetch(endpoint, {
-                method: "POST",
-                headers: {
-                  "x-goog-api-key": actualApiKey,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-                  generationConfig: { temperature: 0.1 },
-                }),
-              });
-              const data = await response.json();
-              fixResult = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-            } else {
-              const endpoint =
-                model.provider === "nvidia"
-                  ? "https://integrate.api.nvidia.com/v1/chat/completions"
-                  : "https://openrouter.ai/api/v1/chat/completions";
-              const response = await tauriFetch(endpoint, {
-                method: "POST",
-                headers: {
-                  Authorization: `Bearer ${actualApiKey}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  model: model.id,
-                  messages: [{ role: "user", content: systemPrompt }],
-                  temperature: 0.1,
-                }),
-              });
-              const data = await response.json();
-              fixResult = data.choices?.[0]?.message?.content || "";
-            }
-
-            const cleanResult = fixResult.replace(/```[a-z]*\n/g, "").replace(/```/g, "");
-            
-            const searchMatch = cleanResult.match(/<<<<<<< SEARCH[\r\n]+([\s\S]*?)[\r\n]+=======/);
-            const replaceMatch = cleanResult.match(/=======[\r\n]+([\s\S]*?)[\r\n]+>>>>>>> REPLACE/);
-
-            if (searchMatch && replaceMatch) {
-              await invoke("submit_patch_fix", {
-                search: searchMatch[1],
-                replace: replaceMatch[1],
-              });
-            } else {
-              console.warn("Sub-Agent trả về định dạng không đúng chuẩn:", fixResult);
-              await invoke("submit_patch_fix", { search: null, replace: null });
-            }
-          } catch (e) {
-            console.error("Sub-Agent Error:", e);
-            useAppStore.getState().actions.addPatchLog(`[SUB-AGENT ERROR] ${String(e)}`);
-            await invoke("submit_patch_fix", { search: null, replace: null });
-          }
-        }
-      )
     );
 
     // Listener cho sự kiện xuất dự án (để hiển thị toast)

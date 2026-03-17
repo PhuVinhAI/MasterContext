@@ -48,6 +48,8 @@ interface AITabProps {
   maxTokens: number;
   geminiThinkingLevel: "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
   subAgentModel: string;
+  subAgentEnabled: boolean;
+  subAgentMaxRetries: number;
   onSave: (settings: {
     apiKey: string;
     googleApiKey: string;
@@ -61,6 +63,8 @@ interface AITabProps {
     maxTokens: number;
     geminiThinkingLevel: "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
     subAgentModel: string;
+    subAgentEnabled: boolean;
+    subAgentMaxRetries: number;
   }) => Promise<void>;
 }
 
@@ -77,6 +81,8 @@ export function AITab({
   maxTokens,
   geminiThinkingLevel,
   subAgentModel,
+  subAgentEnabled,
+  subAgentMaxRetries,
   onSave,
 }: AITabProps) {
   const { t } = useTranslation();
@@ -98,6 +104,8 @@ export function AITab({
   const [localMaxTokens, setLocalMaxTokens] = useState(maxTokens);
   const [localGeminiThinkingLevel, setLocalGeminiThinkingLevel] = useState(geminiThinkingLevel);
   const [localSubAgentModel, setLocalSubAgentModel] = useState(subAgentModel);
+  const [localSubAgentEnabled, setLocalSubAgentEnabled] = useState(subAgentEnabled);
+  const [localSubAgentMaxRetries, setLocalSubAgentMaxRetries] = useState(subAgentMaxRetries);
   const [isSaving, setIsSaving] = useState(false);
   const [isModelPickerOpen, setIsModelPickerOpen] = useState(false);
 
@@ -114,6 +122,8 @@ export function AITab({
     setLocalMaxTokens(maxTokens);
     setLocalGeminiThinkingLevel(geminiThinkingLevel);
     setLocalSubAgentModel(subAgentModel);
+    setLocalSubAgentEnabled(subAgentEnabled);
+    setLocalSubAgentMaxRetries(subAgentMaxRetries);
   }, [
     apiKey,
     googleApiKey,
@@ -127,6 +137,8 @@ export function AITab({
     maxTokens,
     geminiThinkingLevel,
     subAgentModel,
+    subAgentEnabled,
+    subAgentMaxRetries,
   ]);
 
   const handleSave = async () => {
@@ -144,6 +156,8 @@ export function AITab({
       maxTokens: localMaxTokens,
       geminiThinkingLevel: localGeminiThinkingLevel,
       subAgentModel: localSubAgentModel,
+      subAgentEnabled: localSubAgentEnabled,
+      subAgentMaxRetries: localSubAgentMaxRetries,
     });
     setIsSaving(false);
   };
@@ -172,7 +186,9 @@ export function AITab({
     localTopK !== topK ||
     localMaxTokens !== maxTokens ||
     localGeminiThinkingLevel !== geminiThinkingLevel ||
-    localSubAgentModel !== subAgentModel;
+    localSubAgentModel !== subAgentModel ||
+    localSubAgentEnabled !== subAgentEnabled ||
+    localSubAgentMaxRetries !== subAgentMaxRetries;
 
   return (
     <div className="space-y-6">
@@ -476,25 +492,56 @@ export function AITab({
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2 mt-4 pt-4 border-t">
-            <Label>Sub-Agent Model (Dùng tự động sửa lỗi Auto-Patch)</Label>
-            <Select
-              value={localSubAgentModel || "__default__"}
-              onValueChange={(val) => setLocalSubAgentModel(val === "__default__" ? "" : val)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Mặc định (Dùng Model Chat)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__default__">Mặc định (Dùng Model Chat)</SelectItem>
-                {allAvailableModels.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>
-                    {m.provider === "google" ? "Google" : m.provider === "nvidia" ? "NVIDIA" : "OpenRouter"} / {m.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">Model này sẽ chạy ngầm để sửa các đoạn code Patch bị sai lệch thay vì làm phiền bạn.</p>
+          <div className="space-y-4 mt-4 pt-4 border-t">
+            <h3 className="font-semibold text-primary flex items-center gap-2">
+              🤖 Cấu hình Sub-Agent (Auto-Fix)
+            </h3>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="sub-agent-toggle" className="flex flex-col gap-1">
+                <span>Bật Sub-Agent</span>
+                <span className="text-xs text-muted-foreground font-normal">Tự động giao tiếp và sửa lỗi khi Patch không khớp mã nguồn.</span>
+              </Label>
+              <Switch
+                id="sub-agent-toggle"
+                checked={localSubAgentEnabled}
+                onCheckedChange={setLocalSubAgentEnabled}
+              />
+            </div>
+            
+            {localSubAgentEnabled && (
+              <>
+                <div className="space-y-2">
+                  <Label>Số lần thử tối đa (Retries)</Label>
+                  <Input 
+                    type="number" 
+                    value={localSubAgentMaxRetries} 
+                    onChange={(e) => setLocalSubAgentMaxRetries(parseInt(e.target.value) || 3)} 
+                    min={1}
+                    max={10}
+                  />
+                  <p className="text-xs text-muted-foreground">Giới hạn số lần AI được thử lại trước khi bỏ qua block lỗi.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Model xử lý riêng cho Sub-Agent</Label>
+                  <Select
+                    value={localSubAgentModel || "__default__"}
+                    onValueChange={(val) => setLocalSubAgentModel(val === "__default__" ? "" : val)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Mặc định (Dùng Model đang chat)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__default__">Mặc định (Dùng Model đang chat)</SelectItem>
+                      {allAvailableModels.filter(m => localModels.includes(m.id)).map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.provider === "google" ? "Google" : m.provider === "nvidia" ? "NVIDIA" : "OpenRouter"} / {m.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
