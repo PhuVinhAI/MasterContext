@@ -49,6 +49,10 @@ fn normalize_line_endings(s: &str) -> String {
     s.replace("\r\n", "\n").replace('\r', "\n")
 }
 
+fn clean_trailing_spaces(s: &str) -> String {
+    s.split('\n').map(|line| line.trim_end()).collect::<Vec<&str>>().join("\n")
+}
+
 pub fn parse_patch_file(content: &str) -> Vec<PatchOperation> {
     let normalized = normalize_line_endings(content);
     let lines: Vec<&str> = normalized.split('\n').collect();
@@ -229,11 +233,11 @@ pub fn parse_patch_file(content: &str) -> Vec<PatchOperation> {
         }
 
         match state {
-            State::Search => search_block.push(line.to_string()),
-            State::Replace => replace_block.push(line.to_string()),
+            State::Search => search_block.push(line.trim_end().to_string()),
+            State::Replace => replace_block.push(line.trim_end().to_string()),
             State::Content => {
                 if let Some(ref mut op) = current_op {
-                    op.content.push(line.to_string());
+                    op.content.push(line.trim_end().to_string());
                 }
             }
             State::Idle => {}
@@ -641,7 +645,7 @@ pub async fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operation
 
                 match fs::read_to_string(&absolute_path) {
                     Ok(raw_content) => {
-                        let mut file_content = normalize_line_endings(&raw_content);
+                        let mut file_content = clean_trailing_spaces(&normalize_line_endings(&raw_content));
                         let mut applied = 0;
 
                         for patch in &op.patches {
@@ -667,8 +671,11 @@ pub async fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operation
 
                                 match rx.await {
                                     Ok(Some(fixed_patch)) => {
-                                        if file_content.contains(&fixed_patch.search) {
-                                            file_content = file_content.replace(&fixed_patch.search, &fixed_patch.replace);
+                                        let clean_fixed_search = clean_trailing_spaces(&normalize_line_endings(&fixed_patch.search));
+                                        let clean_fixed_replace = clean_trailing_spaces(&normalize_line_endings(&fixed_patch.replace));
+
+                                        if file_content.contains(&clean_fixed_search) {
+                                            file_content = file_content.replace(&clean_fixed_search, &clean_fixed_replace);
                                             applied += 1;
                                             total_patches_applied += 1;
                                             let _ = app_handle.emit("patch_log", format!("[SUB-AGENT] ✅ Sửa Patch thành công, tiếp tục ghi file: {}", op.file));
