@@ -40,10 +40,11 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
   const handleCopyErrors = async (e: React.MouseEvent) => {
     e.stopPropagation();
     const errorOps = task.operations.filter(op => op.status === 'error');
-    let text = "--- AUTO-PATCH ERRORS ---\n\n";
+    let text = "Hệ thống báo lỗi khi chạy bản vá (kiểm tra type/build). Vui lòng phân tích log lỗi dưới đây và sửa lại mã nguồn:\n\n```text\n";
     errorOps.forEach(op => {
-      text += `File/Cmd: ${op.file}\nAction: ${op.opType}\nError:\n${op.message}\n\n`;
+      text += `[${op.opType.toUpperCase()}] ${op.file}\n${op.message}\n\n`;
     });
+    text += "```\n";
     await writeText(text);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
@@ -90,9 +91,10 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
               size="sm" 
               className="h-7 text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
               onClick={handleCopyErrors}
+              title="Copy toàn bộ Log lỗi thành Prompt chuẩn để gửi lại cho AI sửa"
             >
               {isCopied ? <Check className="h-3.5 w-3.5 mr-1" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
-              {isCopied ? "Đã copy" : "Copy Lỗi"}
+              {isCopied ? "Đã copy" : "Copy Log Lỗi (Gửi AI)"}
             </Button>
           )}
           {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
@@ -102,7 +104,7 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
       {isExpanded && task.operations.length > 0 && (
         <div className="p-3 grid gap-2 border-t bg-background">
           {task.operations.map((op, i) => {
-            const isOpExpanded = expandedOps[`${op.id}-${i}`];
+            const isOpExpanded = expandedOps[`${op.id}-${i}`] ?? op.status === 'error';
             const isCommand = op.opType === 'command';
             const hasLongOutput = op.message.includes('\n') || op.message.length > 100;
             
