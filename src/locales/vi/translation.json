@@ -58,7 +58,7 @@
   },
   "analysisSettings": {
     "title": "Cài đặt Phân tích Nội dung",
-    "description": "Các tệp có phần mở rộng và thuộc thư mục dưới đây sẽ không được đọc nội dung để đếm token (vẫn hiển thị ở cây thư mục), giúp tăng tốc độ quét cực mạnh.",
+    "description": "Các tệp có phần mở rộng và thuộc thư mục dưới đây sẽ bị ẨN HOÀN TOÀN khỏi dự án (không hiển thị trên cây thư mục, không đọc nội dung), giúp tăng tốc độ quét và tránh xuất nhầm.",
     "extensionsLabel": "Các phần mở rộng cần bỏ qua",
     "extensionsPlaceholder": "png, svg, lock, jpg...",
     "extensionsHint": "Phân cách các phần mở rộng bằng dấu phẩy (,).",

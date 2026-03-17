@@ -58,7 +58,7 @@
   },
   "analysisSettings": {
     "title": "Content Analysis Settings",
-    "description": "Files with the extensions and folders below will not have their content read for token counting (they still show up in tree), which dramatically speeds up scanning.",
+    "description": "Files with the extensions and folders below will be COMPLETELY HIDDEN from the project (they won't show up in the tree, and content won't be read). This dramatically speeds up scanning and prevents accidental exports.",
     "extensionsLabel": "Extensions to skip",
     "extensionsPlaceholder": "png, svg, lock, jpg...",
     "extensionsHint": "Separate extensions with a comma (,).",

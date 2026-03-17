@@ -84,53 +84,80 @@ pub fn perform_smart_scan_and_rebuild(
         builder.build().map_err(|e| e.to_string())?
     };
 
-    // --- BƯỚC 1 & 2: Quét thư mục nhanh (bỏ qua đếm token các file mới/bị đổi) ---
+    // --- BƯỚC 1 & 2: Quét thư mục nhanh ---
     let mut files_to_analyze: Vec<PathBuf> = Vec::new();
     let mut total_files = 0;
 
-    for entry in WalkBuilder::new(root_path)
+    let filter_folders = final_non_analyzable_folders.clone();
+
+    let walker = WalkBuilder::new(root_path)
         .overrides(override_builder.clone())
-        .build()
-        .filter_map(Result::ok)
-    {
+        .filter_entry(move |entry| {
+            // Tối ưu: Ngăn chặn WalkBuilder đi vào các thư mục bị loại trừ
+            if entry.file_type().map_or(false, |ft| ft.is_dir()) {
+                if let Some(name) = entry.file_name().to_str() {
+                    if filter_folders.iter().any(|f| f == name) {
+                        return false;
+                    }
+                }
+            }
+            true
+        })
+        .build();
+
+    for entry in walker.filter_map(Result::ok) {
         if let Ok(metadata) = entry.metadata() {
             let entry_path = entry.into_path();
-            path_map.insert(entry_path.clone(), metadata.is_dir());
 
-            if metadata.is_file() {
-                total_files += 1;
-                if let Ok(relative_path) = entry_path.strip_prefix(root_path) {
-                    let relative_path_str = relative_path
-                        .to_string_lossy()
-                        .to_string()
-                        .replace("\\", "/");
+            if let Ok(relative_path) = entry_path.strip_prefix(root_path) {
+                let relative_path_str = relative_path
+                    .to_string_lossy()
+                    .to_string()
+                    .replace("\\", "/");
+
+                // Bỏ qua kiểm tra loại trừ cho thư mục gốc
+                if relative_path_str.is_empty() {
+                    path_map.insert(entry_path.clone(), true);
+                    continue;
+                }
+
+                let filename = relative_path
+                    .file_name()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("");
+                let extension = relative_path
+                    .extension()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("");
+
+                let path_parts: Vec<&str> = relative_path_str.split('/').collect();
+
+                // Kiểm tra xem file/thư mục này có thuộc danh sách loại trừ không
+                let mut should_skip = NON_ANALYZABLE_FILENAMES.contains(filename)
+                    || final_non_analyzable_extensions.contains(extension);
+
+                if !should_skip {
+                    for folder in &final_non_analyzable_folders {
+                        if path_parts.contains(&folder.as_str()) {
+                            should_skip = true;
+                            break;
+                        }
+                    }
+                }
+
+                // NẾU BỊ LOẠI TRỪ -> BỎ QUA HOÀN TOÀN (KHÔNG ĐƯA VÀO CÂY THƯ MỤC VÀ BỘ NHỚ)
+                if should_skip {
+                    continue;
+                }
+
+                path_map.insert(entry_path.clone(), metadata.is_dir());
+
+                if metadata.is_file() {
+                    total_files += 1;
 
                     if total_files % 100 == 0 {
                         // Giảm thiểu số lần emit để tăng tốc UI
                         let _ = window.emit("scan_progress", &relative_path_str);
-                    }
-
-                    let filename = relative_path
-                        .file_name()
-                        .and_then(|s| s.to_str())
-                        .unwrap_or("");
-                    let extension = relative_path
-                        .extension()
-                        .and_then(|s| s.to_str())
-                        .unwrap_or("");
-
-                    let mut should_skip_analysis = NON_ANALYZABLE_FILENAMES.contains(filename)
-                        || final_non_analyzable_extensions.contains(extension);
-
-                    // Kiểm tra xem file có nằm trong thư mục cần bỏ qua phân tích không
-                    if !should_skip_analysis {
-                        let path_parts: Vec<&str> = relative_path_str.split('/').collect();
-                        for folder in &final_non_analyzable_folders {
-                            if path_parts.contains(&folder.as_str()) {
-                                should_skip_analysis = true;
-                                break;
-                            }
-                        }
                     }
 
                     let current_mtime = metadata
@@ -150,10 +177,8 @@ pub fn perform_smart_scan_and_rebuild(
                         }
                     }
 
-                    if token_count == 0 && !should_skip_analysis {
+                    if token_count == 0 {
                         files_to_analyze.push(entry_path.clone());
-                    } else if token_count == 0 && should_skip_analysis {
-                        token_count = 1; // File bỏ qua phân tích gán 1 token
                     }
 
                     let file_meta = FileMetadata {
