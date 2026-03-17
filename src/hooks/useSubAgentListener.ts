@@ -9,15 +9,20 @@ const cleanTrailing = (s: string) => s.split('\n').map(line => line.trimEnd()).j
 
 export function useSubAgentListener() {
   useEffect(() => {
-    const unlistenPromise = listen<{ file: string; fileContent: string; failedSearch: string; failedReplace: string }>(
+    const unlistenPromise = listen<{ id: string; file: string; fileContent: string; failedSearch: string; failedReplace: string }>(
       "patch_needs_fix",
       async (event) => {
-        const { file, fileContent, failedSearch, failedReplace } = event.payload;
+        const { id, file, fileContent, failedSearch, failedReplace } = event.payload;
         const state = useAppStore.getState();
-        const { addPatchLog } = state.actions;
+        const { addPatchLog, addSubAgentLogToOperation } = state.actions;
+
+        const logUI = (msg: string) => {
+          addPatchLog(`[SUB-AGENT 🤖] ${msg}`);
+          addSubAgentLogToOperation(id, msg);
+        };
 
         if (!state.subAgentEnabled) {
-          addPatchLog(`[SUB-AGENT] ⚠️ Tính năng Sub-Agent đã bị tắt trong Cài đặt. Bỏ qua block lỗi tại file: ${file}`);
+          logUI(`⚠️ Tính năng Sub-Agent đã bị tắt trong Cài đặt. Bỏ qua block lỗi tại file: ${file}`);
           await invoke("submit_patch_fix", { search: null, replace: null });
           return;
         }
@@ -38,10 +43,12 @@ export function useSubAgentListener() {
 
           if (!actualApiKey) throw new Error("Chưa cung cấp API Key cho Sub-Agent.");
 
+          logUI(`Khởi động Sub-Agent (${model.name})...`);
+
           let attempt = 0;
           let success = false;
           let chatHistory: any[] = [];
-          
+
           const initialPrompt = `You are a strict, autonomous code-fixing agent.
 I tried to apply a SEARCH/REPLACE block to a file, but the SEARCH block did not exactly match the file's current content (indentation or minor changes might exist).
 
@@ -76,7 +83,7 @@ FORMAT REQUIRED:
 
           while (attempt < subAgentMaxRetries && !success) {
             attempt++;
-            addPatchLog(`[SUB-AGENT 🤖] Đang xử lý file ${file} (Lần thử ${attempt}/${subAgentMaxRetries})...`);
+            logUI(`Đang phân tích và sửa mã nguồn (Lần thử ${attempt}/${subAgentMaxRetries})...`);
 
             let fixResult = "";
 
@@ -125,34 +132,36 @@ FORMAT REQUIRED:
             if (searchMatch && replaceMatch) {
               const proposedSearch = searchMatch[1];
               const proposedReplace = replaceMatch[1];
-              
+
               const cleanFileContent = cleanTrailing(normalize(fileContent));
               const cleanProposedSearch = cleanTrailing(normalize(proposedSearch));
 
               if (cleanFileContent.includes(cleanProposedSearch)) {
                 success = true;
-                addPatchLog(`[SUB-AGENT 🤖] ✅ Sửa Patch thành công ở lần thử thứ ${attempt}.`);
+                logUI(`✅ Vá lỗi thành công! Cập nhật mã nguồn...`);
                 await invoke("submit_patch_fix", {
                   search: proposedSearch,
                   replace: proposedReplace,
                 });
                 return;
               } else {
-                addPatchLog(`[SUB-AGENT 🤖] ❌ Lần thử ${attempt} thất bại: Search block vẫn không khớp với code thực tế.`);
+                logUI(`❌ Lần thử ${attempt} thất bại: Mã nguồn thay thế vẫn chưa khớp.`);
                 chatHistory.push({ role: "user", content: "Your proposed SEARCH block STILL does not exactly match the FILE CONTENT. Please try again. Pay extremely close attention to indentation, blank lines, and brackets. Output ONLY the strict SEARCH/REPLACE block." });
               }
             } else {
-              addPatchLog(`[SUB-AGENT 🤖] ❌ Lần thử ${attempt} thất bại: Trả về sai định dạng block.`);
+              logUI(`❌ Lần thử ${attempt} thất bại: AI trả về sai cấu trúc format.`);
               chatHistory.push({ role: "user", content: "You did not output the proper <<<<<<< SEARCH ... ======= ... >>>>>>> REPLACE format. Try again and output ONLY the block." });
             }
           }
 
-          addPatchLog(`[SUB-AGENT 🤖] 🚨 Hết số lần thử (${subAgentMaxRetries}). Bỏ qua block thay đổi này.`);
+          if (!success) {
+            logUI(`🚨 Đã thử tối đa (${subAgentMaxRetries} lần). Bỏ qua block này.`);
+          }
           await invoke("submit_patch_fix", { search: null, replace: null });
 
         } catch (e) {
           console.error("Sub-Agent Error:", e);
-          addPatchLog(`[SUB-AGENT 🤖] ERROR: ${String(e)}`);
+          logUI(`🚨 Lỗi cấu hình / Gọi API Sub-Agent: ${String(e)}`);
           await invoke("submit_patch_fix", { search: null, replace: null });
         }
       }

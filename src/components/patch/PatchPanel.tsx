@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAppStore, useAppActions } from "@/store/appStore";
 import { useShallow } from "zustand/react/shallow";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Code, CheckCircle2, XCircle, FileEdit, FilePlus, FileMinus, FolderPlus, Replace, TerminalSquare, ChevronDown, ChevronUp, Copy, Check, Clock } from "lucide-react";
+import { Code, CheckCircle2, XCircle, FileEdit, FilePlus, FileMinus, FolderPlus, Replace, TerminalSquare, ChevronDown, ChevronUp, Copy, Check, Clock, Bot, Loader2 } from "lucide-react";
 import { PatchHeader } from "./PatchHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,7 +59,7 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
 
   return (
     <div className={cn("flex flex-col rounded-lg overflow-hidden border shadow-xs transition-colors", hasError ? "border-destructive/30" : "border-border")}>
-      <div 
+      <div
         className={cn(
           "flex items-center justify-between p-3 cursor-pointer select-none transition-colors",
           hasError ? "bg-destructive/5 hover:bg-destructive/10" : "bg-muted/30 hover:bg-muted/50"
@@ -77,7 +77,7 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
           <span className="text-sm font-semibold flex items-center gap-1.5">
             Task <Clock className="h-3 w-3 text-muted-foreground ml-1" /> <span className="text-xs text-muted-foreground font-mono">{timeStr}</span>
           </span>
-          
+
           <div className="hidden sm:flex items-center gap-2 ml-2 text-xs">
             {successCount > 0 && <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 h-5">Thành công: {successCount}</Badge>}
             {errorCount > 0 && <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 h-5">Lỗi: {errorCount}</Badge>}
@@ -86,9 +86,9 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
 
         <div className="flex items-center gap-3">
           {hasError && (
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="h-7 text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
               onClick={handleCopyErrors}
               title="Copy toàn bộ Log lỗi thành Prompt chuẩn để gửi lại cho AI sửa"
@@ -107,7 +107,7 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
             const isOpExpanded = expandedOps[`${op.id}-${i}`] ?? op.status === 'error';
             const isCommand = op.opType === 'command';
             const hasLongOutput = op.message.includes('\n') || op.message.length > 100;
-            
+
             return (
               <div key={`${op.id}-${i}`} className="flex flex-col gap-1.5 p-2 rounded-md border bg-muted/10">
                 <div className="flex items-center justify-between gap-2">
@@ -123,10 +123,10 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
                     <div className="h-3.5 w-3.5 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
                   )}
                 </div>
-                
+
                 {isCommand || hasLongOutput ? (
                   <div className="pl-6">
-                    <div 
+                    <div
                       className="text-[10px] font-semibold text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1 mb-1 transition-colors select-none w-fit"
                       onClick={() => toggleExpandOp(`${op.id}-${i}`)}
                     >
@@ -147,6 +147,30 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
                     {op.message}
                   </div>
                 )}
+
+                {/* UI HIỂN THỊ SUB-AGENT HOẠT ĐỘNG */}
+                {op.subAgentLogs && op.subAgentLogs.length > 0 && (
+                  <div className="pl-6 mt-1">
+                    <div className="rounded-md border border-purple-500/30 bg-purple-500/5 overflow-hidden">
+                      <div className="flex items-center gap-2 px-2 py-1.5 bg-purple-500/10 border-b border-purple-500/20">
+                        <Bot className="h-3.5 w-3.5 text-purple-500" />
+                        <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Sub-Agent Auto Fix</span>
+                        {op.status === 'pending' && (
+                          <Loader2 className="h-3 w-3 animate-spin text-purple-500 ml-auto" />
+                        )}
+                      </div>
+                      <div className="p-2 space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar">
+                        {op.subAgentLogs.map((log, idx) => (
+                          <div key={idx} className="text-[11px] text-foreground/80 flex items-start gap-1.5">
+                            <span className="text-purple-500/50 mt-0.5 shrink-0">›</span>
+                            <span>{log}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
               </div>
             );
           })}
@@ -189,14 +213,14 @@ export function PatchPanel() {
 
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
-      <PatchHeader 
+      <PatchHeader
         isPatchServerRunning={isPatchServerRunning}
         onStart={startPatchServer}
         onStop={stopPatchServer}
         onClearLogs={clearPatchLogs}
         status={isPatchServerRunning ? patchTaskStatus : 'idle'}
       />
-      
+
       <ScrollArea className="flex-1 min-h-0" viewportRef={scrollRef}>
         <div className="p-4 space-y-4 w-full min-w-0">
           {patchTasks.length === 0 ? (

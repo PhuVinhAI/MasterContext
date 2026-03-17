@@ -28,6 +28,7 @@ export interface UIActions {
   startNewPatchTask: () => void;
   updateCurrentPatchTaskStatus: (status: "idle" | "running" | "success" | "error") => void;
   addOrUpdatePatchOperation: (op: import("../types").PatchOpUI) => void;
+  addSubAgentLogToOperation: (opId: string, log: string) => void;
   startPatchServer: () => Promise<void>;
   stopPatchServer: () => Promise<void>;
   checkKiloInstalled: () => Promise<void>;
@@ -128,7 +129,7 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
   stopKiloServer: async () => {
     try {
       await invoke("stop_kilo_server");
-      // Chỉ cập nhật trạng thái tác vụ. 
+      // Chỉ cập nhật trạng thái tác vụ.
       // Trạng thái Server (isKiloServerRunning) sẽ được cập nhật dựa vào event "kilo_status_changed" từ Rust
       // Điều này đảm bảo UI chờ Backend dọn dẹp sạch Port trước khi người dùng bấm bật lại.
       set({ kiloTaskStatus: "idle" });
@@ -176,16 +177,40 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
       const newTasks = [...state.patchTasks];
       const lastTaskIndex = newTasks.length - 1;
       const lastTask = { ...newTasks[lastTaskIndex] };
-      
+
       const exists = lastTask.operations.findIndex(o => o.id === op.id);
       if (exists >= 0) {
         const newOps = [...lastTask.operations];
-        newOps[exists] = op;
+        // Bảo tồn lại mảng subAgentLogs nếu đã có trước đó
+        const existingSubLogs = newOps[exists].subAgentLogs;
+        newOps[exists] = { ...op, subAgentLogs: existingSubLogs };
         lastTask.operations = newOps;
       } else {
         lastTask.operations = [...lastTask.operations, op];
       }
-      
+
+      newTasks[lastTaskIndex] = lastTask;
+      return { patchTasks: newTasks };
+    });
+  },
+  addSubAgentLogToOperation: (opId, log) => {
+    set((state) => {
+      if (state.patchTasks.length === 0) return state;
+      const newTasks = [...state.patchTasks];
+      const lastTaskIndex = newTasks.length - 1;
+      const lastTask = { ...newTasks[lastTaskIndex] };
+
+      const opIndex = lastTask.operations.findIndex(o => o.id === opId);
+      if (opIndex >= 0) {
+        const newOps = [...lastTask.operations];
+        const currentLogs = newOps[opIndex].subAgentLogs || [];
+        newOps[opIndex] = {
+          ...newOps[opIndex],
+          subAgentLogs: [...currentLogs, log]
+        };
+        lastTask.operations = newOps;
+      }
+
       newTasks[lastTaskIndex] = lastTask;
       return { patchTasks: newTasks };
     });
@@ -229,20 +254,20 @@ export const createUIActions: StateCreator<AppState, [], [], UIActions> = (
     try {
       const rawLines = await invoke<string[]>("get_kilo_models");
       const models: {id: string, label: string}[] = [];
-      
+
       rawLines.forEach(line => {
         const cleanLine = line.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '').trim();
         if (!cleanLine || cleanLine.startsWith('---') || cleanLine.startsWith('===') || cleanLine.toLowerCase().includes('provider')) return;
-        
+
         const parts = cleanLine.split(/\s+/);
         if (parts.length > 0) {
            let id = parts.find(p => p.includes('/')) || parts[0];
            models.push({ id, label: cleanLine });
         }
       });
-      
+
       set({ kiloAvailableModels: models });
-      
+
       const savedModel = _get().selectedKiloModel;
       const modelExists = models.some(m => m.id === savedModel);
 

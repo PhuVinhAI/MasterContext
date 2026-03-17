@@ -316,7 +316,7 @@ pub async fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operation
                         use std::os::windows::process::CommandExt;
                         c.creation_flags(0x08000000);
                     }
-                    
+
                     match c.output() {
                         Ok(output) => {
                             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
@@ -629,6 +629,16 @@ pub async fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operation
             }
             PatchOpType::Modify => {
                 let absolute_path = root_dir.join(&op.file);
+
+                emit_event(
+                    app_handle,
+                    &op_id,
+                    &op.file,
+                    "modify",
+                    "pending",
+                    "Đang phân tích và áp dụng...",
+                );
+
                 if !absolute_path.exists() {
                     emit_event(
                         app_handle,
@@ -655,7 +665,7 @@ pub async fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operation
                                 total_patches_applied += 1;
                             } else {
                                 let _ = app_handle.emit("patch_log", format!("[SUB-AGENT] 🤖 Đang gọi Sub-Agent tự động sửa lỗi Patch cho file: {}", op.file));
-                                
+
                                 let (tx, rx) = tokio::sync::oneshot::channel();
                                 {
                                     let state = app_handle.state::<crate::PatchFixState>();
@@ -663,6 +673,7 @@ pub async fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operation
                                 }
 
                                 let _ = app_handle.emit("patch_needs_fix", serde_json::json!({
+                                    "id": op_id.clone(),
                                     "file": op.file,
                                     "fileContent": file_content,
                                     "failedSearch": patch.search,

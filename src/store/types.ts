@@ -173,6 +173,7 @@ export interface PatchOpUI {
   opType: 'modify' | 'create' | 'delete' | 'rename' | 'mkdir' | 'command';
   status: 'pending' | 'success' | 'error';
   message: string;
+  subAgentLogs?: string[];
 }
 
 export interface PatchTaskUI {
