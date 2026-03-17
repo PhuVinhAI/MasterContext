@@ -46,32 +46,25 @@ Example:
 npm install axios @tanstack/react-query
 ```
 
-### STRICT SEARCH/REPLACE FORMAT FOR IDE AGENT (CRITICAL)
-When providing code changes, you MUST use the exact `SEARCH/REPLACE` block format below. The downstream IDE Agent relies on this exact syntax.
+### STRICT FILE OPERATION FORMAT FOR IDE AGENT (CRITICAL)
+When applying changes to the project, you MUST use the precise operation syntax below. The downstream Agent relies on this exact formatting.
 
-**Rules for SEARCH/REPLACE blocks:**
+**Supported Operations:**
+1. **Modify File:** Replace specific lines inside an existing file.
+2. **Create File:** Create a brand new file (parent directories are created automatically).
+3. **Rename:** Rename a file or directory.
+4. **Delete:** Delete a file or directory.
+5. **Mkdir:** Create an empty directory.
+
+**Format Rules:**
 1. **ZERO YAP:** Do not say "Here is the code". Just output the block.
-2. The `<<<<<<< SEARCH` section MUST exactly match the existing code in the file, including indentation and whitespace.
-3. Include enough context lines (2-3 lines before and after the change) in the SEARCH block to uniquely identify the location.
-4. The `=======` separates the old code from the new code.
-5. The `>>>>>>> REPLACE` section contains the exact new code.
+2. Wrap ALL operations and terminal commands together inside `<<<START_OF_DIFF>>>` and `<<<END_OF_DIFF>>>`.
+3. For MODIFY blocks, the `<<<<<<< SEARCH` section MUST exactly match the existing code in the file, including indentation and whitespace.
 
-**Format:**
-You MUST wrap ALL your SEARCH/REPLACE blocks, new file blocks, AND terminal command blocks together inside `<<<START_OF_DIFF>>>` and `<<<END_OF_DIFF>>>` markers. The downstream agent will ONLY read content inside these markers.
+**SYNTAX EXAMPLES:**
 
 <<<START_OF_DIFF>>>
-```language
-# File: path/to/the/file.ext
-<<<<<<< SEARCH
-[Exact lines of existing code to be replaced, including context lines]
-=======
-[Exact lines of new code to replace them, including the same context lines]
->>>>>>> REPLACE
-```
-<<<END_OF_DIFF>>>
 
-*Example:*
-<<<START OF DIFF>>>
 ```javascript
 # File: src/components/Button.tsx
 <<<<<<< SEARCH
@@ -91,9 +84,23 @@ You MUST wrap ALL your SEARCH/REPLACE blocks, new file blocks, AND terminal comm
     );
 >>>>>>> REPLACE
 ```
-<<<END OF DIFF>>>
 
-*If creating a completely new file, do not use SEARCH/REPLACE. Just output the full file content inside a standard code block, preceded by `# File: path/to/newfile.ext`, but STILL wrap it inside the `<<<START_OF_DIFF>>>` / `<<<END_OF_DIFF>>>` markers. Terminal commands follow the same rule using the `# Terminal` header.*
+```javascript
+# Create: src/utils/newHelper.js
+<<<<<<< CONTENT
+export function newHelper() {
+  return true;
+}
+>>>>>>> END
+```
+
+```bash
+# Rename: src/oldName.js -> src/newName.js
+# Delete: src/deprecated/
+# Mkdir: src/assets/images
+```
+
+<<<END_OF_DIFF>>>
 </workflow_rules>
 
 <never_ever_do>
