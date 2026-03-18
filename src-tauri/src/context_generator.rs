@@ -7,51 +7,6 @@ use std::fmt::Write as FmtWrite;
 use std::fs;
 use std::path::Path;
 
-fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
-    let extension = std::path::Path::new(file_rel_path)
-        .extension()
-        .and_then(std::ffi::OsStr::to_str)
-        .unwrap_or("")
-        .to_lowercase();
-
-    let c_style = [
-        "ts", "js", "tsx", "jsx", "vue", "svelte", "cs", "java", "cpp", "c", "h", "hpp", "cc", "cxx", "m", "mm", "rs",
-        "go", "php", "swift", "kt",
-    ];
-
-    if !c_style.contains(&extension.as_str()) {
-        return content.to_string();
-    }
-
-    // Nén các đoạn UI tốn nhiều token nếu là file frontend
-    let is_ui = ["tsx", "jsx", "vue", "svelte"].contains(&extension.as_str());
-    let mut processed_content = content.to_string();
-    if is_ui {
-        // Thay thế bằng ... thay vì /*...*/ để tránh bị xóa ở bước sau
-        processed_content = CLASSNAME_REGEX
-            .replace_all(&processed_content, "className=\"...\"")
-            .to_string();
-        processed_content = CLASSNAME_TPL_REGEX
-            .replace_all(&processed_content, "className={`...`}")
-            .to_string();
-        processed_content = CLASS_REGEX
-            .replace_all(&processed_content, "class=\"...\"")
-            .to_string();
-        processed_content = SVG_REGEX
-            .replace_all(&processed_content, "<svg>...</svg>")
-            .to_string();
-    }
-
-    // Loại bỏ comment trước khi phân tích để tránh ngoặc nhọn trong comment gây nhiễu trạng thái
-    let clean_content = remove_comments_from_content(&processed_content, file_rel_path);
-
-    // Gọi sang module phân tích AST-lite mới để loại bỏ logic triệt để
-    let dummy = crate::dummy_logic_parser::process_c_style_dummy(&clean_content);
-
-    // Xóa bớt khoảng trắng thừa sinh ra do lược bỏ code
-    EMPTY_LINES_REGEX.replace_all(&dummy, "\n\n").to_string()
-}
-
 lazy_static! {
     static ref HASH_COMMENT: Regex = Regex::new(r"#.*").unwrap();
     static ref HTML_XML_COMMENT: Regex = Regex::new(r"(?s)<!--.*?-->").unwrap();
@@ -74,15 +29,6 @@ lazy_static! {
         r")\s*\r?\n?"
     )).unwrap();
     static ref WHITESPACE_REGEX: Regex = Regex::new(r"\s+").unwrap();
-
-    // Bớt aggressive: Chỉ nén class quá dài (>30 ký tự) để giữ lại context cơ bản
-    static ref CLASSNAME_REGEX: Regex = Regex::new(r#"className="([^"]{30,})""#).unwrap();
-    static ref CLASSNAME_TPL_REGEX: Regex = Regex::new(r#"className=\{`([^`]{30,})`\}"#).unwrap();
-    static ref CLASS_REGEX: Regex = Regex::new(r#"class="([^"]{30,})""#).unwrap();
-    static ref SVG_REGEX: Regex = Regex::new(r#"(?s)<svg[^>]*>.*?</svg>"#).unwrap();
-
-    // Nén các dòng trống
-    static ref EMPTY_LINES_REGEX: Regex = Regex::new(r"\n\s*\n\s*\n+").unwrap();
 }
 
 fn remove_c_style_comments(content: &str) -> String {
@@ -473,9 +419,9 @@ pub fn generate_context_from_files(
                 }
 
                 if export_dummy_logic {
-                    content = generate_dummy_logic(&content, &file_rel_path);
-                }
-                if without_comments {
+                    let no_comment_content = remove_comments_from_content(&content, &file_rel_path);
+                    content = crate::dummy_parser::process(&no_comment_content, &file_rel_path);
+                } else if without_comments {
                     content = remove_comments_from_content(&content, &file_rel_path);
                 }
                 if remove_debug_logs {
@@ -686,10 +632,9 @@ pub fn generate_context_from_files(
                 let mut processed_content = content;
 
                 if export_dummy_logic {
-                    processed_content = generate_dummy_logic(&processed_content, &file_rel_path);
-                }
-
-                if without_comments {
+                    let no_comment_content = remove_comments_from_content(&processed_content, &file_rel_path);
+                    processed_content = crate::dummy_parser::process(&no_comment_content, &file_rel_path);
+                } else if without_comments {
                     processed_content =
                         remove_comments_from_content(&processed_content, &file_rel_path);
                 }
