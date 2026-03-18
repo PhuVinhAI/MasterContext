@@ -23,6 +23,7 @@ pub struct KiloAbortSignal(pub Arc<std::sync::Mutex<Option<tokio::sync::oneshot:
 
 pub struct PatchServerHandle(pub Arc<Mutex<Option<tokio::sync::oneshot::Sender<()>>>>);
 pub struct PatchFixState(pub Arc<Mutex<Option<tokio::sync::oneshot::Sender<Option<patch_executor::SearchReplace>>>>>);
+pub struct PatchAbortSignal(pub Arc<std::sync::atomic::AtomicBool>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -32,6 +33,7 @@ pub fn run() {
     let kilo_abort = Arc::new(std::sync::Mutex::new(None));
     let patch_handle = Arc::new(Mutex::new(None));
     let patch_fix_state = Arc::new(Mutex::new(None));
+    let patch_abort = Arc::new(std::sync::atomic::AtomicBool::new(false));
 
     tauri::Builder::default()
         .manage(ActiveProjectState(active_project))
@@ -40,6 +42,7 @@ pub fn run() {
         .manage(KiloAbortSignal(kilo_abort))
         .manage(PatchServerHandle(patch_handle))
         .manage(PatchFixState(patch_fix_state))
+        .manage(PatchAbortSignal(patch_abort))
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -146,7 +149,7 @@ pub fn run() {
                 if let Some(tx) = abort_state.0.lock().unwrap().take() {
                     let _ = tx.send(());
                 }
-                
+
                 let state = app_handle.state::<KiloServerHandle>();
                 if let Some(tx) = state.0.lock().unwrap().take() {
                     let _ = tx.send(());

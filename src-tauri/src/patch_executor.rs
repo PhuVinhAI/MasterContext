@@ -251,7 +251,12 @@ pub fn parse_patch_file(content: &str) -> Vec<PatchOperation> {
     operations
 }
 
-pub async fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operations: Vec<PatchOperation>) {
+pub async fn apply_operations(
+    app_handle: &AppHandle,
+    root_dir: &Path,
+    operations: Vec<PatchOperation>,
+    abort_signal: std::sync::Arc<std::sync::atomic::AtomicBool>
+) {
     let mut total_files_updated = 0;
     let mut total_files_created = 0;
     let mut total_files_deleted = 0;
@@ -267,6 +272,13 @@ pub async fn apply_operations(app_handle: &AppHandle, root_dir: &Path, operation
     );
 
     for (idx, op) in operations.into_iter().enumerate() {
+        // Bắt sự kiện người dùng bấm Stop Server / Force Stop
+        if abort_signal.load(std::sync::atomic::Ordering::Relaxed) {
+            let _ = app_handle.emit("patch_log", "[SYSTEM] 🛑 Tiến trình Auto-Patch đã bị hủy bởi người dùng.");
+            total_ops_failed += 1;
+            break;
+        }
+
         // Tạo ID duy nhất bằng cách kết hợp tên file và index để tránh việc UI ghi đè lên nhau
         let op_id = format!("{}_{}", op.file, idx);
         let emit_event =
