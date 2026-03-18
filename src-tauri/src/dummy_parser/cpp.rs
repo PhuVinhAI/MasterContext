@@ -129,25 +129,52 @@ fn is_stripping(stack: &[ScopeType]) -> bool {
 }
 
 fn determine_if_keep_scope(buffer: &str, paren_depth: usize) -> bool {
-    // 1. Nếu đang mở ngoặc nhọn ở bên trong dấu () -> Là hàm Lambda hoặc Struct Initialization -> STRIP
     if paren_depth > 0 {
-        return false;
-    }
-    // 2. Nếu có dấu '=' trước ngoặc nhọn -> Đây là lệnh gán mảng, khởi tạo object inline -> STRIP
-    if buffer.contains('=') {
-        return false;
+        return false; // Lambda, initializer lists, v.v. -> STRIP
     }
 
-    // 3. Phân tách các từ khoá để nhận diện cấp độ
-    let tokens: Vec<&str> = buffer.split(|c: char| !c.is_alphanumeric() && c != '_').filter(|s| !s.is_empty()).collect();
+    // Làm sạch buffer bằng cách loại bỏ toàn bộ nội dung nằm trong (...) và <...>
+    // Giúp loại bỏ các keyword "class", "struct" bị kẹt trong template args hoặc params.
+    let mut clean_buf = String::with_capacity(buffer.len());
+    let mut p_depth = 0;
+    let mut a_depth = 0;
 
-    // Kiểm tra ngược từ cuối buffer lên
-    for t in tokens.iter().rev() {
-        if matches!(*t, "class" | "struct" | "namespace" | "enum" | "union" | "extern" | "concept") {
+    for c in buffer.chars() {
+        match c {
+            '(' => p_depth += 1,
+            ')' => if p_depth > 0 { p_depth -= 1 },
+            '<' => a_depth += 1,
+            '>' => if a_depth > 0 { a_depth -= 1 },
+            _ => {
+                if p_depth == 0 && a_depth == 0 {
+                    clean_buf.push(c);
+                }
+            }
+        }
+    }
+
+    // Tokenize phần buffer đã được làm sạch
+    let tokens: Vec<&str> = clean_buf
+        .split(|c: char| !c.is_alphanumeric() && c != '_')
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    // Nếu sau khi xóa params & template args, bên ngoài vẫn còn các keyword cấu trúc -> KEEP
+    for t in &tokens {
+        if matches!(
+            *t,
+            "class" | "struct" | "namespace" | "enum" | "union" | "interface" | "concept"
+        ) {
             return true;
         }
     }
 
-    // Mặc định, nếu không khớp những cấu trúc định nghĩa ở trên, đó là HÀM -> STRIP
+    // Xử lý đặc biệt cho `extern "C" {` (Không có params -> KEEP)
+    // Nhưng `extern "C" void foo() {` (Có params trong original buffer -> STRIP)
+    if buffer.contains("extern") && !buffer.contains(')') {
+        return true;
+    }
+
+    // Mọi thứ khác (Hàm, if, while, for, switch, try, catch...) -> STRIP
     false
 }
