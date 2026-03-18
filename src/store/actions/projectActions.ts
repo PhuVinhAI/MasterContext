@@ -180,6 +180,7 @@ export const createProjectActions: StateCreator<
         alwaysApplyText: payload.always_apply_text ?? null,
         appendIdePrompt: payload.append_ide_prompt ?? false,
         appendGroupPrompt: payload.append_group_prompt ?? false,
+        appendKiloPrompt: payload.append_kilo_prompt ?? false,
         exportExcludeExtensions: payload.export_exclude_extensions ?? [],
         gitExportModeIsContext: payload.git_export_mode_is_context ?? false,
       };

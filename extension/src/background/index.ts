@@ -188,19 +188,33 @@ async function executeKiloWorkflow(url: string, tabId?: number, isManual: boolea
     let prompt = lastTurn.content;
     if (!prompt) return;
 
-    // Hỗ trợ cả dấu gạch dưới (START_OF_DIFF) và khoảng trắng (START OF DIFF), không phân biệt hoa thường và linh hoạt số lượng dấu < >
-    const diffRegex = /<{2,4}\s*START[_ ]OF[_ ]DIFF\s*>{2,4}([\s\S]*?)<{2,4}\s*END[_ ]OF[_ ]DIFF\s*>{2,4}/gi;
-    const matches = [...prompt.matchAll(diffRegex)];
-    if (matches.length > 0) {
-      // BẮT BUỘC: Phải bọc lại bằng marker chuẩn vì luồng Kilo Agent (apply.md) ở local yêu cầu quét tìm chính xác chuỗi <<<START_OF_DIFF>>>
-      prompt = matches.map(m => `<<<START_OF_DIFF>>>\n${m[1].trim()}\n<<<END_OF_DIFF>>>`).join('\n\n');
+    let extractedData = "";
+
+    if (targetEngine === 'kilo') {
+      const kiloRegex = /<{2,4}\s*KILO[_ ]TASK\s*>{2,4}([\s\S]*?)<{2,4}\s*END[_ ]KILO[_ ]TASK\s*>{2,4}/gi;
+      const matches = [...prompt.matchAll(kiloRegex)];
+      if (matches.length > 0) {
+        extractedData = matches.map(m => m[1].trim()).join('\n\n');
+      }
     } else {
-      showNotification(`${prefix} Bỏ Qua`, 'AI đã trả lời nhưng không có mã nguồn nào cần cập nhật.', 'info', tabId);
+      // Hỗ trợ cả dấu gạch dưới (START_OF_DIFF) và khoảng trắng (START OF DIFF)
+      const diffRegex = /<{2,4}\s*START[_ ]OF[_ ]DIFF\s*>{2,4}([\s\S]*?)<{2,4}\s*END[_ ]OF[_ ]DIFF\s*>{2,4}/gi;
+      const matches = [...prompt.matchAll(diffRegex)];
+      if (matches.length > 0) {
+        extractedData = matches.map(m => `<<<START_OF_DIFF>>>\n${m[1].trim()}\n<<<END_OF_DIFF>>>`).join('\n\n');
+      }
+    }
+
+    if (!extractedData) {
+      showNotification(`${prefix} Bỏ Qua`, `AI đã trả lời nhưng không tìm thấy cấu trúc lệnh hợp lệ cho ${targetEngine.toUpperCase()}.`, 'info', tabId);
       return;
     }
 
+    // Đổi prompt thành dữ liệu đã bóc tách
+    prompt = extractedData;
+
     // Thông báo bắt đầu chạy
-    showNotification(`${prefix} Đang Chạy`, 'Đang gửi mã nguồn xuống cho Kilo CLI xử lý...', 'info', tabId);
+    showNotification(`${prefix} Đang Chạy`, `Đang gửi lệnh đến ${targetEngine === 'kilo' ? 'Kilo Agent' : 'Auto-Patch'}...`, 'info', tabId);
 
     // Đợi process kết thúc (Local server trả về HTTP 200 hoặc HTTP 500)
     const response = await fetch(`http://127.0.0.1:${targetPort}${targetEndpoint}`, {

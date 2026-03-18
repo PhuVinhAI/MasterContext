@@ -42,6 +42,7 @@ export interface SettingsActions {
   setAlwaysApplyText: (text: string) => Promise<void>;
   setAppendIdePrompt: (enabled: boolean) => Promise<void>;
   setAppendGroupPrompt: (enabled: boolean) => Promise<void>;
+  setAppendKiloPrompt: (enabled: boolean) => Promise<void>;
   setExportExcludeExtensions: (extensions: string[]) => Promise<void>;
   setGitExportMode: (enabled: boolean) => Promise<void>;
   updateAppSettings: (settings: Partial<AppSettings>) => Promise<void>;
@@ -225,6 +226,14 @@ export const createSettingsActions: StateCreator<
     await _persistExportToggle(rootPath, activeProfile, "set_append_group_prompt_setting", enabled,
       () => set((s) => ({ appendGroupPrompt: !s.appendGroupPrompt })),
       "Không thể lưu cài đặt Prompt Nhóm");
+  },
+  setAppendKiloPrompt: async (enabled: boolean) => {
+    const { rootPath, activeProfile } = get();
+    if (!rootPath) return;
+    set({ appendKiloPrompt: enabled });
+    await _persistExportToggle(rootPath, activeProfile, "set_append_kilo_prompt_setting", enabled,
+      () => set((s) => ({ appendKiloPrompt: !s.appendKiloPrompt })),
+      "Không thể lưu cài đặt Prompt Kilo");
   },
   setExportExcludeExtensions: async (extensions: string[]) => {
     const { rootPath, activeProfile } = get();

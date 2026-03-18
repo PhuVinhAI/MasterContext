@@ -48,6 +48,7 @@ export function SettingsScene() {
     alwaysApplyText,
     appendIdePrompt,
     appendGroupPrompt,
+    appendKiloPrompt,
     exportExcludeExtensions,
     gitExportModeIsContext,
     googleApiKey,
@@ -82,6 +83,7 @@ export function SettingsScene() {
     setAlwaysApplyText,
     setAppendIdePrompt,
     setAppendGroupPrompt,
+    setAppendKiloPrompt,
     setExportExcludeExtensions,
     handleToggleSync,
     handleChooseSyncPath,
@@ -139,6 +141,8 @@ export function SettingsScene() {
             setAppendIdePrompt={setAppendIdePrompt}
             appendGroupPrompt={appendGroupPrompt}
             setAppendGroupPrompt={setAppendGroupPrompt}
+            appendKiloPrompt={appendKiloPrompt}
+            setAppendKiloPrompt={setAppendKiloPrompt}
             gitExportModeIsContext={gitExportModeIsContext}
             setGitExportMode={setGitExportMode}
           />

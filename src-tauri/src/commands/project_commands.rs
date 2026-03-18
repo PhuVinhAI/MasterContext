@@ -100,6 +100,7 @@ pub fn start_project_export(window: Window, app: AppHandle, path: String, profil
                 &project_data.always_apply_text,
                 project_data.append_ide_prompt.unwrap_or(false),
                 project_data.append_group_prompt.unwrap_or(false),
+                project_data.append_kilo_prompt.unwrap_or(false),
             );
             let exclude_extensions = project_data.export_exclude_extensions;
             let all_files: Vec<String> = project_data.file_metadata_cache.keys().cloned().collect();
@@ -184,6 +185,7 @@ pub fn generate_project_context(
         &project_data.always_apply_text,
         project_data.append_ide_prompt.unwrap_or(false),
         project_data.append_group_prompt.unwrap_or(false),
+        project_data.append_kilo_prompt.unwrap_or(false),
     );
     let exclude_extensions = project_data.export_exclude_extensions;
     let all_files: Vec<String> = project_data.file_metadata_cache.keys().cloned().collect();

@@ -319,6 +319,11 @@
           "label": "Append Group Manager Prompt",
           "description": "Automatically append instructions for AI to output +/- format for group updates.",
           "copyTooltip": "Copy standard Group Prompt"
+        },
+        "appendKilo": {
+          "label": "Append Kilo (Architect) Prompt",
+          "description": "Automatically append Kilo (Architect) Prompt to the context so AI can plan and generate Task Descriptions for Kilo Agent.",
+          "copyTooltip": "Copy Kilo Prompt"
         }
       }
     },

@@ -319,6 +319,11 @@
           "label": "Đính kèm Prompt quản lý Nhóm",
           "description": "Tự động chèn hướng dẫn cho AI xuất định dạng + / - để cập nhật nhóm.",
           "copyTooltip": "Sao chép Prompt Nhóm chuẩn"
+        },
+        "appendKilo": {
+          "label": "Đính kèm Prompt Kilo (Architect)",
+          "description": "Tự động chèn Prompt Kilo (Architect) vào cuối ngữ cảnh để AI có thể lập kế hoạch và sinh Task Description cho Kilo Agent.",
+          "copyTooltip": "Sao chép Prompt Kilo"
         }
       }
     },
