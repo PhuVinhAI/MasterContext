@@ -15,13 +15,11 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
         .to_lowercase();
 
     let c_style = [
-        "ts", "js", "tsx", "jsx", "vue", "svelte", "cs", "java", "cpp", "c", "h", "hpp", "rs",
+        "ts", "js", "tsx", "jsx", "vue", "svelte", "cs", "java", "cpp", "c", "h", "hpp", "cc", "cxx", "m", "mm", "rs",
         "go", "php", "swift", "kt",
     ];
 
-    let is_c_style = c_style.contains(&extension.as_str());
-
-    if !is_c_style {
+    if !c_style.contains(&extension.as_str()) {
         return content.to_string();
     }
 
@@ -47,215 +45,11 @@ fn generate_dummy_logic(content: &str, file_rel_path: &str) -> String {
     // Loại bỏ comment trước khi phân tích để tránh ngoặc nhọn trong comment gây nhiễu trạng thái
     let clean_content = remove_comments_from_content(&processed_content, file_rel_path);
 
-    let mut result = String::with_capacity(clean_content.len());
-    let mut brace_depth = 0;
-    let mut paren_depth = 0;
-    let mut in_string = false;
-    let mut string_char = ' ';
-    let mut escape = false;
-
-    let mut collapsed_stack = vec![false];
-    let mut current_block_collapsed = false;
-    let mut recent_chars = String::new();
-
-    let chars: Vec<char> = clean_content.chars().collect();
-    let len = chars.len();
-    let mut i = 0;
-
-    while i < len {
-        let c = chars[i];
-
-        if escape {
-            if !current_block_collapsed {
-                result.push(c);
-                recent_chars.push(c);
-            }
-            escape = false;
-            i += 1;
-            continue;
-        }
-
-        if c == '\\' {
-            escape = true;
-            if !current_block_collapsed {
-                result.push(c);
-                recent_chars.push(c);
-            }
-            i += 1;
-            continue;
-        }
-
-        if (c == '"' || c == '\'' || c == '`') && !in_string {
-            in_string = true;
-            string_char = c;
-            if !current_block_collapsed {
-                result.push(c);
-                recent_chars.push(c);
-            }
-            i += 1;
-            continue;
-        } else if c == string_char && in_string {
-            in_string = false;
-            if !current_block_collapsed {
-                result.push(c);
-                recent_chars.push(c);
-            }
-            i += 1;
-            continue;
-        }
-
-        // Heuristic skip Regex Literal (chỉ áp dụng cho file C-style)
-        if !in_string && c == '/' && is_c_style {
-            let prev_char = recent_chars.trim_end().chars().last().unwrap_or(' ');
-            // Nếu ký tự trước đó ngụ ý đây là regex chứ không phải phép chia
-            if "(=!?:;,(&|{[".contains(prev_char) {
-                let mut is_regex = false;
-                let mut j = i + 1;
-                let mut rx_escape = false;
-                while j < len {
-                    if rx_escape {
-                        rx_escape = false;
-                        j += 1;
-                        continue;
-                    }
-                    if chars[j] == '\\' {
-                        rx_escape = true;
-                    } else if chars[j] == '\n' {
-                        break;
-                    } else if chars[j] == '/' {
-                        is_regex = true;
-                        break;
-                    }
-                    j += 1;
-                }
-                if is_regex {
-                    if !current_block_collapsed {
-                        let rx_str: String = chars[i..=j].iter().collect();
-                        result.push_str(&rx_str);
-                        recent_chars.push_str(&rx_str);
-                    }
-                    i = j + 1;
-                    continue;
-                }
-            }
-        }
-
-        if !in_string {
-            if c == '(' {
-                paren_depth += 1;
-            } else if c == ')' {
-                if paren_depth > 0 {
-                    paren_depth -= 1;
-                }
-            }
-
-            if c == '{' {
-                let normalized_recent = recent_chars.replace('\n', " ");
-                let pre_text = normalized_recent.trim_end();
-
-                let should_collapse = if paren_depth > 0 {
-                    false
-                } else if pre_text.ends_with("import") || pre_text.contains("import ") {
-                    false
-                } else if (pre_text.ends_with("export") || pre_text.contains("export "))
-                    && !pre_text.contains("=")
-                    && !pre_text.contains(" default ")
-                {
-                    false
-                } else if pre_text.contains("interface ")
-                    || pre_text.contains("class ")
-                    || pre_text.contains("struct ")
-                    || pre_text.contains("enum ")
-                    || pre_text.contains("trait ")
-                    || pre_text.contains("impl ")
-                    || pre_text.contains("namespace ")
-                    || pre_text.contains("module ")
-                    || pre_text.contains("type ")
-                    || pre_text.contains("mod ")
-                    || pre_text.contains("declare ")
-                {
-                    false
-                } else if pre_text.ends_with(":")
-                    || pre_text.ends_with("<")
-                    || pre_text.ends_with("|")
-                    || pre_text.ends_with("&")
-                    || pre_text.ends_with("const")
-                    || pre_text.ends_with("let")
-                    || pre_text.ends_with("var")
-                    || pre_text.ends_with("=")
-                    || pre_text.ends_with("(")
-                    || pre_text.ends_with("return")
-                {
-                    false
-                } else {
-                    true
-                };
-
-                let will_collapse = current_block_collapsed || should_collapse;
-                collapsed_stack.push(will_collapse);
-                current_block_collapsed = will_collapse;
-                brace_depth += 1;
-
-                let parent_collapsed = if collapsed_stack.len() >= 2 {
-                    collapsed_stack[collapsed_stack.len() - 2]
-                } else {
-                    false
-                };
-
-                if !parent_collapsed {
-                    result.push(c);
-                    if current_block_collapsed {
-                        // Dùng " ... " thay vì "/* logic omitted */" để không bị xóa bởi remove_comments
-                        result.push_str(" ... ");
-                    }
-                }
-
-                recent_chars.clear();
-                i += 1;
-                continue;
-            } else if c == '}' {
-                let parent_collapsed = if collapsed_stack.len() >= 2 {
-                    collapsed_stack[collapsed_stack.len() - 2]
-                } else {
-                    false
-                };
-
-                if brace_depth > 0 {
-                    collapsed_stack.pop();
-                    current_block_collapsed = *collapsed_stack.last().unwrap_or(&false);
-                    brace_depth -= 1;
-                }
-
-                if !parent_collapsed {
-                    result.push(c);
-                }
-
-                recent_chars.clear();
-                i += 1;
-                continue;
-            } else if c == ';' {
-                if !current_block_collapsed {
-                    result.push(c);
-                }
-                recent_chars.clear();
-                i += 1;
-                continue;
-            }
-        }
-
-        if !current_block_collapsed {
-            result.push(c);
-            recent_chars.push(c);
-            if recent_chars.len() > 2000 {
-                let drained: String = recent_chars.chars().skip(1000).collect();
-                recent_chars = drained;
-            }
-        }
-        i += 1;
-    }
+    // Gọi sang module phân tích AST-lite mới để loại bỏ logic triệt để
+    let dummy = crate::dummy_logic_parser::process_c_style_dummy(&clean_content);
 
     // Xóa bớt khoảng trắng thừa sinh ra do lược bỏ code
-    EMPTY_LINES_REGEX.replace_all(&result, "\n\n").to_string()
+    EMPTY_LINES_REGEX.replace_all(&dummy, "\n\n").to_string()
 }
 
 lazy_static! {

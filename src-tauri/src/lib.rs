@@ -5,6 +5,7 @@ pub mod commands;
 pub mod git_utils;
 pub mod group_updater;
 mod context_generator;
+mod dummy_logic_parser;
 mod file_cache;
 mod models;
 mod project_scanner;
