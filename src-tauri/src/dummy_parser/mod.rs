@@ -1,6 +1,7 @@
 pub mod cpp;
 pub mod c_style;
 pub mod vue;
+pub mod python;
 
 pub fn process(clean_content: &str, file_rel_path: &str) -> String {
     let normalized_path = file_rel_path.replace("\\", "/");
@@ -43,6 +44,10 @@ pub fn process(clean_content: &str, file_rel_path: &str) -> String {
         // Các ngôn ngữ C-Style cơ bản (JS, TS, C#, Java, Rust...)
         "ts" | "js" | "tsx" | "jsx" | "cs" | "java" | "rs" | "go" | "php" | "swift" | "kt" => {
             c_style::parse(clean_content, &extension)
+        }
+        // Phân tích mã nguồn Python (Dựa trên thụt lề Indentation)
+        "py" | "pyw" | "pyi" => {
+            python::parse(clean_content)
         }
         _ => clean_content.to_string(),
     }
