@@ -3,6 +3,24 @@ pub mod c_style;
 pub mod vue;
 
 pub fn process(clean_content: &str, file_rel_path: &str) -> String {
+    let normalized_path = file_rel_path.replace("\\", "/");
+
+    // 1. Loại trừ thư mục từ điển đa ngôn ngữ (Locales/I18n)
+    if normalized_path.contains("/locales/lang/") ||
+       normalized_path.contains("/locales/en") ||
+       normalized_path.contains("/locales/vi") ||
+       normalized_path.contains("/locales/zh") ||
+       normalized_path.contains("/lang/en") ||
+       normalized_path.contains("/lang/zh") {
+        return "// [LOCALES EXCLUDED IN DUMMY MODE]".to_string();
+    }
+
+    // 2. Loại trừ các file asset tĩnh (như iconfont.js, svg...)
+    if normalized_path.contains("/assets/") &&
+       (normalized_path.ends_with(".js") || normalized_path.ends_with(".ts") || normalized_path.ends_with(".svg")) {
+        return "// [STATIC ASSET EXCLUDED IN DUMMY MODE]".to_string();
+    }
+
     let extension = std::path::Path::new(file_rel_path)
         .extension()
         .and_then(std::ffi::OsStr::to_str)
