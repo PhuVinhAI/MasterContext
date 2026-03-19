@@ -22,6 +22,11 @@ pub fn process(clean_content: &str, file_rel_path: &str) -> String {
         return "// [STATIC ASSET EXCLUDED IN DUMMY MODE]".to_string();
     }
 
+    // 3. Loại trừ thư mục migrations của Database (Django, Alembic, Prisma...)
+    if normalized_path.contains("/migrations/") || normalized_path.starts_with("migrations/") {
+        return "// [DATABASE MIGRATIONS EXCLUDED IN DUMMY MODE]".to_string();
+    }
+
     let extension = std::path::Path::new(file_rel_path)
         .extension()
         .and_then(std::ffi::OsStr::to_str)
