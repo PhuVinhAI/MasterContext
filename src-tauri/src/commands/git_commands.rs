@@ -555,3 +555,24 @@ pub async fn git_create_branch(path: String, branch_name: String) -> Result<Stri
         Err(format!("{}\n{}", stdout, stderr))
     }
 }
+
+#[command]
+pub async fn git_delete_branch(path: String, branch_name: String) -> Result<String, String> {
+    use tokio::process::Command;
+    let git_cmd = if cfg!(target_os = "windows") { "git.exe" } else { "git" };
+
+    let mut branch_cmd = Command::new(git_cmd);
+    branch_cmd.current_dir(&path).args(&["branch", "-D", &branch_name]);
+    #[cfg(target_os = "windows")]
+    branch_cmd.creation_flags(0x08000000);
+    
+    let branch_out = branch_cmd.output().await.map_err(|e| format!("Lỗi xóa branch: {}", e))?;
+    let stdout = String::from_utf8_lossy(&branch_out.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&branch_out.stderr).to_string();
+    
+    if branch_out.status.success() {
+        Ok(format!("{}\n{}", stdout, stderr))
+    } else {
+        Err(format!("{}\n{}", stdout, stderr))
+    }
+}

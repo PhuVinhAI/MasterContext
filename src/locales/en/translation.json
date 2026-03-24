@@ -237,7 +237,8 @@
       "gitCommitAll": "Git Commit:",
       "gitPush": "Push code to Remote (Git Push)",
       "gitCreateBranch": "Create & Switch to branch:",
-      "gitSwitchBranch": "Switch to branch:"
+      "gitSwitchBranch": "Switch to branch:",
+      "gitDeleteBranch": "Delete local branch:"
     },
     "addedExclusion": "Added exclusion for",
     "addedExclusionError": "Failed to add exclusion for"

@@ -379,6 +379,20 @@ export function ChatMessage({
         }
         break;
 
+      case "git_delete_branch":
+        ToolIcon = GitBranch;
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          toolContent = (
+            <p className="font-medium text-foreground">
+              {t("aiPanel.toolCall.gitDeleteBranch")} <code className="ml-1 text-xs text-muted-foreground line-through decoration-destructive">{args.branch_name}</code>
+            </p>
+          );
+        } catch (e) {
+          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.gitDeleteBranch")}</p>;
+        }
+        break;
+
       default:
         toolContent = <p>{tool.function.name}</p>;
         break;

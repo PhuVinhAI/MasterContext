@@ -389,6 +389,21 @@ export const handleToolCalls = async (
           toolResultContent = `Error switching branch: ${e}`;
         }
       }
+    } else if (tool.function.name === "git_delete_branch") {
+      const { rootPath } = getState();
+      if (!rootPath) {
+        toolResultContent = "Error: Project path not found.";
+      } else {
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const result = await invoke<string>("git_delete_branch", { path: rootPath, branchName: args.branch_name });
+          toolResultContent = `[SUCCESS] Git Delete Branch executed:\n${result}`;
+          toolSucceeded = true;
+          getState().actions.checkGitRepo();
+        } catch (e) {
+          toolResultContent = `Error deleting branch: ${e}`;
+        }
+      }
     }
 
     if (toolSucceeded && ["manage_filesystem", "edit_file_by_lines", "apply_diff_blocks"].includes(tool.function.name)) {

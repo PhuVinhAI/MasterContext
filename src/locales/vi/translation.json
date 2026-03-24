@@ -237,7 +237,8 @@
       "gitCommitAll": "Git Commit:",
       "gitPush": "Đẩy mã nguồn (Git Push) lên Remote",
       "gitCreateBranch": "Tạo & chuyển sang nhánh mới:",
-      "gitSwitchBranch": "Chuyển sang nhánh:"
+      "gitSwitchBranch": "Chuyển sang nhánh:",
+      "gitDeleteBranch": "Xóa nhánh cục bộ:"
     },
     "addedExclusion": "Đã thêm vùng loại trừ cho",
     "addedExclusionError": "Không thể thêm vùng loại trừ cho"

@@ -124,6 +124,7 @@ pub fn run() {
             commands::git_commit_all,
             commands::git_push,
             commands::git_create_branch,
+            commands::git_delete_branch,
             // AI Chat History Commands
             commands::list_chat_sessions,
             commands::save_chat_session,

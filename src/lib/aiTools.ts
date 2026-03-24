@@ -267,6 +267,17 @@ const ALL_TOOLS: Record<string, ToolDefinition> = {
       },
       required: ["branch_name"]
     },
+  },
+  GIT_DELETE_BRANCH: {
+    name: "git_delete_branch",
+    description: "Xóa một nhánh cục bộ (git branch -D <branch_name>).",
+    parameters: {
+      type: "object",
+      properties: {
+        branch_name: { type: "string", description: "Tên nhánh muốn xóa." }
+      },
+      required: ["branch_name"]
+    },
   }
 };
 
@@ -299,6 +310,7 @@ function getAvailableTools(
     tools.push(ALL_TOOLS.GIT_PUSH);
     tools.push(ALL_TOOLS.GIT_CREATE_BRANCH);
     tools.push(ALL_TOOLS.GIT_SWITCH_BRANCH);
+    tools.push(ALL_TOOLS.GIT_DELETE_BRANCH);
     if (editingGroupId) {
       tools.push(ALL_TOOLS.GET_CURRENT_CONTEXT_GROUP_FILES);
     }
