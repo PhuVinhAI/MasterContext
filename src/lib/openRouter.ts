@@ -50,6 +50,17 @@ export const handleToolCalls = async (
   let requiresRescan = false;
 
   for (let i = 0; i < toolCalls.length; i++) {
+    toolCalls[i].status = "pending";
+    setState((state) => {
+      const newMessages = [...state.chatMessages];
+      const lastMessage = newMessages[newMessages.length - 1];
+      if (lastMessage?.role === "assistant" && lastMessage.tool_calls) {
+        lastMessage.tool_calls = [...toolCalls]; 
+      }
+      return { chatMessages: newMessages };
+    });
+    await new Promise(resolve => setTimeout(resolve, 20));
+
     const tool = toolCalls[i];
     let toolResultContent = `Error: Tool '${tool.function.name}' not found or failed to execute.`;
     let toolSucceeded = false;
@@ -355,17 +366,20 @@ export const handleToolCalls = async (
     }
 
     // toolCalls[i].status đã được set cụ thể ở trên cho các tool hỗ trợ partial
-    if (!toolCalls[i].status) {
+    if (!toolCalls[i].status || toolCalls[i].status === "pending") {
       toolCalls[i].status = toolSucceeded ? "success" : "error";
     }
     
-    // KHÔNG LƯU toolResultContent vào toolCalls[i].result.
-    // Việc lưu dữ liệu siêu lớn (hàng MB) vào object state sẽ làm React/Zustand đứng hình khi xử lý.
-    delete toolCalls[i].result;
+    // Giữ lại result của bash để hiển thị UI, các tool khác xóa đi để tránh phình to RAM/State
+    if (tool.function.name === "bash") {
+      toolCalls[i].result = toolResultContent;
+    } else {
+      delete toolCalls[i].result;
+    }
 
     combinedToolResults.push(`[TOOL_RESULT for ${tool.function.name}]\n${toolResultContent}`);
 
-    // Cập nhật State NGAY LẬP TỨC để UI đổi trạng thái (Spinning -> Success/Error) từng bước
+    // Cập nhật State NGAY LẬP TỨC để UI đổi trạng thái (Spinning -> Success/Error)
     setState((state) => {
       const newMessages = [...state.chatMessages];
       const lastMessage = newMessages[newMessages.length - 1];
@@ -374,10 +388,10 @@ export const handleToolCalls = async (
       }
       return { chatMessages: newMessages };
     });
-
-    // Ép nhường luồng thực thi cho trình duyệt để Paint UI (Rất quan trọng tránh treo máy)
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise(resolve => setTimeout(resolve, 20));
   }
+
+  // 3. Update the assistant message in state is already handled in the loop
 
   // 4. Add tool result as a hidden user message and re-fetch AI response
   const toolResultMessage: ChatMessage = {

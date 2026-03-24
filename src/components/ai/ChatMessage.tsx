@@ -16,6 +16,7 @@ import {
   Brain,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   FileEdit,
   Terminal,
   Pencil,
@@ -58,11 +59,13 @@ export function ChatMessage({
     let toolContent: React.ReactNode;
     let ToolIcon: React.ElementType | null = null;
 
+    const isPending = tool.status === "pending";
+
     switch (tool.function.name) {
       case "get_project_file_tree":
         toolContent = (
           <p className="font-medium text-foreground">
-            {t("aiPanel.toolCall.listingFiles")}
+            {isPending ? "Đang liệt kê cấu trúc dự án" : "Đã liệt kê cấu trúc dự án"}
           </p>
         );
         break;
@@ -72,50 +75,62 @@ export function ChatMessage({
         try {
           const args = JSON.parse(tool.function.arguments);
           const filesToRead: any[] = args.files_to_read || (args.file_path ? [args] : []);
+          
+          if (filesToRead.length === 1) {
+            const f = filesToRead[0];
+            const fileName = f.file_path?.split("/").pop() || "unknown";
+            toolContent = (
+              <div className="w-full">
+                <p className="font-medium text-foreground">
+                  {isPending ? "Đang đọc file:" : "Đã đọc file:"} <code className="ml-1 text-xs text-muted-foreground">{fileName}</code>
+                </p>
+              </div>
+            );
+          } else {
+            toolContent = (
+              <div className="w-full">
+                <p className="font-medium text-foreground">
+                  {isPending ? "Đang đọc file" : "Đã đọc file"} ({filesToRead.length})
+                </p>
+                {filesToRead.length > 0 && (
+                  <pre className="mt-2 bg-muted/30 dark:bg-muted/20 p-2 rounded-md text-xs font-mono max-h-40 overflow-auto custom-scrollbar">
+                    <code>
+                      {filesToRead.map((f, idx) => {
+                        const fileName = f.file_path?.split("/").pop() || "unknown";
+                        let lineInfo = "";
+                        if (f.start_line && f.end_line) lineInfo = `(${f.start_line}-${f.end_line})`;
+                        else if (f.start_line) lineInfo = `(${f.start_line}-...)`;
+                        else if (f.end_line) lineInfo = `(...-${f.end_line})`;
 
-          toolContent = (
-            <div className="w-full">
-              <p className="font-medium text-foreground">
-                {t("aiPanel.toolCall.readingFile")} ({filesToRead.length})
-              </p>
-              {filesToRead.length > 0 && (
-                <pre className="mt-2 bg-muted/30 dark:bg-muted/20 p-2 rounded-md text-xs font-mono max-h-40 overflow-auto custom-scrollbar">
-                  <code>
-                    {filesToRead.map((f, idx) => {
-                      const fileName = f.file_path?.split("/").pop() || "unknown";
-                      let lineInfo = "";
-                      if (f.start_line && f.end_line) lineInfo = `(${f.start_line}-${f.end_line})`;
-                      else if (f.start_line) lineInfo = `(${f.start_line}-...)`;
-                      else if (f.end_line) lineInfo = `(...-${f.end_line})`;
-
-                      const detail = tool.detailed_results?.[idx];
-                      return (
-                        <div
-                          key={`read-${idx}`}
-                          className="text-blue-600 dark:text-blue-400 whitespace-pre-wrap flex items-baseline gap-1.5"
-                        >
-                          <span className="select-none text-muted-foreground">
-                            {detail?.status === 'error' ? <XCircle className="h-3 w-3 text-destructive inline" /> : <CheckCircle2 className="h-3 w-3 text-green-500 inline" />}
-                          </span>
-                          <span title={f.file_path} className={cn(detail?.status === 'error' && "text-destructive line-through")}>{fileName}</span>
-                          {lineInfo && <span className="text-muted-foreground text-[10px]">{lineInfo}</span>}
-                        </div>
-                      );
-                    })}
-                  </code>
-                </pre>
-              )}
-            </div>
-          );
+                        const detail = tool.detailed_results?.[idx];
+                        return (
+                          <div
+                            key={`read-${idx}`}
+                            className="text-blue-600 dark:text-blue-400 whitespace-pre-wrap flex items-baseline gap-1.5"
+                          >
+                            <span className="select-none text-muted-foreground">
+                              {detail?.status === 'error' ? <XCircle className="h-3 w-3 text-destructive inline" /> : <CheckCircle2 className="h-3 w-3 text-green-500 inline" />}
+                            </span>
+                            <span title={f.file_path} className={cn(detail?.status === 'error' && "text-destructive line-through")}>{fileName}</span>
+                            {lineInfo && <span className="text-muted-foreground text-[10px]">{lineInfo}</span>}
+                          </div>
+                        );
+                      })}
+                    </code>
+                  </pre>
+                )}
+              </div>
+            );
+          }
         } catch (e) {
-          toolContent = <p>{t("aiPanel.toolCall.readingFile")}</p>;
+          toolContent = <p>{isPending ? "Đang đọc file..." : "Đã đọc file"}</p>;
         }
         break;
 
       case "get_current_context_group_files":
         toolContent = (
           <p className="font-medium text-foreground">
-            {t("aiPanel.toolCall.listingGroupFiles")}
+            {isPending ? "Đang liệt kê tệp trong nhóm" : "Đã liệt kê tệp trong nhóm"}
           </p>
         );
         break;
@@ -129,7 +144,7 @@ export function ChatMessage({
           toolContent = (
             <div className="w-full">
               <p className="font-medium text-foreground">
-                {t("aiPanel.toolCall.modifiedGroup")}
+                {isPending ? "Đang sửa đổi nhóm ngữ cảnh" : "Đã sửa đổi nhóm ngữ cảnh"}
               </p>
               {filesToAdd.length > 0 || filesToRemove.length > 0 ? (
                 <pre className="mt-2 bg-muted/30 dark:bg-muted/20 p-2 rounded-md text-xs font-mono max-h-40 overflow-auto custom-scrollbar">
@@ -164,7 +179,7 @@ export function ChatMessage({
         } catch (e) {
           toolContent = (
             <p className="font-medium text-foreground">
-              {t("aiPanel.toolCall.modifiedGroup")}
+              {isPending ? "Đang sửa đổi nhóm ngữ cảnh" : "Đã sửa đổi nhóm ngữ cảnh"}
             </p>
           );
         }
@@ -187,11 +202,7 @@ export function ChatMessage({
                   success ? "text-foreground" : "text-destructive"
                 )}
               >
-                {t(
-                  success
-                    ? "aiPanel.toolCall.addedExclusion"
-                    : "aiPanel.toolCall.addedExclusionError"
-                )}
+                {success ? "Đã thêm vùng loại trừ cho" : "Không thể thêm vùng loại trừ cho"}
               </span>
               <code className="font-medium" title={filePath}>
                 {fileName}
@@ -202,7 +213,7 @@ export function ChatMessage({
             </div>
           );
         } catch (e) {
-          toolContent = <p>{t("aiPanel.toolCall.addedExclusionError")}</p>;
+          toolContent = <p>Không thể thêm vùng loại trừ</p>;
         }
         break;
 
@@ -210,7 +221,7 @@ export function ChatMessage({
         ToolIcon = Brain;
         toolContent = (
           <p className="font-medium text-foreground">
-            {t("aiPanel.toolCall.gettingDummyContext")}
+            {isPending ? "Đang phân tích cấu trúc mã nguồn (Dummy)..." : "Đã phân tích cấu trúc mã nguồn (Dummy)"}
           </p>
         );
         break;
@@ -221,11 +232,11 @@ export function ChatMessage({
           const args = JSON.parse(tool.function.arguments);
           toolContent = (
             <p className="font-medium text-foreground">
-              {t("aiPanel.toolCall.creatingGroup")} <code className="ml-1 px-1.5 py-0.5 bg-background rounded-md text-xs">{args.name}</code>
+              {isPending ? "Đang tạo nhóm ngữ cảnh:" : "Đã tạo nhóm ngữ cảnh:"} <code className="ml-1 px-1.5 py-0.5 bg-background rounded-md text-xs">{args.name}</code>
             </p>
           );
         } catch (e) {
-          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.creatingGroupFallback")}</p>;
+          toolContent = <p className="font-medium text-foreground">{isPending ? "Đang tạo nhóm ngữ cảnh..." : "Đã tạo nhóm ngữ cảnh"}</p>;
         }
         break;
 
@@ -234,12 +245,25 @@ export function ChatMessage({
         try {
           const args = JSON.parse(tool.function.arguments);
           toolContent = (
-            <p className="font-medium text-foreground">
-              {t("aiPanel.toolCall.bash")} <code className="ml-1 text-xs text-muted-foreground truncate max-w-[300px] inline-block align-bottom">{args.command}</code>
-            </p>
+            <div className="w-full flex flex-col gap-1.5">
+              <p className="font-medium text-foreground flex items-center gap-2">
+                {isPending ? "Đang chạy Terminal:" : "Đã chạy Terminal:"} <code className="text-xs text-muted-foreground truncate max-w-[300px]">{args.command}</code>
+              </p>
+              {tool.result && (
+                <details className="group/details mt-1">
+                  <summary className="text-[10px] font-semibold text-muted-foreground hover:text-foreground cursor-pointer select-none list-none flex items-center gap-1 w-fit">
+                    <ChevronRight className="h-3 w-3 transition-transform group-open/details:rotate-90" />
+                    Xem chi tiết Output
+                  </summary>
+                  <pre className="mt-1.5 bg-muted/50 border border-border/50 p-2 rounded-md text-[11px] font-mono max-h-60 overflow-auto custom-scrollbar whitespace-pre-wrap text-foreground/80">
+                    {tool.result}
+                  </pre>
+                </details>
+              )}
+            </div>
           );
         } catch (e) {
-          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.bash")}</p>;
+          toolContent = <p className="font-medium text-foreground">{isPending ? 'Đang chạy Terminal...' : 'Đã chạy Terminal'}</p>;
         }
         break;
 
@@ -250,11 +274,11 @@ export function ChatMessage({
           const filePath = args.file_path ?? "unknown";
           toolContent = (
             <p className="font-medium text-foreground">
-              {t("aiPanel.toolCall.read")} <code className="ml-1 text-xs text-muted-foreground">{filePath}</code>
+              {isPending ? "Đang đọc file:" : "Đã đọc file:"} <code className="ml-1 text-xs text-muted-foreground">{filePath}</code>
             </p>
           );
         } catch (e) {
-          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.read")}</p>;
+          toolContent = <p className="font-medium text-foreground">{isPending ? "Đang đọc file..." : "Đã đọc file"}</p>;
         }
         break;
 
@@ -264,11 +288,11 @@ export function ChatMessage({
           const args = JSON.parse(tool.function.arguments);
           toolContent = (
             <p className="font-medium text-foreground">
-              {t("aiPanel.toolCall.write")} <code className="ml-1 text-xs text-muted-foreground">{args.file_path}</code>
+              {isPending ? "Đang ghi đè file:" : "Đã ghi đè file:"} <code className="ml-1 text-xs text-muted-foreground">{args.file_path}</code>
             </p>
           );
         } catch (e) {
-          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.write")}</p>;
+          toolContent = <p className="font-medium text-foreground">{isPending ? "Đang ghi đè file..." : "Đã ghi đè file"}</p>;
         }
         break;
 
@@ -278,11 +302,11 @@ export function ChatMessage({
           const args = JSON.parse(tool.function.arguments);
           toolContent = (
             <p className="font-medium text-foreground">
-              {t("aiPanel.toolCall.edit")} <code className="ml-1 text-xs text-muted-foreground">{args.file_path}</code>
+              {isPending ? "Đang chỉnh sửa file:" : "Đã chỉnh sửa file:"} <code className="ml-1 text-xs text-muted-foreground">{args.file_path}</code>
             </p>
           );
         } catch (e) {
-          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.edit")}</p>;
+          toolContent = <p className="font-medium text-foreground">{isPending ? "Đang chỉnh sửa file..." : "Đã chỉnh sửa file"}</p>;
         }
         break;
 
@@ -292,11 +316,11 @@ export function ChatMessage({
           const args = JSON.parse(tool.function.arguments);
           toolContent = (
             <p className="font-medium text-foreground">
-              {t("aiPanel.toolCall.glob")} <code className="ml-1 text-xs text-muted-foreground">{args.pattern}</code>
+              {isPending ? "Đang tìm kiếm file:" : "Đã tìm kiếm file:"} <code className="ml-1 text-xs text-muted-foreground">{args.pattern}</code>
             </p>
           );
         } catch (e) {
-          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.glob")}</p>;
+          toolContent = <p className="font-medium text-foreground">{isPending ? "Đang tìm kiếm file..." : "Đã tìm kiếm file"}</p>;
         }
         break;
 
@@ -306,11 +330,11 @@ export function ChatMessage({
           const args = JSON.parse(tool.function.arguments);
           toolContent = (
             <p className="font-medium text-foreground">
-              {t("aiPanel.toolCall.grep")} <code className="ml-1 text-xs text-muted-foreground truncate max-w-[200px] inline-block align-bottom">{args.pattern}</code>
+              {isPending ? "Đang tìm kiếm nội dung:" : "Đã tìm kiếm nội dung:"} <code className="ml-1 text-xs text-muted-foreground truncate max-w-[200px] inline-block align-bottom">{args.pattern}</code>
             </p>
           );
         } catch (e) {
-          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.grep")}</p>;
+          toolContent = <p className="font-medium text-foreground">{isPending ? "Đang tìm kiếm nội dung..." : "Đã tìm kiếm nội dung"}</p>;
         }
         break;
 
@@ -329,6 +353,8 @@ export function ChatMessage({
             <XCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
           ) : tool.status === "partial" ? (
             <AlertTriangle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
+          ) : tool.status === "pending" ? (
+            <Loader2 className="h-5 w-5 animate-spin text-blue-500 shrink-0 mt-0.5" />
           ) : (
             <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
           )}
@@ -357,19 +383,19 @@ export function ChatMessage({
           "transition-all"
         )}
       >
-      <div
-        className={cn(
-          message.role === "assistant" && message.tool_calls && message.tool_calls.length > 0
-            ? "max-w-full lg:max-w-3xl w-full"
-            : "max-w-xs md:max-w-md lg:max-w-lg",
-          "text-sm rounded-lg",
-          editingMessageIndex === index &&
-            "ring-2 ring-primary ring-offset-2 ring-offset-background",
-          message.role === "user" && !message.hidden && "cursor-pointer",
-          message.role === "user"
-            ? "bg-muted px-3 py-2 group-hover:bg-accent"
-            : ""
-        )}
+        <div
+          className={cn(
+            message.role === "assistant" && message.tool_calls && message.tool_calls.length > 0
+              ? "max-w-full lg:max-w-3xl w-full"
+              : "max-w-xs md:max-w-md lg:max-w-lg",
+            "text-sm rounded-lg",
+            editingMessageIndex === index &&
+              "ring-2 ring-primary ring-offset-2 ring-offset-background",
+            message.role === "user" && !message.hidden && "cursor-pointer",
+            message.role === "user"
+              ? "bg-muted px-3 py-2 group-hover:bg-accent"
+              : ""
+          )}
           onClick={
             message.role === "user" && !message.hidden
               ? () => onStartEdit(index)
