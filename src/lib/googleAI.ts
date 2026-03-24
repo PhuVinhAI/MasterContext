@@ -145,14 +145,13 @@ export const handleStreamingResponseGoogle = async (
   let buffer = "";
   let isFirstChunk = true;
   let finalUsage: GenerationInfo | null = null;
+  let toolCallsToExecute: ToolCall[] = [];
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
 
     buffer += decoder.decode(value, { stream: true });
-    // We might get multiple JSON objects in one chunk, or partial objects.
-    // We need to find and parse complete objects from the buffer using brace-counting.
     const objectsToProcess = [];
     let lastProcessedIndex = 0;
 
@@ -166,7 +165,7 @@ export const handleStreamingResponseGoogle = async (
     let searchFrom = 0;
     while (searchFrom < buffer.length) {
       const start = findNextObjectStart(searchFrom);
-      if (start === -1) break; // No more objects start in the buffer
+      if (start === -1) break;
 
       let braceCount = 1;
       let end = -1;
@@ -180,107 +179,110 @@ export const handleStreamingResponseGoogle = async (
       }
 
       if (end !== -1) {
-        // We found a complete object
         const objectStr = buffer.substring(start, end + 1);
         try {
           const parsedObject = JSON.parse(objectStr);
           objectsToProcess.push(parsedObject);
-          // Continue searching after this object
           searchFrom = end + 1;
           lastProcessedIndex = searchFrom;
         } catch (e) {
-          // This shouldn't happen if brace counting is correct, but as a safeguard
-          // we assume the object is incomplete and wait for more data.
-          searchFrom = start + 1; // Move past the initial brace to avoid infinite loops
+          searchFrom = start + 1;
         }
       } else {
-        // Incomplete object, wait for more data
         break;
       }
     }
 
-    // If we processed any objects, slice them from the main buffer
     if (lastProcessedIndex > 0) {
       buffer = buffer.substring(lastProcessedIndex);
     }
 
     if (objectsToProcess.length > 0) {
       let combinedText = "";
-      let chunkUsage: GenerationInfo | null = null;
 
       for (const chunk of objectsToProcess) {
         if (chunk.usageMetadata) {
-          chunkUsage = {
+          finalUsage = {
             tokens_prompt: chunk.usageMetadata.promptTokenCount || 0,
             tokens_completion: chunk.usageMetadata.candidatesTokenCount || 0,
             total_cost: 0,
           };
-          finalUsage = chunkUsage;
+          // Cập nhật State token ngay lập tức nếu API gửi kèm
+          setState((state) => {
+            const newMessages = [...state.chatMessages];
+            const lastIndex = newMessages.length - 1;
+            if (newMessages[lastIndex] && newMessages[lastIndex].role === "assistant") {
+              newMessages[lastIndex] = { ...newMessages[lastIndex], generationInfo: finalUsage! };
+            }
+            return { chatMessages: newMessages };
+          });
         }
 
-        const part = chunk?.candidates?.[0]?.content?.parts?.[0];
-        if (!part) continue;
+        const parts = chunk?.candidates?.[0]?.content?.parts;
+        if (!parts) continue;
 
-        // Handle tool call chunk
-        if (part.functionCall) {
-          reader.cancel(); // Stop processing stream
-          const { name, args } = part.functionCall;
-          const toolCall: ToolCall = {
-            id: `call_${Date.now()}`,
-            type: "function",
-            function: { name, arguments: JSON.stringify(args) },
-          };
-          await handleToolCalls([toolCall], storeApi, chunkUsage || undefined);
-          return; // Exit function, tool handler will take over
-        }
-
-        combinedText += part.text || "";
-      }
-
-      if (!combinedText && !chunkUsage) {
-        continue;
-      }
-
-      if (isFirstChunk && combinedText) {
-        isFirstChunk = false;
-        const newAssistantMessage: ChatMessage = {
-          role: "assistant",
-          content: combinedText,
-          ...(chunkUsage && { generationInfo: chunkUsage }),
-        };
-        setState((state) => ({
-          chatMessages: [...state.chatMessages, newAssistantMessage],
-        }));
-      } else if (combinedText || chunkUsage) {
-        setState((state) => {
-          const lastMessage = state.chatMessages[state.chatMessages.length - 1];
-          if (lastMessage && lastMessage.role === "assistant") {
-            const updatedMessage = {
-              ...lastMessage,
-              content: combinedText ? (lastMessage.content || "") + combinedText : lastMessage.content,
-              ...(chunkUsage && { generationInfo: chunkUsage }),
-            };
-            return {
-              chatMessages: [
-                ...state.chatMessages.slice(0, -1),
-                updatedMessage,
-              ],
-            };
+        for (const part of parts) {
+          if (part.functionCall) {
+            const { name, args } = part.functionCall;
+            toolCallsToExecute.push({
+              id: `call_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+              type: "function",
+              function: { name, arguments: JSON.stringify(args) },
+            });
+          } else if (part.text) {
+            combinedText += part.text;
           }
-          return state;
-        });
+        }
+      }
+
+      if (combinedText) {
+        if (isFirstChunk) {
+          isFirstChunk = false;
+          setState((state) => ({
+            chatMessages: [
+              ...state.chatMessages,
+              {
+                role: "assistant",
+                content: combinedText,
+                ...(finalUsage && { generationInfo: finalUsage }),
+              },
+            ],
+          }));
+        } else {
+          setState((state) => {
+            const lastMessage = state.chatMessages[state.chatMessages.length - 1];
+            if (lastMessage && lastMessage.role === "assistant") {
+              return {
+                chatMessages: [
+                  ...state.chatMessages.slice(0, -1),
+                  {
+                    ...lastMessage,
+                    content: (lastMessage.content || "") + combinedText,
+                    ...(finalUsage && { generationInfo: finalUsage }),
+                  },
+                ],
+              };
+            }
+            return state;
+          });
+        }
       }
     }
   }
 
-  // After stream is complete, save session
+  if (toolCallsToExecute.length > 0) {
+    await handleToolCalls(toolCallsToExecute, storeApi, finalUsage || undefined);
+    return;
+  }
+
   if (finalUsage) {
     const state = getState();
-    const lastMessage = state.chatMessages[state.chatMessages.length - 1];
-    if (lastMessage && lastMessage.role === "assistant") {
-      // The state is already updated with finalUsage from the loop above,
-      // so we just need to persist the session to the backend.
-      getState().actions.saveCurrentChatSession(state.chatMessages);
+    const newMessages = [...state.chatMessages];
+    const lastIndex = newMessages.length - 1;
+    if (newMessages[lastIndex] && newMessages[lastIndex].role === "assistant") {
+      newMessages[lastIndex] = { ...newMessages[lastIndex], generationInfo: finalUsage };
+      setState({ chatMessages: newMessages });
+      await getState().actions.saveCurrentChatSession(newMessages);
     }
   }
 };

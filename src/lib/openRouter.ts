@@ -2,7 +2,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { type AppState, useAppStore } from "@/store/appStore";
-import { type ChatMessage, type GenerationInfo } from "@/store/types";
+import { type ChatMessage, type GenerationInfo, type ToolCall } from "@/store/types";
 
 type StoreApi = {
   getState: () => AppState;
@@ -41,150 +41,160 @@ export const handleToolCalls = async (
   // Cập nhật session ngay lập tức để UI hiển thị số token đã dùng cho lượt gọi này
   await getState().actions.saveCurrentChatSession();
 
-  // 2. Execute tool
+  // 2. Execute tools
   setState({ isAiPanelLoading: true }); // Keep loading state for the next AI call
 
-  const tool = toolCalls[0];
-  let toolResultContent = `Error: Tool '${tool.function.name}' not found or failed to execute.`;
-  let toolSucceeded = false;
-  if (tool.function.name === "get_project_file_tree") {
-    const fileTree = getState().fileTree;
-    if (fileTree && fileTree.children) {
-      const children = fileTree.children;
-      toolResultContent =
-        "Current project structure:\n" +
-        children
-          .map((child, index) =>
-            formatNode(child, "", index === children.length - 1)
-          )
-          .join("");
-    }
-    toolSucceeded = true;
-  } else if (tool.function.name === "read_file") {
-    const { rootPath } = getState();
-    if (!rootPath) {
-      toolResultContent = "Error: Project path is not available to read file.";
-    } else {
-      try {
-        const args = JSON.parse(tool.function.arguments);
-        const content = await invoke<string>("read_file_with_lines", {
-          rootPathStr: rootPath,
-          fileRelPath: args.file_path,
-          startLine: args.start_line,
-          endLine: args.end_line,
-        });
-        toolResultContent = `Here is the content of ${args.file_path}${
-          args.start_line ? ` from line ${args.start_line}` : ""
-        }${args.end_line ? ` to line ${args.end_line}` : ""}:\n\n${content}`;
-        toolSucceeded = true;
-      } catch (e) {
-        toolResultContent = `Error reading file: ${e}`;
-        toolSucceeded = false;
-      }
-    }
-  } else if (tool.function.name === "get_current_context_group_files") {
-    const { editingGroupId, rootPath, activeProfile } = getState();
-    if (!editingGroupId || !rootPath || !activeProfile) {
-      toolResultContent =
-        "Error: No group is currently being edited. The user must select a group to check its files.";
-    } else {
-      try {
-        const files = await invoke<string[]>("get_expanded_files_for_group", {
-          path: rootPath,
-          profileName: activeProfile,
-          groupId: editingGroupId,
-        });
-        toolResultContent = `The current group contains the following files:\n${files.join(
-          "\n"
-        )}`;
-        toolSucceeded = true;
-      } catch (e) {
-        toolResultContent = `Error getting group files: ${e}`;
-        toolSucceeded = false;
-      }
-    }
-  } else if (tool.function.name === "modify_context_group") {
-    const { editingGroupId, rootPath, activeProfile } = getState();
-    if (!editingGroupId || !rootPath || !activeProfile) {
-      toolResultContent =
-        "Error: No group is currently being edited. The user must select a group to modify first.";
-    } else {
-      try {
-        const args = JSON.parse(tool.function.arguments);
-        const pathsToAdd = args.files_to_add || [];
-        const pathsToRemove = args.files_to_remove || [];
+  const combinedToolResults: string[] = [];
 
-        const result = await invoke<
-          import("@/store/types").AIGroupUpdateResult
-        >("update_group_paths_from_ai", {
-          path: rootPath,
-          profileName: activeProfile,
-          groupId: editingGroupId,
-          pathsToAdd,
-          pathsToRemove,
-        });
+  for (let i = 0; i < toolCalls.length; i++) {
+    const tool = toolCalls[i];
+    let toolResultContent = `Error: Tool '${tool.function.name}' not found or failed to execute.`;
+    let toolSucceeded = false;
 
-        // Update the group state in Zustand, including tempSelectedPaths
-        await getState().actions._updateGroupFromAi(result.updatedGroup);
-
-        let resultMessage = "Successfully modified the group.";
-        if (pathsToAdd.length > 0)
-          resultMessage += ` Added: ${pathsToAdd.join(", ")}.`;
-        if (pathsToRemove.length > 0)
-          resultMessage += ` Removed: ${pathsToRemove.join(", ")}.`;
-        resultMessage += `\n\nThe group now contains the following files:\n${result.finalExpandedFiles.join(
-          "\n"
-        )}`;
-        toolResultContent = resultMessage;
-        toolSucceeded = true;
-      } catch (e) {
-        toolResultContent = `Error modifying group: ${e}`;
-        toolSucceeded = false;
+    if (tool.function.name === "get_project_file_tree") {
+      const fileTree = getState().fileTree;
+      if (fileTree && fileTree.children) {
+        const children = fileTree.children;
+        toolResultContent =
+          "Current project structure:\n" +
+          children
+            .map((child, index) =>
+              formatNode(child, "", index === children.length - 1)
+            )
+            .join("");
       }
-    }
-  } else if (tool.function.name === "add_exclusion_range_to_file") {
-    const { actions } = getState();
-    try {
-      const args = JSON.parse(tool.function.arguments);
-      const result = await actions.addExclusionRangeFromAI(
-        args.file_path,
-        args.start_line,
-        args.end_line
-      );
-      toolResultContent = result.message;
-      toolSucceeded = result.success;
-    } catch (e) {
-      toolResultContent = `Error adding exclusion range: ${e}`;
-      toolSucceeded = false;
-    }
-  } else if (tool.function.name === "get_dummy_project_context") {
-    const { rootPath, activeProfile } = getState();
-    if (!rootPath || !activeProfile) {
-      toolResultContent = "Error: Project path or profile is not available.";
-    } else {
-      try {
-        const context = await invoke<string>("generate_dummy_project_context_for_ai", {
-          path: rootPath,
-          profileName: activeProfile,
-        });
-        toolResultContent = `DUMMY PROJECT CONTEXT:\n\n${context}`;
-        toolSucceeded = true;
-      } catch (e) {
-        toolResultContent = `Error generating dummy context: ${e}`;
-        toolSucceeded = false;
-      }
-    }
-  } else if (tool.function.name === "create_context_group") {
-    try {
-      const args = JSON.parse(tool.function.arguments);
-      const name = args.name || "AI Generated Group";
-      getState().actions.addGroup({ name });
-      toolResultContent = `Successfully created and selected new context group: "${name}". You can now use modify_context_group to add files to it.`;
       toolSucceeded = true;
-    } catch (e) {
-      toolResultContent = `Error creating group: ${e}`;
-      toolSucceeded = false;
+    } else if (tool.function.name === "read_file") {
+      const { rootPath } = getState();
+      if (!rootPath) {
+        toolResultContent = "Error: Project path is not available to read file.";
+      } else {
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const content = await invoke<string>("read_file_with_lines", {
+            rootPathStr: rootPath,
+            fileRelPath: args.file_path,
+            startLine: args.start_line,
+            endLine: args.end_line,
+          });
+          toolResultContent = `Here is the content of ${args.file_path}${
+            args.start_line ? ` from line ${args.start_line}` : ""
+          }${args.end_line ? ` to line ${args.end_line}` : ""}:\n\n${content}`;
+          toolSucceeded = true;
+        } catch (e) {
+          toolResultContent = `Error reading file: ${e}`;
+          toolSucceeded = false;
+        }
+      }
+    } else if (tool.function.name === "get_current_context_group_files") {
+      const { editingGroupId, rootPath, activeProfile } = getState();
+      if (!editingGroupId || !rootPath || !activeProfile) {
+        toolResultContent =
+          "Error: No group is currently being edited. The user must select a group to check its files.";
+      } else {
+        try {
+          const files = await invoke<string[]>("get_expanded_files_for_group", {
+            path: rootPath,
+            profileName: activeProfile,
+            groupId: editingGroupId,
+          });
+          toolResultContent = `The current group contains the following files:\n${files.join(
+            "\n"
+          )}`;
+          toolSucceeded = true;
+        } catch (e) {
+          toolResultContent = `Error getting group files: ${e}`;
+          toolSucceeded = false;
+        }
+      }
+    } else if (tool.function.name === "modify_context_group") {
+      const { editingGroupId, rootPath, activeProfile } = getState();
+      if (!editingGroupId || !rootPath || !activeProfile) {
+        toolResultContent =
+          "Error: No group is currently being edited. The user must select a group to modify first.";
+      } else {
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const pathsToAdd = args.files_to_add || [];
+          const pathsToRemove = args.files_to_remove || [];
+
+          const result = await invoke<
+            import("@/store/types").AIGroupUpdateResult
+          >("update_group_paths_from_ai", {
+            path: rootPath,
+            profileName: activeProfile,
+            groupId: editingGroupId,
+            pathsToAdd,
+            pathsToRemove,
+          });
+
+          // Update the group state in Zustand, including tempSelectedPaths
+          await getState().actions._updateGroupFromAi(result.updatedGroup);
+
+          let resultMessage = "Successfully modified the group.";
+          if (pathsToAdd.length > 0)
+            resultMessage += ` Added: ${pathsToAdd.join(", ")}.`;
+          if (pathsToRemove.length > 0)
+            resultMessage += ` Removed: ${pathsToRemove.join(", ")}.`;
+          resultMessage += `\n\nThe group now contains the following files:\n${result.finalExpandedFiles.join(
+            "\n"
+          )}`;
+          toolResultContent = resultMessage;
+          toolSucceeded = true;
+        } catch (e) {
+          toolResultContent = `Error modifying group: ${e}`;
+          toolSucceeded = false;
+        }
+      }
+    } else if (tool.function.name === "add_exclusion_range_to_file") {
+      const { actions } = getState();
+      try {
+        const args = JSON.parse(tool.function.arguments);
+        const result = await actions.addExclusionRangeFromAI(
+          args.file_path,
+          args.start_line,
+          args.end_line
+        );
+        toolResultContent = result.message;
+        toolSucceeded = result.success;
+      } catch (e) {
+        toolResultContent = `Error adding exclusion range: ${e}`;
+        toolSucceeded = false;
+      }
+    } else if (tool.function.name === "get_dummy_project_context") {
+      const { rootPath, activeProfile } = getState();
+      if (!rootPath || !activeProfile) {
+        toolResultContent = "Error: Project path or profile is not available.";
+      } else {
+        try {
+          const context = await invoke<string>("generate_dummy_project_context_for_ai", {
+            path: rootPath,
+            profileName: activeProfile,
+          });
+          toolResultContent = `DUMMY PROJECT CONTEXT:\n\n${context}`;
+          toolSucceeded = true;
+        } catch (e) {
+          toolResultContent = `Error generating dummy context: ${e}`;
+          toolSucceeded = false;
+        }
+      }
+    } else if (tool.function.name === "create_context_group") {
+      try {
+        const args = JSON.parse(tool.function.arguments);
+        const name = args.name || "AI Generated Group";
+        getState().actions.addGroup({ name });
+        toolResultContent = `Successfully created and selected new context group: "${name}". You can now use modify_context_group to add files to it.`;
+        toolSucceeded = true;
+      } catch (e) {
+        toolResultContent = `Error creating group: ${e}`;
+        toolSucceeded = false;
+      }
     }
+
+    toolCalls[i].status = toolSucceeded ? "success" : "error";
+    toolCalls[i].result = toolResultContent;
+
+    combinedToolResults.push(`[TOOL_RESULT for ${tool.function.name}]\n${toolResultContent}`);
   }
 
   // 3. Update the assistant message in state with the tool's execution status
@@ -192,8 +202,7 @@ export const handleToolCalls = async (
     const newMessages = [...state.chatMessages];
     const lastMessage = newMessages[newMessages.length - 1];
     if (lastMessage?.role === "assistant" && lastMessage.tool_calls) {
-      lastMessage.tool_calls[0].status = toolSucceeded ? "success" : "error";
-      lastMessage.tool_calls[0].result = toolResultContent; // Lưu lại kết quả cho UI
+      lastMessage.tool_calls = toolCalls; // Update the UI with execution results
     }
     return { chatMessages: newMessages };
   });
@@ -201,7 +210,7 @@ export const handleToolCalls = async (
   // 4. Add tool result as a hidden user message and re-fetch AI response
   const toolResultMessage: ChatMessage = {
     role: "user",
-    content: `[TOOL_RESULT for ${tool.function.name}]\n${toolResultContent}`,
+    content: combinedToolResults.join("\n\n---\n\n"),
     hidden: true,
   };
   setState((state: AppState) => ({
@@ -325,6 +334,8 @@ export const handleStreamingResponse = async (
   const decoder = new TextDecoder();
   let buffer = "";
   let isFirstChunk = true;
+  let finalUsage: GenerationInfo | null = null;
+  let toolCallsToExecute: ToolCall[] = [];
 
   while (true) {
     const { done, value } = await reader.read();
@@ -342,17 +353,17 @@ export const handleStreamingResponse = async (
         const json = JSON.parse(line.substring(5));
 
         if (json.usage) {
-          const usageInfo = {
+          finalUsage = {
             tokens_prompt: json.usage.prompt_tokens || 0,
             tokens_completion: json.usage.completion_tokens || 0,
             total_cost: 0,
           };
-          // Cập nhật State token ngay lập tức khi nhận được chunk
+          // Cập nhật State token ngay lập tức nếu API gửi kèm
           setState((state) => {
             const newMessages = [...state.chatMessages];
             const lastIndex = newMessages.length - 1;
             if (newMessages[lastIndex] && newMessages[lastIndex].role === "assistant") {
-              newMessages[lastIndex] = { ...newMessages[lastIndex], generationInfo: usageInfo };
+              newMessages[lastIndex] = { ...newMessages[lastIndex], generationInfo: finalUsage! };
             }
             return { chatMessages: newMessages };
           });
@@ -364,17 +375,20 @@ export const handleStreamingResponse = async (
 
         const toolCallsChunk = json.choices?.[0]?.delta?.tool_calls;
         if (toolCallsChunk && toolCallsChunk.length > 0) {
-          reader.cancel(); // Stop stream processing
-
-          // Thử lấy usage từ chunk hiện tại nếu API có trả về cùng lúc
-          const currentUsage = json.usage ? {
-            tokens_prompt: json.usage.prompt_tokens || 0,
-            tokens_completion: json.usage.completion_tokens || 0,
-            total_cost: 0,
-          } : undefined;
-
-          await handleToolCalls(toolCallsChunk, storeApi, currentUsage);
-          return; // Exit fetch function
+          for (const tc of toolCallsChunk) {
+            const index = tc.index;
+            if (!toolCallsToExecute[index]) {
+              toolCallsToExecute[index] = {
+                id: tc.id || `call_${Date.now()}`,
+                type: tc.type || "function",
+                function: { name: tc.function?.name || "", arguments: tc.function?.arguments || "" }
+              };
+            } else {
+              if (tc.function?.arguments) {
+                toolCallsToExecute[index].function.arguments += tc.function.arguments;
+              }
+            }
+          }
         }
 
         const delta = json.choices?.[0]?.delta?.content || "";
@@ -420,23 +434,32 @@ export const handleStreamingResponse = async (
     }
   }
 
-  // After stream is complete, fetch generation info (dành cho OpenRouter)
-  // Lưu ý: Nếu stream đã trả về trực tiếp usage, biến lastMessageHasInfo sẽ block hàm fetch API bên dưới.
-  const lastMessageHasInfo = getState().chatMessages[getState().chatMessages.length - 1]?.generationInfo;
-  if (generationId && apiKey && isOpenRouter && !lastMessageHasInfo) {
-    const generationInfo = await fetchGenerationInfoWithRetry(
+  // After stream is complete, check generation info from OpenRouter API if no usage was provided in stream
+  if (generationId && apiKey && isOpenRouter && !finalUsage) {
+    const fetchedInfo = await fetchGenerationInfoWithRetry(
       generationId,
       apiKey
     );
-    if (generationInfo) {
-      const state = getState();
-      const newMessages = [...state.chatMessages];
-      const lastIndex = newMessages.length - 1;
-      if (newMessages[lastIndex] && newMessages[lastIndex].role === "assistant") {
-        newMessages[lastIndex] = { ...newMessages[lastIndex], generationInfo };
-        setState({ chatMessages: newMessages });
-        await getState().actions.saveCurrentChatSession(newMessages);
-      }
+    if (fetchedInfo) {
+      finalUsage = fetchedInfo;
+    }
+  }
+
+  const validToolCalls = toolCallsToExecute.filter(Boolean);
+
+  if (validToolCalls.length > 0) {
+    await handleToolCalls(validToolCalls, storeApi, finalUsage || undefined);
+    return;
+  }
+
+  if (finalUsage) {
+    const state = getState();
+    const newMessages = [...state.chatMessages];
+    const lastIndex = newMessages.length - 1;
+    if (newMessages[lastIndex] && newMessages[lastIndex].role === "assistant") {
+      newMessages[lastIndex] = { ...newMessages[lastIndex], generationInfo: finalUsage };
+      setState({ chatMessages: newMessages });
+      await getState().actions.saveCurrentChatSession(newMessages);
     }
   }
 };
