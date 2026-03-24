@@ -511,7 +511,8 @@ pub async fn execute_terminal_command(root_path_str: String, command: String) ->
     use tokio::process::Command;
     let mut cmd = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");
-        c.args(&["/C", &command]);
+        let full_cmd = format!("chcp 65001 > nul & {}", command);
+        c.args(&["/C", &full_cmd]);
         #[cfg(target_os = "windows")]
         c.creation_flags(0x08000000); // Ẩn cửa sổ cmd đen
         c
@@ -523,50 +524,64 @@ pub async fn execute_terminal_command(root_path_str: String, command: String) ->
 
     cmd.current_dir(root_path);
 
-    let output = cmd.output().await.map_err(|e| format!("Failed to execute command: {}", e))?;
+    // Timeout 2 phút tương tự triết lý Opencode
+    let timeout_duration = std::time::Duration::from_secs(120);
+    
+    match tokio::time::timeout(timeout_duration, cmd.output()).await {
+        Ok(Ok(output)) => {
+            let mut result = String::new();
+            let stdout_str = String::from_utf8_lossy(&output.stdout);
+            let stderr_str = String::from_utf8_lossy(&output.stderr);
 
-    let mut result = String::new();
-    let stdout_str = String::from_utf8_lossy(&output.stdout);
-    let stderr_str = String::from_utf8_lossy(&output.stderr);
+            result.push_str(&format!("Exit Code: {}\n", output.status.code().unwrap_or(-1)));
+            if !stdout_str.trim().is_empty() {
+                result.push_str("--- STDOUT ---\n");
+                result.push_str(&stdout_str.chars().take(15000).collect::<String>());
+                if stdout_str.len() > 15000 {
+                    result.push_str("\n... (truncated)");
+                }
+                result.push_str("\n");
+            }
+            if !stderr_str.trim().is_empty() {
+                result.push_str("--- STDERR ---\n");
+                result.push_str(&stderr_str.chars().take(5000).collect::<String>());
+                if stderr_str.len() > 5000 {
+                    result.push_str("\n... (truncated)");
+                }
+                result.push_str("\n");
+            }
 
-    result.push_str(&format!(
-        "Exit Code: {}\n",
-        output.status.code().unwrap_or(-1)
-    ));
-    if !stdout_str.trim().is_empty() {
-        result.push_str("--- STDOUT ---\n");
-        result.push_str(&stdout_str.chars().take(4000).collect::<String>());
-        if stdout_str.len() > 4000 {
-            result.push_str("\n... (truncated)");
+            Ok(result)
         }
-        result.push_str("\n");
-    }
-    if !stderr_str.trim().is_empty() {
-        result.push_str("--- STDERR ---\n");
-        result.push_str(&stderr_str.chars().take(4000).collect::<String>());
-        if stderr_str.len() > 4000 {
-            result.push_str("\n... (truncated)");
+        Ok(Err(e)) => Err(format!("Lỗi khởi chạy tiến trình: {}", e)),
+        Err(_) => {
+            Ok("Lệnh bash đã bị buộc dừng do vượt quá thời gian chờ (Timeout 120s).".to_string())
         }
-        result.push_str("\n");
     }
-
-    Ok(result)
 }
 
 #[command]
 pub fn glob_search(root_path_str: String, pattern: String) -> Result<Vec<String>, String> {
     let mut results = Vec::new();
-    let re_str = format!("^{}$", pattern.replace(".", "\\.").replace("*", ".*").replace("?", "."));
-    let re = regex::Regex::new(&re_str).map_err(|e| e.to_string())?;
+    let root = Path::new(&root_path_str);
+    
+    // Sử dụng OverrideBuilder để áp dụng glob pattern chuẩn của thư viện ignore
+    let mut override_builder = ignore::overrides::OverrideBuilder::new(root);
+    if let Err(e) = override_builder.add(&pattern) {
+        return Err(format!("Mẫu glob không hợp lệ: {}", e));
+    }
+    let overrides = override_builder.build().map_err(|e| e.to_string())?;
 
-    for result in ignore::WalkBuilder::new(&root_path_str).build().filter_map(Result::ok) {
+    let walker = ignore::WalkBuilder::new(root)
+        .overrides(overrides)
+        .hidden(false)
+        .build();
+
+    for result in walker.filter_map(Result::ok) {
         if result.path().is_file() {
-            if let Ok(rel_path) = result.path().strip_prefix(&root_path_str) {
-                let rel_path_str = rel_path.to_string_lossy().replace("\\", "/");
-                if re.is_match(&rel_path_str) {
-                    results.push(rel_path_str);
-                    if results.len() > 1000 { break; }
-                }
+            if let Ok(rel_path) = result.path().strip_prefix(root) {
+                results.push(rel_path.to_string_lossy().replace("\\", "/"));
+                if results.len() >= 100 { break; }
             }
         }
     }
@@ -576,23 +591,33 @@ pub fn glob_search(root_path_str: String, pattern: String) -> Result<Vec<String>
 #[command]
 pub fn grep_search(root_path_str: String, pattern: String) -> Result<Vec<String>, String> {
     let mut results = Vec::new();
-    let re = regex::Regex::new(&pattern).map_err(|e| e.to_string())?;
+    let root = Path::new(&root_path_str);
+    let re = regex::Regex::new(&pattern).map_err(|e| format!("Lỗi Regex: {}", e))?;
     
-    for result in ignore::WalkBuilder::new(&root_path_str).build().filter_map(Result::ok) {
+    let walker = ignore::WalkBuilder::new(root)
+        .hidden(false)
+        .build();
+
+    for result in walker.filter_map(Result::ok) {
         if result.path().is_file() {
-            if let Ok(content) = std::fs::read_to_string(result.path()) {
-                if let Ok(rel_path) = result.path().strip_prefix(&root_path_str) {
+            if let Ok(content) = fs::read_to_string(result.path()) {
+                if let Ok(rel_path) = result.path().strip_prefix(root) {
                     let rel_path_str = rel_path.to_string_lossy().replace("\\", "/");
                     for (i, line) in content.lines().enumerate() {
                         if re.is_match(line) {
-                            results.push(format!("{}:{}: {}", rel_path_str, i + 1, line.trim()));
-                            if results.len() > 500 { break; }
+                            let truncated_line = if line.len() > 2000 {
+                                format!("{}...", &line[..2000])
+                            } else {
+                                line.to_string()
+                            };
+                            results.push(format!("{}|{}|{}", rel_path_str, i + 1, truncated_line.trim()));
+                            if results.len() >= 100 { break; }
                         }
                     }
                 }
             }
         }
-        if results.len() > 500 { break; }
+        if results.len() >= 100 { break; }
     }
     Ok(results)
 }

@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { type AppState, useAppStore } from "@/store/appStore";
 import { type ChatMessage, type GenerationInfo, type ToolCall } from "@/store/types";
+import { applyOpencodeEdit } from "./opencodeEdit";
 
 type StoreApi = {
   getState: () => AppState;
@@ -85,27 +86,36 @@ export const handleToolCalls = async (
 
             for (const fileReq of filesToRead) {
               try {
-                // Hỗ trợ cả chuẩn cũ (start_line, end_line) và chuẩn Opencode (offset, limit)
-                let startLine = fileReq.start_line;
-                let endLine = fileReq.end_line;
+                let startLine = fileReq.offset || fileReq.start_line || 1;
+                let limit = fileReq.limit || 2000;
+                let endLine = fileReq.end_line || (startLine + limit - 1);
 
-                if (fileReq.offset) {
-                  startLine = fileReq.offset;
-                  endLine = startLine + (fileReq.limit || 2000) - 1;
-                }
-
-                const content = await invoke<string>("read_file_with_lines", {
+                const fullContent = await invoke<string>("get_file_content", {
                   rootPathStr: rootPath,
                   fileRelPath: fileReq.file_path,
-                  startLine: startLine,
-                  endLine: endLine,
                 });
-                
-                // Trả về định dạng line-numbered giống Opencode
-                const lines = content.split('\n');
-                const numberedLines = lines.map((line, idx) => `${(startLine || 1) + idx}: ${line}`).join('\n');
 
-                combinedResults += `--- START OF FILE ${fileReq.file_path} ---\n${numberedLines}\n--- END OF FILE ${fileReq.file_path} ---\n\n`;
+                const allLines = fullContent.split('\n');
+                const totalLines = allLines.length;
+
+                const startIdx = Math.max(0, startLine - 1);
+                const endIdx = Math.min(totalLines, endLine);
+                
+                const lines = allLines.slice(startIdx, endIdx);
+                const numberedLines = lines.map((line, idx) => `${startLine + idx}: ${line}`).join('\n');
+
+                const hasMore = endIdx < totalLines;
+                const nextOffset = endIdx + 1;
+                
+                let output = `<path>${fileReq.file_path}</path>\n<type>file</type>\n<content>\n${numberedLines}\n`;
+                if (hasMore) {
+                  output += `\n(Showing lines ${startLine}-${endIdx} of ${totalLines}. Use offset=${nextOffset} to continue.)\n`;
+                } else {
+                  output += `\n(End of file - total ${totalLines} lines)\n`;
+                }
+                output += `</content>\n\n`;
+
+                combinedResults += output;
                 successCount++;
                 detailedResults.push({ status: "success", message: "OK" });
               } catch (err) {
@@ -276,25 +286,25 @@ export const handleToolCalls = async (
       } else {
         try {
           const args = JSON.parse(tool.function.arguments);
-          if (args.replace_all) {
-            await invoke("apply_multiple_search_replace", {
-              rootPathStr: rootPath,
-              fileRelPath: args.file_path,
-              blocks: [{ search: args.old_string, replace: args.new_string }]
-            });
-          } else {
-            await invoke("apply_search_replace", {
-              rootPathStr: rootPath,
-              fileRelPath: args.file_path,
-              searchText: args.old_string,
-              replaceText: args.new_string,
-            });
-          }
-          toolResultContent = `[SUCCESS] File edited: ${args.file_path}`;
+          const currentContent = await invoke<string>("get_file_content", {
+            rootPathStr: rootPath,
+            fileRelPath: args.file_path,
+          });
+          
+          // Sử dụng bộ não Opencode để sửa file (Fuzzy matching)
+          const newContent = applyOpencodeEdit(currentContent, args.old_string, args.new_string, args.replace_all);
+          
+          await invoke("save_file_content", {
+            rootPathStr: rootPath,
+            fileRelPath: args.file_path,
+            content: newContent,
+          });
+
+          toolResultContent = `[SUCCESS] File edited successfully: ${args.file_path}`;
           toolSucceeded = true;
           requiresRescan = true;
         } catch (e) {
-          toolResultContent = `[ERROR] Failed to edit file: ${e}\n-> HÀNH ĐỘNG BẮT BUỘC: Chuỗi 'old_string' của bạn không khớp 100% với mã nguồn gốc (thụt lề, khoảng trắng). Hãy gọi 'read' để kiểm tra lại file gốc.`;
+          toolResultContent = `[ERROR] Failed to edit file: ${e}\n-> HÀNH ĐỘNG BẮT BUỘC: Chuỗi 'old_string' của bạn không tìm thấy bằng bất cứ thuật toán nào. Hãy gọi 'read' để kiểm tra lại file gốc.`;
           toolSucceeded = false;
         }
       }
