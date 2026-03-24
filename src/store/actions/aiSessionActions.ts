@@ -120,18 +120,20 @@ export const createAiSessionActions: StateCreator<
     if (rootPath && activeProfile && activeChatSession) {
       const messagesToSave = messagesOverride ?? currentMessages;
 
-      // Tính tổng token và cost từ TẤT CẢ các tin nhắn (cộng dồn mỗi lần AI phản hồi hoặc gọi tool)
-      let totalTokens: number = 0;
-      let totalCost: number = 0;
-      let hasInfo = false;
+      // Find the last message with generationInfo to get the final session totals
+      let totalTokens: number | undefined = undefined;
+      let totalCost: number | undefined = undefined;
 
-      for (const msg of messagesToSave) {
+      // Vòng lặp chạy ngược từ cuối mảng
+      for (let i = messagesToSave.length - 1; i >= 0; i--) {
+        const msg = messagesToSave[i];
         if (msg.generationInfo) {
-          hasInfo = true;
-          totalTokens +=
+          // Lấy thông tin từ tin nhắn cuối cùng có generationInfo
+          totalTokens =
             (msg.generationInfo.tokens_prompt || 0) +
             (msg.generationInfo.tokens_completion || 0);
-          totalCost += msg.generationInfo.total_cost || 0;
+          totalCost = msg.generationInfo.total_cost || 0;
+          break; // Thoát ngay khi tìm thấy, vì chỉ cần tin cuối cùng
         }
       }
 
@@ -139,11 +141,11 @@ export const createAiSessionActions: StateCreator<
         ...activeChatSession,
         messages: messagesToSave,
         totalTokens:
-          hasInfo && totalTokens > 0
+          totalTokens !== undefined && totalTokens > 0
             ? totalTokens
             : undefined,
         totalCost:
-          hasInfo && totalCost > 0 ? totalCost : undefined,
+          totalCost !== undefined && totalCost > 0 ? totalCost : undefined,
       };
       await invoke("save_chat_session", {
         projectPath: rootPath,
