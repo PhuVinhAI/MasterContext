@@ -218,6 +218,55 @@ const ALL_TOOLS: Record<string, ToolDefinition> = {
       },
       required: ["edits"]
     }
+  },
+  GIT_STATUS: {
+    name: "git_status",
+    description: "Xem trạng thái các file bị thay đổi (modified, added, deleted) trong Git hiện tại.",
+    parameters: {
+      type: "object",
+      properties: {},
+    },
+  },
+  GIT_COMMIT_ALL: {
+    name: "git_commit_all",
+    description: "Tự động thêm tất cả thay đổi (git add .) và commit với nội dung chỉ định.",
+    parameters: {
+      type: "object",
+      properties: {
+        message: { type: "string", description: "Nội dung commit message." }
+      },
+      required: ["message"]
+    },
+  },
+  GIT_PUSH: {
+    name: "git_push",
+    description: "Đẩy các commit lên remote repository (git push).",
+    parameters: {
+      type: "object",
+      properties: {},
+    },
+  },
+  GIT_CREATE_BRANCH: {
+    name: "git_create_branch",
+    description: "Tạo một nhánh mới và chuyển sang nhánh đó (git checkout -b <branch_name>).",
+    parameters: {
+      type: "object",
+      properties: {
+        branch_name: { type: "string", description: "Tên nhánh muốn tạo." }
+      },
+      required: ["branch_name"]
+    },
+  },
+  GIT_SWITCH_BRANCH: {
+    name: "git_switch_branch",
+    description: "Chuyển sang một nhánh đã tồn tại (git checkout <branch_name>).",
+    parameters: {
+      type: "object",
+      properties: {
+        branch_name: { type: "string", description: "Tên nhánh muốn chuyển tới." }
+      },
+      required: ["branch_name"]
+    },
   }
 };
 
@@ -245,6 +294,11 @@ function getAvailableTools(
     tools.push(ALL_TOOLS.MANAGE_FILESYSTEM);
     tools.push(ALL_TOOLS.EDIT_FILE_BY_LINES);
     tools.push(ALL_TOOLS.APPLY_DIFF_BLOCKS);
+    tools.push(ALL_TOOLS.GIT_STATUS);
+    tools.push(ALL_TOOLS.GIT_COMMIT_ALL);
+    tools.push(ALL_TOOLS.GIT_PUSH);
+    tools.push(ALL_TOOLS.GIT_CREATE_BRANCH);
+    tools.push(ALL_TOOLS.GIT_SWITCH_BRANCH);
     if (editingGroupId) {
       tools.push(ALL_TOOLS.GET_CURRENT_CONTEXT_GROUP_FILES);
     }

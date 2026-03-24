@@ -209,8 +209,10 @@ export const handleToolCalls = async (
         toolSucceeded = false;
       }
     } else if (tool.function.name === "manage_filesystem") {
-      const { rootPath } = getState();
-      if (!rootPath) {
+      const { rootPath, gitRepoInfo } = getState();
+      if (!gitRepoInfo?.isRepository) {
+        toolResultContent = "Error: Project must be a Git repository to use file modification tools. This is a strict safety policy. Please initialize Git first.";
+      } else if (!rootPath) {
         toolResultContent = "Error: Project path not found.";
       } else {
         try {
@@ -245,8 +247,10 @@ export const handleToolCalls = async (
         }
       }
     } else if (tool.function.name === "edit_file_by_lines") {
-      const { rootPath } = getState();
-      if (!rootPath) {
+      const { rootPath, gitRepoInfo } = getState();
+      if (!gitRepoInfo?.isRepository) {
+        toolResultContent = "Error: Project must be a Git repository to use file modification tools. This is a strict safety policy. Please initialize Git first.";
+      } else if (!rootPath) {
         toolResultContent = "Error: Project path not found.";
       } else {
         try {
@@ -277,8 +281,10 @@ export const handleToolCalls = async (
         }
       }
     } else if (tool.function.name === "apply_diff_blocks") {
-      const { rootPath } = getState();
-      if (!rootPath) {
+      const { rootPath, gitRepoInfo } = getState();
+      if (!gitRepoInfo?.isRepository) {
+        toolResultContent = "Error: Project must be a Git repository to use file modification tools. This is a strict safety policy. Please initialize Git first.";
+      } else if (!rootPath) {
         toolResultContent = "Error: Project path not found.";
       } else {
         try {
@@ -308,6 +314,79 @@ export const handleToolCalls = async (
           toolSucceeded = successCount > 0;
         } catch (e) {
           toolResultContent = `Error parsing diff blocks: ${e}`;
+        }
+      }
+    } else if (tool.function.name === "git_status") {
+      const { rootPath } = getState();
+      if (!rootPath) {
+        toolResultContent = "Error: Project path not found.";
+      } else {
+        try {
+          const status = await invoke("get_git_status", { path: rootPath });
+          toolResultContent = JSON.stringify(status, null, 2);
+          toolSucceeded = true;
+        } catch (e) {
+          toolResultContent = `Error fetching git status: ${e}`;
+        }
+      }
+    } else if (tool.function.name === "git_commit_all") {
+      const { rootPath } = getState();
+      if (!rootPath) {
+        toolResultContent = "Error: Project path not found.";
+      } else {
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const result = await invoke<string>("git_commit_all", { path: rootPath, message: args.message });
+          toolResultContent = `[SUCCESS] Git Commit All executed:\n${result}`;
+          toolSucceeded = true;
+          getState().actions.checkGitRepo();
+        } catch (e) {
+          toolResultContent = `Error during git commit: ${e}`;
+        }
+      }
+    } else if (tool.function.name === "git_push") {
+      const { rootPath } = getState();
+      if (!rootPath) {
+        toolResultContent = "Error: Project path not found.";
+      } else {
+        try {
+          const result = await invoke<string>("git_push", { path: rootPath });
+          toolResultContent = `[SUCCESS] Git Push executed:\n${result}`;
+          toolSucceeded = true;
+          getState().actions.checkGitRepo();
+        } catch (e) {
+          toolResultContent = `Error during git push: ${e}`;
+        }
+      }
+    } else if (tool.function.name === "git_create_branch") {
+      const { rootPath } = getState();
+      if (!rootPath) {
+        toolResultContent = "Error: Project path not found.";
+      } else {
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const result = await invoke<string>("git_create_branch", { path: rootPath, branchName: args.branch_name });
+          toolResultContent = `[SUCCESS] Git Create Branch executed:\n${result}`;
+          toolSucceeded = true;
+          getState().actions.checkGitRepo();
+        } catch (e) {
+          toolResultContent = `Error during git branch creation: ${e}`;
+        }
+      }
+    } else if (tool.function.name === "git_switch_branch") {
+      const { rootPath } = getState();
+      if (!rootPath) {
+        toolResultContent = "Error: Project path not found.";
+      } else {
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          await invoke("checkout_branch", { path: rootPath, branch: args.branch_name });
+          toolResultContent = `[SUCCESS] Switched to branch: ${args.branch_name}`;
+          toolSucceeded = true;
+          getState().actions.checkGitRepo();
+          requiresRescan = true;
+        } catch (e) {
+          toolResultContent = `Error switching branch: ${e}`;
         }
       }
     }

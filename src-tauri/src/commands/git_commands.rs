@@ -486,3 +486,72 @@ pub fn clone_git_repository(url: String, path: String) -> Result<(), String> {
     Repository::clone(&url, &path).map_err(|e| format!("Không thể clone kho Git: {}", e.message()))?;
     Ok(())
 }
+
+#[command]
+pub async fn git_commit_all(path: String, message: String) -> Result<String, String> {
+    use tokio::process::Command;
+    let git_cmd = if cfg!(target_os = "windows") { "git.exe" } else { "git" };
+
+    let mut add_cmd = Command::new(git_cmd);
+    add_cmd.current_dir(&path).args(&["add", "."]);
+    #[cfg(target_os = "windows")]
+    add_cmd.creation_flags(0x08000000);
+    
+    let add_out = add_cmd.output().await.map_err(|e| format!("Lỗi git add: {}", e))?;
+    if !add_out.status.success() {
+        return Err(String::from_utf8_lossy(&add_out.stderr).to_string());
+    }
+
+    let mut commit_cmd = Command::new(git_cmd);
+    commit_cmd.current_dir(&path).args(&["commit", "-m", &message]);
+    #[cfg(target_os = "windows")]
+    commit_cmd.creation_flags(0x08000000);
+    
+    let commit_out = commit_cmd.output().await.map_err(|e| format!("Lỗi git commit: {}", e))?;
+    let stdout = String::from_utf8_lossy(&commit_out.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&commit_out.stderr).to_string();
+    
+    Ok(format!("{}\n{}", stdout, stderr))
+}
+
+#[command]
+pub async fn git_push(path: String) -> Result<String, String> {
+    use tokio::process::Command;
+    let git_cmd = if cfg!(target_os = "windows") { "git.exe" } else { "git" };
+
+    let mut push_cmd = Command::new(git_cmd);
+    push_cmd.current_dir(&path).args(&["push"]);
+    #[cfg(target_os = "windows")]
+    push_cmd.creation_flags(0x08000000);
+    
+    let push_out = push_cmd.output().await.map_err(|e| format!("Lỗi git push: {}", e))?;
+    let stdout = String::from_utf8_lossy(&push_out.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&push_out.stderr).to_string();
+    
+    if push_out.status.success() {
+        Ok(format!("{}\n{}", stdout, stderr))
+    } else {
+        Err(format!("{}\n{}", stdout, stderr))
+    }
+}
+
+#[command]
+pub async fn git_create_branch(path: String, branch_name: String) -> Result<String, String> {
+    use tokio::process::Command;
+    let git_cmd = if cfg!(target_os = "windows") { "git.exe" } else { "git" };
+
+    let mut branch_cmd = Command::new(git_cmd);
+    branch_cmd.current_dir(&path).args(&["checkout", "-b", &branch_name]);
+    #[cfg(target_os = "windows")]
+    branch_cmd.creation_flags(0x08000000);
+    
+    let branch_out = branch_cmd.output().await.map_err(|e| format!("Lỗi tạo branch: {}", e))?;
+    let stdout = String::from_utf8_lossy(&branch_out.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&branch_out.stderr).to_string();
+    
+    if branch_out.status.success() {
+        Ok(format!("{}\n{}", stdout, stderr))
+    } else {
+        Err(format!("{}\n{}", stdout, stderr))
+    }
+}

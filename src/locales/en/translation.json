@@ -232,7 +232,12 @@
         "create_file": "Create File",
         "delete": "Delete",
         "create_dir": "Create Folder"
-      }
+      },
+      "gitStatus": "Check Git Status",
+      "gitCommitAll": "Git Commit:",
+      "gitPush": "Push code to Remote (Git Push)",
+      "gitCreateBranch": "Create & Switch to branch:",
+      "gitSwitchBranch": "Switch to branch:"
     },
     "addedExclusion": "Added exclusion for",
     "addedExclusionError": "Failed to add exclusion for"

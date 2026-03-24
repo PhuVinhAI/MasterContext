@@ -18,6 +18,10 @@ import {
   FileEdit,
   Code,
   FileDiff,
+  GitBranch,
+  GitCommit,
+  UploadCloud,
+  FileSearch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type ChatMessage as ChatMessageType } from "@/store/types";
@@ -312,6 +316,66 @@ export function ChatMessage({
           );
         } catch (e) {
           toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.applyDiffBlocks")}</p>;
+        }
+        break;
+
+      case "git_status":
+        ToolIcon = FileSearch;
+        toolContent = (
+          <p className="font-medium text-foreground">
+            {t("aiPanel.toolCall.gitStatus")}
+          </p>
+        );
+        break;
+
+      case "git_commit_all":
+        ToolIcon = GitCommit;
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          toolContent = (
+            <p className="font-medium text-foreground">
+              {t("aiPanel.toolCall.gitCommitAll")} <code className="ml-1 text-xs text-muted-foreground">"{args.message}"</code>
+            </p>
+          );
+        } catch (e) {
+          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.gitCommitAll")}</p>;
+        }
+        break;
+
+      case "git_push":
+        ToolIcon = UploadCloud;
+        toolContent = (
+          <p className="font-medium text-foreground">
+            {t("aiPanel.toolCall.gitPush")}
+          </p>
+        );
+        break;
+
+      case "git_create_branch":
+        ToolIcon = GitBranch;
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          toolContent = (
+            <p className="font-medium text-foreground">
+              {t("aiPanel.toolCall.gitCreateBranch")} <code className="ml-1 text-xs text-muted-foreground">{args.branch_name}</code>
+            </p>
+          );
+        } catch (e) {
+          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.gitCreateBranch")}</p>;
+        }
+        break;
+
+      case "git_switch_branch":
+        ToolIcon = GitBranch;
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          toolContent = (
+            <p className="font-medium text-foreground">
+              {t("aiPanel.toolCall.gitSwitchBranch")} <code className="ml-1 text-xs text-muted-foreground">{args.branch_name}</code>
+            </p>
+          );
+        } catch (e) {
+          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.gitSwitchBranch")}</p>;
         }
         break;
 

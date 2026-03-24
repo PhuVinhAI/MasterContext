@@ -232,7 +232,12 @@
         "create_file": "Tạo tệp",
         "delete": "Xóa",
         "create_dir": "Tạo thư mục"
-      }
+      },
+      "gitStatus": "Xem trạng thái thay đổi Git",
+      "gitCommitAll": "Git Commit:",
+      "gitPush": "Đẩy mã nguồn (Git Push) lên Remote",
+      "gitCreateBranch": "Tạo & chuyển sang nhánh mới:",
+      "gitSwitchBranch": "Chuyển sang nhánh:"
     },
     "addedExclusion": "Đã thêm vùng loại trừ cho",
     "addedExclusionError": "Không thể thêm vùng loại trừ cho"
