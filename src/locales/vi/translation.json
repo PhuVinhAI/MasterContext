@@ -219,24 +219,109 @@
       "context": "Context",
       "mc": "Master Context"
     },
+    "viewDetails": "Xem chi tiết Output",
     "toolCall": {
-      "listingFiles": "Liệt kê tệp dự án",
-      "readingFile": "Đang đọc file",
-      "executingTool": "Thực thi công cụ",
-      "modifiedGroup": "Đã sửa đổi nhóm ngữ cảnh",
-      "listingGroupFiles": "Liệt kê tệp trong nhóm hiện tại",
-      "gettingDummyContext": "Đang phân tích cấu trúc mã nguồn (Dummy DLLs)...",
-      "creatingGroup": "Đang tạo nhóm ngữ cảnh:",
-      "creatingGroupFallback": "Đang tạo nhóm ngữ cảnh...",
-      "bash": "Đang chạy Terminal...",
-      "read": "Đang đọc nội dung file...",
-      "write": "Đang ghi đè file...",
-      "edit": "Đang chỉnh sửa file...",
-      "glob": "Đang tìm kiếm file...",
-      "grep": "Đang tìm nội dung trong mã nguồn..."
-    },
-    "addedExclusion": "Đã thêm vùng loại trừ cho",
-    "addedExclusionError": "Không thể thêm vùng loại trừ cho"
+      "listingFiles": {
+        "pending": "Đang liệt kê cấu trúc dự án...",
+        "success": "Đã liệt kê cấu trúc dự án",
+        "error": "Lỗi khi liệt kê cấu trúc dự án"
+      },
+      "readingFile": {
+        "pending": "Đang đọc file",
+        "success": "Đã đọc file",
+        "error": "Lỗi khi đọc file"
+      },
+      "modifiedGroup": {
+        "pending": "Đang sửa đổi nhóm ngữ cảnh...",
+        "success": "Đã sửa đổi nhóm ngữ cảnh",
+        "error": "Lỗi sửa đổi nhóm ngữ cảnh"
+      },
+      "listingGroupFiles": {
+        "pending": "Đang liệt kê tệp trong nhóm...",
+        "success": "Đã liệt kê tệp trong nhóm",
+        "error": "Lỗi liệt kê tệp trong nhóm"
+      },
+      "gettingDummyContext": {
+        "pending": "Đang phân tích cấu trúc mã nguồn (Dummy)...",
+        "success": "Đã phân tích cấu trúc mã nguồn (Dummy)",
+        "error": "Lỗi phân tích cấu trúc mã nguồn"
+      },
+      "creatingGroup": {
+        "pending": "Đang tạo nhóm ngữ cảnh:",
+        "success": "Đã tạo nhóm ngữ cảnh:",
+        "error": "Lỗi khi tạo nhóm ngữ cảnh:"
+      },
+      "creatingGroupFallback": {
+        "pending": "Đang tạo nhóm ngữ cảnh...",
+        "success": "Đã tạo nhóm ngữ cảnh",
+        "error": "Lỗi khi tạo nhóm ngữ cảnh"
+      },
+      "bash": {
+        "pending": "Đang chạy Terminal:",
+        "success": "Đã chạy Terminal:",
+        "error": "Lỗi chạy Terminal:"
+      },
+      "bashFallback": {
+        "pending": "Đang chạy Terminal...",
+        "success": "Đã chạy Terminal",
+        "error": "Lỗi chạy Terminal"
+      },
+      "read": {
+        "pending": "Đang đọc nội dung file:",
+        "success": "Đã đọc nội dung file:",
+        "error": "Lỗi đọc nội dung file:"
+      },
+      "readFallback": {
+        "pending": "Đang đọc nội dung file...",
+        "success": "Đã đọc nội dung file",
+        "error": "Lỗi đọc nội dung file"
+      },
+      "write": {
+        "pending": "Đang ghi đè file:",
+        "success": "Đã ghi đè file:",
+        "error": "Lỗi ghi đè file:"
+      },
+      "writeFallback": {
+        "pending": "Đang ghi đè file...",
+        "success": "Đã ghi đè file",
+        "error": "Lỗi ghi đè file"
+      },
+      "edit": {
+        "pending": "Đang chỉnh sửa file:",
+        "success": "Đã chỉnh sửa file:",
+        "error": "Lỗi chỉnh sửa file:"
+      },
+      "editFallback": {
+        "pending": "Đang chỉnh sửa file...",
+        "success": "Đã chỉnh sửa file",
+        "error": "Lỗi chỉnh sửa file"
+      },
+      "glob": {
+        "pending": "Đang tìm kiếm file:",
+        "success": "Đã tìm kiếm file:",
+        "error": "Lỗi tìm kiếm file:"
+      },
+      "globFallback": {
+        "pending": "Đang tìm kiếm file...",
+        "success": "Đã tìm kiếm file",
+        "error": "Lỗi tìm kiếm file"
+      },
+      "grep": {
+        "pending": "Đang tìm kiếm nội dung:",
+        "success": "Đã tìm kiếm nội dung:",
+        "error": "Lỗi tìm kiếm nội dung:"
+      },
+      "grepFallback": {
+        "pending": "Đang tìm kiếm nội dung...",
+        "success": "Đã tìm kiếm nội dung",
+        "error": "Lỗi tìm kiếm nội dung"
+      },
+      "addedExclusion": {
+        "pending": "Đang thêm vùng loại trừ cho",
+        "success": "Đã thêm vùng loại trừ cho",
+        "error": "Không thể thêm vùng loại trừ cho"
+      }
+    }
   },
   "mainPanel": {
     "placeholder": {

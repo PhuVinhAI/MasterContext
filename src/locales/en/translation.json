@@ -219,33 +219,109 @@
       "context": "Context",
       "mc": "Master Context"
     },
+    "viewDetails": "View Output Details",
     "toolCall": {
-      "listingFiles": "Listing project files",
-      "readingFile": "Reading file",
-      "executingTool": "Executing tool",
-      "modifiedGroup": "Modified context group",
-      "listingGroupFiles": "Listing files in current group",
-      "gettingDummyContext": "Analyzing source code structure (Dummy DLLs)...",
-      "creatingGroup": "Creating context group:",
-      "creatingGroupFallback": "Creating context group...",
-      "manageFilesystem": "Execute File System operations",
-      "manageFilesystemCount": "Execute File System operations ({{count}} tasks)",
-      "applyDiffBlocks": "Apply Diff Blocks patch",
-      "applyDiffBlocksCount": "Apply Diff Blocks patch ({{count}} files)",
-      "actions": {
-        "create_file": "Create File",
-        "delete": "Delete",
-        "create_dir": "Create Folder"
+      "listingFiles": {
+        "pending": "Listing project files...",
+        "success": "Listed project files",
+        "error": "Failed to list project files"
       },
-      "gitStatus": "Check Git Status",
-      "gitCommitAll": "Git Commit:",
-      "gitPush": "Push code to Remote (Git Push)",
-      "gitCreateBranch": "Create & Switch to branch:",
-      "gitSwitchBranch": "Switch to branch:",
-      "gitDeleteBranch": "Delete local branch:"
-    },
-    "addedExclusion": "Added exclusion for",
-    "addedExclusionError": "Failed to add exclusion for"
+      "readingFile": {
+        "pending": "Reading file",
+        "success": "Read file",
+        "error": "Failed to read file"
+      },
+      "modifiedGroup": {
+        "pending": "Modifying context group...",
+        "success": "Modified context group",
+        "error": "Failed to modify context group"
+      },
+      "listingGroupFiles": {
+        "pending": "Listing files in current group...",
+        "success": "Listed files in current group",
+        "error": "Failed to list files in group"
+      },
+      "gettingDummyContext": {
+        "pending": "Analyzing source code structure (Dummy DLLs)...",
+        "success": "Analyzed source code structure (Dummy DLLs)",
+        "error": "Failed to analyze source code structure"
+      },
+      "creatingGroup": {
+        "pending": "Creating context group:",
+        "success": "Created context group:",
+        "error": "Failed to create context group:"
+      },
+      "creatingGroupFallback": {
+        "pending": "Creating context group...",
+        "success": "Created context group",
+        "error": "Failed to create context group"
+      },
+      "bash": {
+        "pending": "Running Terminal:",
+        "success": "Ran Terminal:",
+        "error": "Failed to run Terminal:"
+      },
+      "bashFallback": {
+        "pending": "Running Terminal...",
+        "success": "Ran Terminal",
+        "error": "Failed to run Terminal"
+      },
+      "read": {
+        "pending": "Reading file content:",
+        "success": "Read file content:",
+        "error": "Failed to read file content:"
+      },
+      "readFallback": {
+        "pending": "Reading file content...",
+        "success": "Read file content",
+        "error": "Failed to read file content"
+      },
+      "write": {
+        "pending": "Overwriting file:",
+        "success": "Overwrote file:",
+        "error": "Failed to overwrite file:"
+      },
+      "writeFallback": {
+        "pending": "Overwriting file...",
+        "success": "Overwrote file",
+        "error": "Failed to overwrite file"
+      },
+      "edit": {
+        "pending": "Editing file:",
+        "success": "Edited file:",
+        "error": "Failed to edit file:"
+      },
+      "editFallback": {
+        "pending": "Editing file...",
+        "success": "Edited file",
+        "error": "Failed to edit file"
+      },
+      "glob": {
+        "pending": "Searching for files:",
+        "success": "Searched for files:",
+        "error": "Failed to search for files:"
+      },
+      "globFallback": {
+        "pending": "Searching for files...",
+        "success": "Searched for files",
+        "error": "Failed to search for files"
+      },
+      "grep": {
+        "pending": "Searching content in code:",
+        "success": "Searched content in code:",
+        "error": "Failed to search content in code:"
+      },
+      "grepFallback": {
+        "pending": "Searching content in code...",
+        "success": "Searched content in code",
+        "error": "Failed to search content in code"
+      },
+      "addedExclusion": {
+        "pending": "Adding exclusion range for",
+        "success": "Added exclusion range for",
+        "error": "Failed to add exclusion range for"
+      }
+    }
   },
   "mainPanel": {
     "placeholder": {

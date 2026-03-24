@@ -524,11 +524,9 @@ pub async fn execute_terminal_command(root_path_str: String, command: String) ->
 
     cmd.current_dir(root_path);
 
-    // Timeout 2 phút tương tự triết lý Opencode
-    let timeout_duration = std::time::Duration::from_secs(120);
-    
-    match tokio::time::timeout(timeout_duration, cmd.output()).await {
-        Ok(Ok(output)) => {
+    // Đã bỏ Timeout theo yêu cầu người dùng
+    match cmd.output().await {
+        Ok(output) => {
             let mut result = String::new();
             let stdout_str = String::from_utf8_lossy(&output.stdout);
             let stderr_str = String::from_utf8_lossy(&output.stderr);
@@ -553,10 +551,7 @@ pub async fn execute_terminal_command(root_path_str: String, command: String) ->
 
             Ok(result)
         }
-        Ok(Err(e)) => Err(format!("Lỗi khởi chạy tiến trình: {}", e)),
-        Err(_) => {
-            Ok("Lệnh bash đã bị buộc dừng do vượt quá thời gian chờ (Timeout 120s).".to_string())
-        }
+        Err(e) => Err(format!("Lỗi khởi chạy tiến trình: {}", e)),
     }
 }
 
