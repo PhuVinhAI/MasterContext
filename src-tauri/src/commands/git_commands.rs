@@ -442,7 +442,7 @@ pub fn checkout_branch(path: String, branch: String) -> Result<(), String> {
 }
 
 #[command]
-pub fn get_git_status(path: String) -> Result<GitStatus, String> {
+pub fn get_git_status(path: String, include_diff: Option<bool>) -> Result<GitStatus, String> {
     let repo = git2::Repository::open(&path).map_err(|e| e.to_string())?;
     
     let mut opts = StatusOptions::new();
@@ -456,10 +456,8 @@ pub fn get_git_status(path: String) -> Result<GitStatus, String> {
         if status == Status::CURRENT { continue; }
 
         if let Some(path_str) = entry.path() {
-            // Prioritize the most significant status for a simple display
             let status_char = 
-                if status.is_wt_new() { "A" } // Untracked is like a new file in working tree
-                else if status.is_index_new() { "A" }
+                if status.is_wt_new() || status.is_index_new() { "A" }
                 else if status.is_wt_deleted() || status.is_index_deleted() { "D" }
                 else if status.is_wt_renamed() || status.is_index_renamed() { "R" }
                 else if status.is_wt_modified() || status.is_index_modified() { "M" }
@@ -475,7 +473,36 @@ pub fn get_git_status(path: String) -> Result<GitStatus, String> {
         }
     }
 
-    Ok(GitStatus { files: files_status_map })
+    let mut diff_str = None;
+    if include_diff.unwrap_or(true) {
+        let mut combined_diff = String::new();
+        
+        // 1. Thay đổi đã staged (Head -> Index)
+        if let Ok(head) = repo.head().and_then(|h| h.peel_to_tree()) {
+            if let Ok(staged_diff) = repo.diff_tree_to_index(Some(&head), None, None) {
+                staged_diff.print(git2::DiffFormat::Patch, |_, _, line| {
+                    combined_diff.push(line.origin());
+                    combined_diff.push_str(std::str::from_utf8(line.content()).unwrap_or(""));
+                    true
+                }).ok();
+            }
+        }
+
+        // 2. Thay đổi chưa staged (Index -> Workdir)
+        if let Ok(unstaged_diff) = repo.diff_index_to_workdir(None, None) {
+             unstaged_diff.print(git2::DiffFormat::Patch, |_, _, line| {
+                combined_diff.push(line.origin());
+                combined_diff.push_str(std::str::from_utf8(line.content()).unwrap_or(""));
+                true
+            }).ok();
+        }
+
+        if !combined_diff.is_empty() {
+            diff_str = Some(combined_diff);
+        }
+    }
+
+    Ok(GitStatus { files: files_status_map, diff: diff_str })
 }
 
 #[command]
@@ -583,7 +610,7 @@ pub async fn git_revert_commit(path: String, commit_sha: String) -> Result<Strin
     let git_cmd = if cfg!(target_os = "windows") { "git.exe" } else { "git" };
 
     let mut revert_cmd = Command::new(git_cmd);
-    revert_cmd.current_dir(&path).args(&["revert", "--no-edit", &commit_sha]);
+    revert_cmd.current_dir(&path).args(&["revert", "--no-commit", &commit_sha]);
     #[cfg(target_os = "windows")]
     revert_cmd.creation_flags(0x08000000);
     

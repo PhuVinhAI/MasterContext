@@ -16,7 +16,6 @@ import {
   ChevronDown,
   ChevronUp,
   FileEdit,
-  Code,
   FileDiff,
   GitBranch,
   GitCommit,

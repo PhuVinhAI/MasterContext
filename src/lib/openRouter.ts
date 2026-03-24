@@ -299,7 +299,11 @@ export const handleToolCalls = async (
         toolResultContent = "Error: Project path not found.";
       } else {
         try {
-          const status = await invoke("get_git_status", { path: rootPath });
+          const args = JSON.parse(tool.function.arguments);
+          const status = await invoke("get_git_status", { 
+            path: rootPath,
+            includeDiff: args.include_diff !== undefined ? args.include_diff : true 
+          });
           toolResultContent = JSON.stringify(status, null, 2);
           toolSucceeded = true;
         } catch (e) {

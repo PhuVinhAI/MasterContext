@@ -26,6 +26,8 @@ pub struct GitCommit {
 #[serde(rename_all = "camelCase")]
 pub struct GitStatus {
     pub files: BTreeMap<String, String>, // Path -> Status Code (e.g., "M", "A", "D")
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub diff: Option<String>,
 }
 
 // --- STRUCTS FOR AI CHAT & TOOL CALLING ---

@@ -198,10 +198,15 @@ const ALL_TOOLS: Record<string, ToolDefinition> = {
   },
   GIT_STATUS: {
     name: "git_status",
-    description: "Xem trạng thái các file bị thay đổi (modified, added, deleted) trong Git hiện tại.",
+    description: "Xem trạng thái các file bị thay đổi và nội dung diff chi tiết. Mặc định sẽ trả về toàn bộ diff để bạn phân tích, trừ khi bạn chỉ cần cấu hình cây thư mục thì đặt include_diff=false.",
     parameters: {
       type: "object",
-      properties: {},
+      properties: {
+        include_diff: {
+          type: "boolean",
+          description: "Mặc định là true. Nếu false, chỉ trả về danh sách các file bị ảnh hưởng.",
+        },
+      },
     },
   },
   GIT_COMMIT_ALL: {

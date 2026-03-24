@@ -42,6 +42,7 @@ export const createGitActions: StateCreator<AppState, [], [], GitActions> = (
     try {
       const status = await invoke<GitStatus>("get_git_status", {
         path: rootPath,
+        includeDiff: false, // UI chỉ cần danh sách file để hiện icon M, A, D
       });
       set({ gitStatus: status });
     } catch (e) {
