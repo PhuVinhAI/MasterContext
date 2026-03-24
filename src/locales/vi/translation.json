@@ -104,6 +104,12 @@
       "confirm": "Xác nhận và Checkout"
     },
     "branch": "Nhánh",
+    "revertTooltip": "Hoàn tác (Revert) thay đổi của commit này",
+    "revertDialog": {
+      "title": "Xác nhận Hoàn tác (Revert)?",
+      "description": "Hành động này sẽ tạo ra một commit mới để đảo ngược các thay đổi trong <strong>{{sha}}</strong>. Nó không làm thay đổi lịch sử cũ và KHÔNG tự động push.",
+      "confirm": "Hoàn tác Commit"
+    },
     "forcePushTooltip": "Khôi phục nhánh về commit này và Đẩy đè lên Remote (XÓA COMMIT MỚI)",
     "forcePushDialog": {
       "title": "Xác nhận ghi đè lịch sử (Force Push)?",

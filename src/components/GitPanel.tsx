@@ -1,6 +1,5 @@
 // src/components/GitPanel.tsx
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppStore, useAppActions } from "@/store/appStore";
 import { useShallow } from "zustand/react/shallow";
@@ -18,6 +17,7 @@ import {
   History,
   RotateCcw,
   Flame,
+  Undo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -47,6 +47,7 @@ export function GitPanel() {
     checkoutLatestBranch,
     switchBranch,
     resetAndForcePush,
+    revertCommit,
   } = useAppActions();
   const {
     rootPath: state_rootPath,
@@ -83,6 +84,8 @@ export function GitPanel() {
   const [checkoutSha, setCheckoutSha] = useState<string | null>(null);
   const [forcePushSha, setForcePushSha] = useState<string | null>(null);
   const [isForcePushing, setIsForcePushing] = useState(false);
+  const [revertSha, setRevertSha] = useState<string | null>(null);
+  const [isReverting, setIsReverting] = useState(false);
 
   const handleCopy = async (sha: string) => {
     setCopyingSha(sha);
@@ -230,6 +233,16 @@ export function GitPanel() {
                         )}
                       >
                         <Download className="h-3.5 w-3.5" />
+                      </Button>
+
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => setRevertSha(commit.sha)}
+                        className="h-7 w-7 border-orange-500/50 text-orange-600 hover:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/10"
+                        title={t("gitPanel.revertTooltip")}
+                      >
+                        <Undo2 className="h-3.5 w-3.5" />
                       </Button>
 
                       <Button
@@ -386,6 +399,47 @@ export function GitPanel() {
             >
               {isForcePushing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               {t("gitPanel.forcePushDialog.confirm")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog Revert */}
+      <AlertDialog
+        open={!!revertSha}
+        onOpenChange={(open) => !open && setRevertSha(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-orange-500 flex items-center gap-2">
+              <Undo2 className="h-5 w-5" />
+              {t("gitPanel.revertDialog.title")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span dangerouslySetInnerHTML={{
+                __html: t("gitPanel.revertDialog.description", {
+                  sha: revertSha?.substring(0, 7),
+                })
+              }} />
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isReverting}>{t("common.cancel")}</AlertDialogCancel>
+            <Button
+              variant="outline"
+              className="border-orange-500 text-orange-600 hover:bg-orange-500/10 dark:text-orange-400"
+              disabled={isReverting}
+              onClick={async () => {
+                if (revertSha) {
+                  setIsReverting(true);
+                  await revertCommit(revertSha);
+                  setIsReverting(false);
+                  setRevertSha(null);
+                }
+              }}
+            >
+              {isReverting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {t("gitPanel.revertDialog.confirm")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

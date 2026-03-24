@@ -576,3 +576,24 @@ pub async fn git_delete_branch(path: String, branch_name: String) -> Result<Stri
         Err(format!("{}\n{}", stdout, stderr))
     }
 }
+
+#[command]
+pub async fn git_revert_commit(path: String, commit_sha: String) -> Result<String, String> {
+    use tokio::process::Command;
+    let git_cmd = if cfg!(target_os = "windows") { "git.exe" } else { "git" };
+
+    let mut revert_cmd = Command::new(git_cmd);
+    revert_cmd.current_dir(&path).args(&["revert", "--no-edit", &commit_sha]);
+    #[cfg(target_os = "windows")]
+    revert_cmd.creation_flags(0x08000000);
+    
+    let revert_out = revert_cmd.output().await.map_err(|e| format!("Lỗi khi chạy git revert: {}", e))?;
+    let stdout = String::from_utf8_lossy(&revert_out.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&revert_out.stderr).to_string();
+    
+    if revert_out.status.success() {
+        Ok(format!("{}\n{}", stdout, stderr))
+    } else {
+        Err(format!("{}\n{}", stdout, stderr))
+    }
+}

@@ -26,6 +26,7 @@ export interface GitActions {
   fetchGitBranches: () => Promise<void>;
   switchBranch: (branchName: string) => Promise<void>;
   resetAndForcePush: (commitSha: string) => Promise<void>;
+  revertCommit: (commitSha: string) => Promise<void>;
 }
 
 export const createGitActions: StateCreator<AppState, [], [], GitActions> = (
@@ -268,6 +269,26 @@ export const createGitActions: StateCreator<AppState, [], [], GitActions> = (
       get().actions.rescanProject();
     } catch (e) {
       message(`Lỗi force push: ${e}`, { title: "Lỗi", kind: "error" });
+    }
+  },
+
+  revertCommit: async (commitSha: string) => {
+    const { rootPath } = get();
+    if (!rootPath) return;
+
+    try {
+      await invoke("git_revert_commit", {
+        path: rootPath,
+        commitSha,
+      });
+      await message("Đã revert thành công (commit mới đã được tạo)! Chưa push.", { title: "Thành công", kind: "info" });
+      await get().actions.checkGitRepo();
+      get().actions.rescanProject();
+    } catch (e) {
+      await message(`Lỗi khi revert commit (có thể bị conflict): ${e}`, {
+        title: "Lỗi",
+        kind: "error",
+      });
     }
   },
 });
