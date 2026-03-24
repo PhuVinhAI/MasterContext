@@ -210,7 +210,12 @@ function App() {
           topP: settings.topP ?? 1.0,
           topK: settings.topK ?? 0,
           maxTokens: settings.maxTokens ?? 0,
+          geminiThinkingLevel: settings.geminiThinkingLevel ?? "MEDIUM",
+          subAgentModel: settings.subAgentModel ?? "",
+          subAgentEnabled: settings.subAgentEnabled ?? true,
+          subAgentMaxRetries: settings.subAgentMaxRetries ?? 3,
           kiloPort: settings.kiloPort ?? 9999,
+          patchPort: settings.patchPort ?? 9998,
           discordWebhookUrl: settings.discordWebhookUrl ?? "",
           aiModels: projectAiModels.length
             ? projectAiModels
