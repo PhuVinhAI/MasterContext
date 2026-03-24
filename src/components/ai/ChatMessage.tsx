@@ -478,7 +478,7 @@ export function ChatMessage({
                   </div>
                 </div>
               )}
-              <div className="markdown-content w-full min-w-0 max-w-full">
+              <div className="markdown-content w-full min-w-0 max-w-full overflow-x-auto">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[rehypeHighlight]}
@@ -514,7 +514,7 @@ export function ChatMessage({
                   )}
                 </div>
               )}
-              <div className="markdown-content w-full min-w-0 max-w-full">
+              <div className="markdown-content w-full min-w-0 max-w-full overflow-x-auto">
                 {message.role === "assistant" ? (
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
