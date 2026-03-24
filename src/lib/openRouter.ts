@@ -246,40 +246,6 @@ export const handleToolCalls = async (
           toolResultContent = `Error parsing operations: ${e}`;
         }
       }
-    } else if (tool.function.name === "edit_file_by_lines") {
-      const { rootPath, gitRepoInfo } = getState();
-      if (!gitRepoInfo?.isRepository) {
-        toolResultContent = "Error: Project must be a Git repository to use file modification tools. This is a strict safety policy. Please initialize Git first.";
-      } else if (!rootPath) {
-        toolResultContent = "Error: Project path not found.";
-      } else {
-        try {
-          const args = JSON.parse(tool.function.arguments);
-          const edits = args.edits || [];
-          let combinedResults = "";
-          let successCount = 0;
-
-          for (const edit of edits) {
-            try {
-              await invoke("replace_file_lines", {
-                rootPathStr: rootPath,
-                fileRelPath: edit.file_path,
-                startLine: edit.start_line,
-                endLine: edit.end_line,
-                newContent: edit.new_content
-              });
-              combinedResults += `[SUCCESS] Updated lines ${edit.start_line}-${edit.end_line} in ${edit.file_path}\n`;
-              successCount++;
-            } catch (err) {
-              combinedResults += `[ERROR] Failed to edit lines in ${edit.file_path}: ${err}\n`;
-            }
-          }
-          toolResultContent = combinedResults.trim() || "No edits executed.";
-          toolSucceeded = successCount > 0;
-        } catch (e) {
-          toolResultContent = `Error parsing edits: ${e}`;
-        }
-      }
     } else if (tool.function.name === "apply_diff_blocks") {
       const { rootPath, gitRepoInfo } = getState();
       if (!gitRepoInfo?.isRepository) {
@@ -295,10 +261,21 @@ export const handleToolCalls = async (
 
           for (const edit of edits) {
             try {
-              const blocks = edit.blocks.map((b: any) => ({
+              // Defensive Parsing: Handle hallucinated JSON structures where 'blocks' array is missing
+              let rawBlocks = [];
+              if (Array.isArray(edit.blocks)) {
+                rawBlocks = edit.blocks;
+              } else if (edit.search_block && edit.replace_block) {
+                rawBlocks = [edit];
+              } else {
+                throw new Error(`Malformed JSON: 'blocks' array is missing for file ${edit.file_path || 'unknown'}.`);
+              }
+
+              const blocks = rawBlocks.map((b: any) => ({
                 search: b.search_block,
                 replace: b.replace_block
               }));
+
               await invoke("apply_multiple_search_replace", {
                 rootPathStr: rootPath,
                 fileRelPath: edit.file_path,
@@ -307,7 +284,7 @@ export const handleToolCalls = async (
               combinedResults += `[SUCCESS] Applied ${blocks.length} diff block(s) to ${edit.file_path}\n`;
               successCount++;
             } catch (err) {
-              combinedResults += `[ERROR] Failed to apply diff to ${edit.file_path}: ${err}\n`;
+              combinedResults += `[ERROR] Failed to apply diff to ${edit.file_path}: ${err}\n-> HÀNH ĐỘNG BẮT BUỘC: Bạn đã cung cấp sai search_block (sai khoảng trắng, thụt lề, hoặc code đã bị thay đổi). KHÔNG ĐƯỢC thử lại diff cũ. Hãy gọi ngay tool 'read_file' để lấy nội dung file mới nhất, sau đó mới tạo ra diff mới chuẩn xác.\n`;
             }
           }
           toolResultContent = combinedResults.trim() || "No diffs executed.";
@@ -406,7 +383,7 @@ export const handleToolCalls = async (
       }
     }
 
-    if (toolSucceeded && ["manage_filesystem", "edit_file_by_lines", "apply_diff_blocks"].includes(tool.function.name)) {
+    if (toolSucceeded && ["manage_filesystem", "apply_diff_blocks"].includes(tool.function.name)) {
       requiresRescan = true;
     }
 

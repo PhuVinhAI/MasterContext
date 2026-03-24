@@ -230,8 +230,6 @@
       "creatingGroupFallback": "Creating context group...",
       "manageFilesystem": "Execute File System operations",
       "manageFilesystemCount": "Execute File System operations ({{count}} tasks)",
-      "editFileByLines": "Update code by lines",
-      "editFileByLinesCount": "Update code by lines ({{count}} files)",
       "applyDiffBlocks": "Apply Diff Blocks patch",
       "applyDiffBlocksCount": "Apply Diff Blocks patch ({{count}} files)",
       "actions": {
