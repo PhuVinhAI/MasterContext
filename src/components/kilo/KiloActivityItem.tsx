@@ -34,9 +34,9 @@ export function KiloActivityItem({ activity }: { activity: KiloActivity }) {
   }
 
   return (
-    <div className={cn("border rounded-lg overflow-hidden transition-all shadow-sm flex flex-col w-full max-w-full", bgClass)}>
-      <div 
-        className={cn("p-3 flex items-center justify-between gap-2 w-full", hasDetails ? "cursor-pointer hover:bg-black/5 dark:hover:bg-white/5" : "")}
+    <div className={cn("border rounded-lg overflow-hidden transition-all shadow-sm flex flex-col w-full max-w-full min-w-0", bgClass)}>
+      <div
+        className={cn("p-3 flex items-center justify-between gap-2 w-full min-w-0", hasDetails ? "cursor-pointer hover:bg-black/5 dark:hover:bg-white/5" : "")}
         onClick={() => hasDetails && setExpanded(!expanded)}
       >
         <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
@@ -50,12 +50,12 @@ export function KiloActivityItem({ activity }: { activity: KiloActivity }) {
         )}
       </div>
       {expanded && hasDetails && (
-        <div className="bg-[#18181B] border-t border-border/50 overflow-auto max-h-[500px] shadow-inner custom-scrollbar w-full">
+        <div className="bg-[#18181B] border-t border-border/50 overflow-auto max-h-[500px] shadow-inner custom-scrollbar w-full min-w-0 max-w-full">
           <div className="p-4 font-mono text-[12px] leading-relaxed whitespace-pre min-w-full w-fit inline-block">
             {activity.details.map((line, i) => {
               const cleanLine = stripAnsi(line);
               let lineClass = "text-gray-300 hover:bg-white/10 px-2 py-0.5 rounded-sm transition-colors block w-full";
-              
+
               // Highlight Logic cho Code Diff & Error
               if (cleanLine.startsWith('+') && !cleanLine.startsWith('+++')) {
                 lineClass = "text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded-sm block w-full";

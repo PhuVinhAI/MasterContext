@@ -58,15 +58,15 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
   const timeStr = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
   return (
-    <div className={cn("flex flex-col rounded-lg overflow-hidden border shadow-xs transition-colors", hasError ? "border-destructive/30" : "border-border")}>
+    <div className={cn("flex flex-col rounded-lg overflow-hidden border shadow-xs transition-colors min-w-0 max-w-full", hasError ? "border-destructive/30" : "border-border")}>
       <div
         className={cn(
-          "flex items-center justify-between p-3 cursor-pointer select-none transition-colors",
+          "flex items-center justify-between p-3 cursor-pointer select-none transition-colors min-w-0 w-full",
           hasError ? "bg-destructive/5 hover:bg-destructive/10" : "bg-muted/30 hover:bg-muted/50"
         )}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           {task.status === 'running' ? (
             <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
           ) : hasError ? (
@@ -74,17 +74,17 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
           ) : (
             <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
           )}
-          <span className="text-sm font-semibold flex items-center gap-1.5">
-            Task <Clock className="h-3 w-3 text-muted-foreground ml-1" /> <span className="text-xs text-muted-foreground font-mono">{timeStr}</span>
+          <span className="text-sm font-semibold flex items-center gap-1.5 truncate">
+            Task <Clock className="h-3 w-3 text-muted-foreground ml-1 shrink-0" /> <span className="text-xs text-muted-foreground font-mono shrink-0">{timeStr}</span>
           </span>
 
-          <div className="hidden sm:flex items-center gap-2 ml-2 text-xs">
+          <div className="hidden sm:flex items-center gap-2 ml-2 text-xs shrink-0">
             {successCount > 0 && <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 h-5">Thành công: {successCount}</Badge>}
             {errorCount > 0 && <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 h-5">Lỗi: {errorCount}</Badge>}
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           {hasError && (
             <Button
               variant="outline"
@@ -102,16 +102,16 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
       </div>
 
       {isExpanded && task.operations.length > 0 && (
-        <div className="p-3 grid gap-2 border-t bg-background">
+        <div className="p-3 grid gap-2 border-t bg-background min-w-0 w-full">
           {task.operations.map((op, i) => {
             const isOpExpanded = expandedOps[`${op.id}-${i}`] ?? op.status === 'error';
             const isCommand = op.opType === 'command';
             const hasLongOutput = op.message.includes('\n') || op.message.length > 100;
 
             return (
-              <div key={`${op.id}-${i}`} className="flex flex-col gap-1.5 p-2 rounded-md border bg-muted/10">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0 font-mono text-sm">
+              <div key={`${op.id}-${i}`} className="flex flex-col gap-1.5 p-2 rounded-md border bg-muted/10 min-w-0 w-full max-w-full">
+                <div className="flex items-center justify-between gap-2 min-w-0 w-full">
+                  <div className="flex items-center gap-2 min-w-0 font-mono text-sm flex-1">
                     {renderOpIcon(op.opType, op.status)}
                     <span className="truncate flex-1 font-semibold">{op.file}</span>
                   </div>
@@ -134,14 +134,14 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
                       {isOpExpanded ? "Ẩn chi tiết" : "Hiển thị chi tiết"}
                     </div>
                     {isOpExpanded && (
-                      <pre className="text-[11px] bg-muted/50 border border-border/50 p-2 rounded-md overflow-x-auto whitespace-pre-wrap max-h-60 font-mono text-foreground/80 custom-scrollbar">
+                      <pre className="text-[11px] bg-muted/50 border border-border/50 p-2 rounded-md overflow-x-auto whitespace-pre-wrap max-h-60 font-mono text-foreground/80 custom-scrollbar min-w-0 max-w-full">
                         {op.message}
                       </pre>
                     )}
                   </div>
                 ) : (
                   <div className={cn(
-                    "text-xs pl-6",
+                    "text-xs pl-6 min-w-0 max-w-full break-words",
                     op.status === 'error' ? "text-destructive font-medium" : "text-muted-foreground"
                   )}>
                     {op.message}
@@ -150,8 +150,8 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
 
                 {/* UI HIỂN THỊ SUB-AGENT HOẠT ĐỘNG */}
                 {op.subAgentLogs && op.subAgentLogs.length > 0 && (
-                  <div className="pl-6 mt-1">
-                    <div className="rounded-md border border-purple-500/30 bg-purple-500/5 overflow-hidden">
+                  <div className="pl-6 mt-1 min-w-0 max-w-full">
+                    <div className="rounded-md border border-purple-500/30 bg-purple-500/5 overflow-hidden min-w-0 max-w-full">
                       <div className="flex items-center gap-2 px-2 py-1.5 bg-purple-500/10 border-b border-purple-500/20">
                         <Bot className="h-3.5 w-3.5 text-purple-500" />
                         <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Sub-Agent Auto Fix</span>
@@ -159,11 +159,11 @@ const TaskGroup = ({ task, isFirst }: { task: PatchTaskUI, isFirst: boolean }) =
                           <Loader2 className="h-3 w-3 animate-spin text-purple-500 ml-auto" />
                         )}
                       </div>
-                      <div className="p-2 space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar">
+                      <div className="p-2 space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar min-w-0 max-w-full">
                         {op.subAgentLogs.map((log, idx) => (
-                          <div key={idx} className="text-[11px] text-foreground/80 flex items-start gap-1.5">
+                          <div key={idx} className="text-[11px] text-foreground/80 flex items-start gap-1.5 min-w-0 max-w-full">
                             <span className="text-purple-500/50 mt-0.5 shrink-0">›</span>
-                            <span>{log}</span>
+                            <span className="break-words min-w-0">{log}</span>
                           </div>
                         ))}
                       </div>
@@ -222,14 +222,14 @@ export function PatchPanel() {
       />
 
       <ScrollArea className="flex-1 min-h-0" viewportRef={scrollRef}>
-        <div className="p-4 space-y-4 w-full min-w-0">
+        <div className="p-4 space-y-4 w-full min-w-0 max-w-full">
           {patchTasks.length === 0 ? (
-             <div className="flex flex-col items-center justify-center py-10 text-muted-foreground/50 space-y-3 border-2 border-dashed rounded-xl">
-               <Code className="h-8 w-8 opacity-50" />
-               <span className="text-sm text-center px-4">Hãy chọn Target Engine là "Auto-Patch" trong Extension và gọi AI để xem cập nhật UI tại đây!</span>
+             <div className="flex flex-col items-center justify-center py-10 text-muted-foreground/50 space-y-3 border-2 border-dashed rounded-xl w-full min-w-0 max-w-full">
+               <Code className="h-8 w-8 opacity-50 shrink-0" />
+               <span className="text-sm text-center px-4 truncate w-full">Hãy chọn Target Engine là "Auto-Patch" trong Extension và gọi AI để xem cập nhật UI tại đây!</span>
              </div>
           ) : (
-            <div className="flex flex-col gap-4 pb-4">
+            <div className="flex flex-col gap-4 pb-4 min-w-0 w-full max-w-full">
               {patchTasks.map((task, index) => (
                 <TaskGroup key={task.id} task={task} isFirst={index === patchTasks.length - 1} />
               ))}

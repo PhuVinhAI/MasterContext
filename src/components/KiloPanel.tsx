@@ -39,7 +39,7 @@ export function KiloPanel() {
     const finalStatus = isKiloServerRunning ? kiloTaskStatus : 'error';
     let currentModel: string | null = null;
     const activities: KiloActivity[] = [];
-    
+
     const state: { current: KiloActivity | null } = { current: null };
     let idCounter = 0;
 
@@ -111,30 +111,30 @@ export function KiloPanel() {
 
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
-      <KiloHeader 
+      <KiloHeader
         isKiloServerRunning={isKiloServerRunning}
         onStart={startKiloServer}
         onStop={stopKiloServer}
         onClearLogs={clearKiloLogs}
         status={parsedState.status}
       />
-      
+
       <ScrollArea className="flex-1 min-h-0" viewportRef={scrollRef}>
-        <div className="p-4 space-y-6 w-full min-w-0">
-          <div className="w-full min-w-0">
+        <div className="p-4 space-y-6 w-full min-w-0 max-w-full">
+          <div className="w-full min-w-0 max-w-full">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Code className="h-4 w-4" /> Luồng thực thi
+              <Code className="h-4 w-4 shrink-0" /> <span className="truncate">Luồng thực thi</span>
             </h3>
-            
+
             {parsedState.activities.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-muted-foreground/50 space-y-3 border-2 border-dashed rounded-xl w-full">
-                <Rocket className="h-8 w-8 opacity-50" />
-                <span className="text-sm text-center px-4">Hệ thống đang chờ yêu cầu từ Kilo CLI...</span>
+              <div className="flex flex-col items-center justify-center py-10 text-muted-foreground/50 space-y-3 border-2 border-dashed rounded-xl w-full min-w-0 max-w-full">
+                <Rocket className="h-8 w-8 opacity-50 shrink-0" />
+                <span className="text-sm text-center px-4 truncate w-full">Hệ thống đang chờ yêu cầu từ Kilo CLI...</span>
               </div>
             ) : (
-              <div className="space-y-3 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent w-full min-w-0">
+              <div className="space-y-3 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent w-full min-w-0 max-w-full">
                 {parsedState.activities.map((act) => (
-                  <div key={act.id} className="relative z-10 w-full min-w-0">
+                  <div key={act.id} className="relative z-10 w-full min-w-0 max-w-full">
                     <KiloActivityItem activity={act} />
                   </div>
                 ))}
