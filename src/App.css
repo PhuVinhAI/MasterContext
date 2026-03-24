@@ -148,7 +148,7 @@
 
 /* --- TÙY CHỈNH CHO MARKDOWN --- */
 .markdown-content {
-  @apply text-sm leading-relaxed break-words;
+  @apply text-sm leading-relaxed break-words min-w-0 max-w-full;
 }
 
 .markdown-content h1,

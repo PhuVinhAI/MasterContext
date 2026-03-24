@@ -240,7 +240,7 @@ export function ChatMessage({
   return (
     <div
       className={cn(
-        "group flex w-full items-start gap-2",
+        "group flex w-full items-start gap-2 min-w-0",
         message.role === "user" ? "justify-end" : "justify-start"
       )}
     >
@@ -271,7 +271,7 @@ export function ChatMessage({
           }
         >
           {message.role === "user" ? (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 w-full min-w-0 max-w-full">
               {message.attachedFiles && message.attachedFiles.length > 0 && (
                 <div className="border-b border-background/50 pb-2">
                   <div className="flex flex-wrap gap-1.5">
@@ -295,7 +295,7 @@ export function ChatMessage({
                   </div>
                 </div>
               )}
-              <div className="markdown-content">
+              <div className="markdown-content w-full min-w-0 max-w-full overflow-x-auto">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[rehypeHighlight]}
@@ -305,11 +305,11 @@ export function ChatMessage({
               </div>
             </div>
           ) : message.role === "assistant" && message.tool_calls ? (
-            <div className="space-y-2">
+            <div className="space-y-2 w-full min-w-0 max-w-full">
               {message.tool_calls.map(renderToolCall)}
             </div>
           ) : (
-            <div className="flex flex-col w-full">
+            <div className="flex flex-col w-full min-w-0 max-w-full">
               {message.role === "assistant" && message.thoughts && (
                 <div className="mb-3 rounded-md border border-border/50 bg-muted/20 overflow-hidden">
                   <button
@@ -331,7 +331,7 @@ export function ChatMessage({
                   )}
                 </div>
               )}
-              <div className="markdown-content">
+              <div className="markdown-content w-full min-w-0 max-w-full overflow-x-auto">
                 {message.role === "assistant" ? (
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
