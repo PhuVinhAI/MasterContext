@@ -116,10 +116,14 @@ export const handleNonStreamingResponseGoogle = async (
     assistantMessage.content = null; // As per OpenAI spec, content is null when tool_calls are present
 
     // Reuse existing tool handling logic
-    await handleToolCalls([toolCall], {
-      getState: useAppStore.getState,
-      setState: useAppStore.setState,
-    });
+    await handleToolCalls(
+      [toolCall],
+      {
+        getState: useAppStore.getState,
+        setState: useAppStore.setState,
+      },
+      assistantMessage.generationInfo
+    );
   }
 
   return assistantMessage;
@@ -203,7 +207,7 @@ export const handleStreamingResponseGoogle = async (
     if (objectsToProcess.length > 0) {
       let combinedText = "";
       let chunkUsage: GenerationInfo | null = null;
-      
+
       for (const chunk of objectsToProcess) {
         if (chunk.usageMetadata) {
           chunkUsage = {
@@ -226,7 +230,7 @@ export const handleStreamingResponseGoogle = async (
             type: "function",
             function: { name, arguments: JSON.stringify(args) },
           };
-          await handleToolCalls([toolCall], storeApi);
+          await handleToolCalls([toolCall], storeApi, chunkUsage || undefined);
           return; // Exit function, tool handler will take over
         }
 

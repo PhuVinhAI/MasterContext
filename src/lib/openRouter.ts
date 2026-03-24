@@ -20,7 +20,8 @@ type StoreApi = {
  */
 export const handleToolCalls = async (
   toolCalls: ChatMessage["tool_calls"],
-  storeApi: StoreApi
+  storeApi: StoreApi,
+  generationInfo?: GenerationInfo
 ) => {
   if (!toolCalls) return;
   const { getState, setState } = storeApi;
@@ -31,10 +32,14 @@ export const handleToolCalls = async (
     content: null,
     tool_calls: toolCalls,
     hidden: false,
+    ...(generationInfo && { generationInfo }),
   };
   setState((state: AppState) => ({
     chatMessages: [...state.chatMessages, assistantMessage],
   }));
+
+  // Cập nhật session ngay lập tức để UI hiển thị số token đã dùng cho lượt gọi này
+  await getState().actions.saveCurrentChatSession();
 
   // 2. Execute tool
   setState({ isAiPanelLoading: true }); // Keep loading state for the next AI call
@@ -221,7 +226,7 @@ export const fetchGenerationInfoWithRetry = async (
         `https://openrouter.ai/api/v1/generation?id=${generationId}`,
         { headers: { Authorization: `Bearer ${apiKey}` } }
       );
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           console.log(`Attempt ${i + 1} failed (404). Retrying in ${delay}ms...`);
@@ -230,7 +235,7 @@ export const fetchGenerationInfoWithRetry = async (
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       return data.data as GenerationInfo;
     } catch (error) {
@@ -285,10 +290,14 @@ export const handleNonStreamingResponse = async (
 
   // Check for tool calls
   if (assistantMessage.tool_calls) {
-    await handleToolCalls(assistantMessage.tool_calls, {
-      getState: useAppStore.getState,
-      setState: useAppStore.setState,
-    });
+    await handleToolCalls(
+      assistantMessage.tool_calls,
+      {
+        getState: useAppStore.getState,
+        setState: useAppStore.setState,
+      },
+      assistantMessage.generationInfo
+    );
     return assistantMessage; // Return immediately, the recursive call will handle the final message
   }
 
@@ -331,7 +340,7 @@ export const handleStreamingResponse = async (
 
       try {
         const json = JSON.parse(line.substring(5));
-        
+
         if (json.usage) {
           const usageInfo = {
             tokens_prompt: json.usage.prompt_tokens || 0,
@@ -356,13 +365,21 @@ export const handleStreamingResponse = async (
         const toolCallsChunk = json.choices?.[0]?.delta?.tool_calls;
         if (toolCallsChunk && toolCallsChunk.length > 0) {
           reader.cancel(); // Stop stream processing
-          await handleToolCalls(toolCallsChunk, storeApi);
+
+          // Thử lấy usage từ chunk hiện tại nếu API có trả về cùng lúc
+          const currentUsage = json.usage ? {
+            tokens_prompt: json.usage.prompt_tokens || 0,
+            tokens_completion: json.usage.completion_tokens || 0,
+            total_cost: 0,
+          } : undefined;
+
+          await handleToolCalls(toolCallsChunk, storeApi, currentUsage);
           return; // Exit fetch function
         }
 
         const delta = json.choices?.[0]?.delta?.content || "";
         const reasoning = json.choices?.[0]?.delta?.reasoning_content || "";
-        
+
         if (delta || reasoning) {
           if (isFirstChunk) {
             isFirstChunk = false;
