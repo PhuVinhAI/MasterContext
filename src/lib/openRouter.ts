@@ -71,18 +71,35 @@ export const handleToolCalls = async (
       } else {
         try {
           const args = JSON.parse(tool.function.arguments);
-          const content = await invoke<string>("read_file_with_lines", {
-            rootPathStr: rootPath,
-            fileRelPath: args.file_path,
-            startLine: args.start_line,
-            endLine: args.end_line,
-          });
-          toolResultContent = `Here is the content of ${args.file_path}${
-            args.start_line ? ` from line ${args.start_line}` : ""
-          }${args.end_line ? ` to line ${args.end_line}` : ""}:\n\n${content}`;
-          toolSucceeded = true;
+          // Hỗ trợ cả định dạng cũ (file_path) và mới (files_to_read)
+          const filesToRead = args.files_to_read || (args.file_path ? [args] : []);
+
+          if (filesToRead.length === 0) {
+            toolResultContent = "Error: No files specified to read.";
+            toolSucceeded = false;
+          } else {
+            let combinedResults = "";
+            let successCount = 0;
+
+            for (const fileReq of filesToRead) {
+              try {
+                const content = await invoke<string>("read_file_with_lines", {
+                  rootPathStr: rootPath,
+                  fileRelPath: fileReq.file_path,
+                  startLine: fileReq.start_line,
+                  endLine: fileReq.end_line,
+                });
+                combinedResults += `--- START OF FILE ${fileReq.file_path} ${fileReq.start_line ? `(Lines ${fileReq.start_line}-${fileReq.end_line})` : ''} ---\n${content}\n--- END OF FILE ${fileReq.file_path} ---\n\n`;
+                successCount++;
+              } catch (err) {
+                combinedResults += `--- ERROR READING FILE ${fileReq.file_path} ---\n${err}\n\n`;
+              }
+            }
+            toolResultContent = combinedResults.trim();
+            toolSucceeded = successCount > 0;
+          }
         } catch (e) {
-          toolResultContent = `Error reading file: ${e}`;
+          toolResultContent = `Error parsing arguments or reading files: ${e}`;
           toolSucceeded = false;
         }
       }

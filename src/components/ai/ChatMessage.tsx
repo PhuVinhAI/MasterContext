@@ -65,26 +65,36 @@ export function ChatMessage({
         ToolIcon = FileText;
         try {
           const args = JSON.parse(tool.function.arguments);
-          const filePath = args.file_path || "unknown file";
-          const fileName = filePath.split("/").pop();
-          let lineInfo = "";
-          if (args.start_line && args.end_line) {
-            lineInfo = `${args.start_line}-${args.end_line}`;
-          } else if (args.start_line) {
-            lineInfo = `${args.start_line}-...`;
-          } else if (args.end_line) {
-            lineInfo = `...-${args.end_line}`;
-          }
+          const filesToRead: any[] = args.files_to_read || (args.file_path ? [args] : []);
 
           toolContent = (
-            <div className="flex items-baseline gap-1.5">
-              <code className="font-medium text-foreground" title={filePath}>
-                {fileName}
-              </code>
-              {lineInfo && (
-                <span className="text-xs text-muted-foreground">
-                  ({lineInfo})
-                </span>
+            <div className="w-full">
+              <p className="font-medium text-foreground">
+                {t("aiPanel.toolCall.readingFile")} ({filesToRead.length})
+              </p>
+              {filesToRead.length > 0 && (
+                <pre className="mt-2 bg-muted/30 dark:bg-muted/20 p-2 rounded-md text-xs font-mono max-h-40 overflow-auto custom-scrollbar">
+                  <code>
+                    {filesToRead.map((f, idx) => {
+                      const fileName = f.file_path?.split("/").pop() || "unknown";
+                      let lineInfo = "";
+                      if (f.start_line && f.end_line) lineInfo = `(${f.start_line}-${f.end_line})`;
+                      else if (f.start_line) lineInfo = `(${f.start_line}-...)`;
+                      else if (f.end_line) lineInfo = `(...-${f.end_line})`;
+
+                      return (
+                        <div
+                          key={`read-${idx}`}
+                          className="text-blue-600 dark:text-blue-400 whitespace-pre-wrap flex items-baseline gap-1.5"
+                        >
+                          <span className="select-none text-muted-foreground">• </span>
+                          <span title={f.file_path}>{fileName}</span>
+                          {lineInfo && <span className="text-muted-foreground text-[10px]">{lineInfo}</span>}
+                        </div>
+                      );
+                    })}
+                  </code>
+                </pre>
               )}
             </div>
           );

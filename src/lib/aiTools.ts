@@ -2,9 +2,11 @@
 
 // Định nghĩa một cấu trúc chung, không phụ thuộc vào nhà cung cấp
 interface ToolParameter {
-  type: "string" | "number" | "array" | "object";
+  type: "string" | "number" | "array" | "object" | "boolean";
   description: string;
-  items?: { type: "string" }; // Dành cho kiểu array
+  items?: Record<string, any>; // Hỗ trợ mảng object
+  properties?: Record<string, any>;
+  required?: string[];
 }
 
 interface ToolDefinition {
@@ -22,7 +24,7 @@ interface ToolDefinition {
 const ALL_TOOLS: Record<string, ToolDefinition> = {
   GET_PROJECT_FILE_TREE: {
     name: "get_project_file_tree",
-    description: "Lấy cấu trúc file và thư mục hoàn chỉnh của dự án hiện tại.",
+    description: "Lấy cấu trúc file và thư mục hoàn chỉnh của dự án hiện tại. KHUYẾN KHÍCH gọi tool này cùng với các tool khác trong 1 lượt (Multi-tool calling).",
     parameters: {
       type: "object",
       properties: {},
@@ -31,24 +33,34 @@ const ALL_TOOLS: Record<string, ToolDefinition> = {
   READ_FILE: {
     name: "read_file",
     description:
-      "Đọc nội dung của một file cụ thể trong dự án. Có thể đọc toàn bộ file hoặc một khoảng dòng cụ thể.",
+      "Đọc nội dung của MỘT hoặc NHIỀU file cụ thể trong dự án. KHUYẾN KHÍCH gọi tool này cùng lúc với các tool khác, hoặc truyền nhiều file vào mảng để đọc cùng lúc nhằm tiết kiệm thời gian.",
     parameters: {
       type: "object",
       properties: {
-        file_path: {
-          type: "string",
-          description: "Đường dẫn tương đối đến file từ gốc dự án.",
-        },
-        start_line: {
-          type: "number",
-          description: "Tùy chọn. Số dòng bắt đầu (tính từ 1) để đọc.",
-        },
-        end_line: {
-          type: "number",
-          description: "Tùy chọn. Số dòng kết thúc (tính từ 1) để đọc.",
+        files_to_read: {
+          type: "array",
+          description: "Danh sách các file cần đọc.",
+          items: {
+            type: "object",
+            properties: {
+              file_path: {
+                type: "string",
+                description: "Đường dẫn tương đối đến file từ gốc dự án.",
+              },
+              start_line: {
+                type: "number",
+                description: "Tùy chọn. Số dòng bắt đầu (tính từ 1) để đọc.",
+              },
+              end_line: {
+                type: "number",
+                description: "Tùy chọn. Số dòng kết thúc (tính từ 1) để đọc.",
+              },
+            },
+            required: ["file_path"],
+          },
         },
       },
-      required: ["file_path"],
+      required: ["files_to_read"],
     },
   },
   GET_CURRENT_CONTEXT_GROUP_FILES: {
@@ -108,7 +120,7 @@ const ALL_TOOLS: Record<string, ToolDefinition> = {
   },
   GET_DUMMY_PROJECT_CONTEXT: {
     name: "get_dummy_project_context",
-    description: "Lấy toàn bộ ngữ cảnh dự án ở chế độ Dummy (chỉ giữ lại cấu trúc file, class, hàm, biến và ẩn đi logic bên trong). Dùng công cụ này để có cái nhìn tổng quan về kiến trúc mã nguồn nhằm tự động tạo nhóm ngữ cảnh.",
+    description: "Lấy toàn bộ ngữ cảnh dự án ở chế độ Dummy (chỉ giữ lại cấu trúc file, class, hàm, biến và ẩn đi logic bên trong). Dùng công cụ này để có cái nhìn tổng quan về kiến trúc mã nguồn nhằm tự động tạo nhóm ngữ cảnh. Khuyến khích gọi kết hợp cùng lúc với các tool khác.",
     parameters: {
       type: "object",
       properties: {},
