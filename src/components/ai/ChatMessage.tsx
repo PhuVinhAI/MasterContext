@@ -11,6 +11,7 @@ import {
   Loader2,
   Scissors,
   XCircle,
+  AlertTriangle,
   RotateCcw,
   Brain,
   ChevronDown,
@@ -88,13 +89,16 @@ export function ChatMessage({
                       else if (f.start_line) lineInfo = `(${f.start_line}-...)`;
                       else if (f.end_line) lineInfo = `(...-${f.end_line})`;
 
+                      const detail = tool.detailed_results?.[idx];
                       return (
                         <div
                           key={`read-${idx}`}
                           className="text-blue-600 dark:text-blue-400 whitespace-pre-wrap flex items-baseline gap-1.5"
                         >
-                          <span className="select-none text-muted-foreground">• </span>
-                          <span title={f.file_path}>{fileName}</span>
+                          <span className="select-none text-muted-foreground">
+                            {detail?.status === 'error' ? <XCircle className="h-3 w-3 text-destructive inline" /> : <CheckCircle2 className="h-3 w-3 text-green-500 inline" />}
+                          </span>
+                          <span title={f.file_path} className={cn(detail?.status === 'error' && "text-destructive line-through")}>{fileName}</span>
                           {lineInfo && <span className="text-muted-foreground text-[10px]">{lineInfo}</span>}
                         </div>
                       );
@@ -239,15 +243,20 @@ export function ChatMessage({
               {ops.length > 0 && (
                 <pre className="mt-2 bg-muted/30 dark:bg-muted/20 p-2 rounded-md text-xs font-mono max-h-40 overflow-auto custom-scrollbar">
                   <code>
-                    {ops.map((op, idx) => (
-                      <div key={idx} className="whitespace-pre-wrap flex items-baseline gap-1.5">
-                         <span className="select-none text-muted-foreground">• </span>
-                         <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                            [{t(`aiPanel.toolCall.actions.${op.action}` as any, { defaultValue: op.action })}]
-                         </span>
-                         <span title={op.path}>{op.path}</span>
-                      </div>
-                    ))}
+                    {ops.map((op, idx) => {
+                      const detail = tool.detailed_results?.[idx];
+                      return (
+                        <div key={idx} className="whitespace-pre-wrap flex items-baseline gap-1.5">
+                           <span className="select-none text-muted-foreground">
+                              {detail?.status === 'error' ? <XCircle className="h-3 w-3 text-destructive inline" /> : <CheckCircle2 className="h-3 w-3 text-green-500 inline" />}
+                           </span>
+                           <span className="text-purple-600 dark:text-purple-400 font-semibold">
+                              [{t(`aiPanel.toolCall.actions.${op.action}` as any, { defaultValue: op.action })}]
+                           </span>
+                           <span title={op.path} className={cn(detail?.status === 'error' && "text-destructive line-through")}>{op.path}</span>
+                        </div>
+                      );
+                    })}
                   </code>
                 </pre>
               )}
@@ -271,13 +280,18 @@ export function ChatMessage({
               {edits.length > 0 && (
                 <pre className="mt-2 bg-muted/30 dark:bg-muted/20 p-2 rounded-md text-xs font-mono max-h-40 overflow-auto custom-scrollbar">
                   <code>
-                    {edits.map((edit, idx) => (
-                      <div key={idx} className="whitespace-pre-wrap flex items-baseline gap-1.5">
-                         <span className="select-none text-muted-foreground">• </span>
-                         <span className="text-blue-600 dark:text-blue-400" title={edit.file_path}>{edit.file_path}</span>
-                         <span className="text-muted-foreground text-[10px]">{edit.blocks?.length || 0} blocks</span>
-                      </div>
-                    ))}
+                    {edits.map((edit, idx) => {
+                      const detail = tool.detailed_results?.[idx];
+                      return (
+                        <div key={idx} className="whitespace-pre-wrap flex items-baseline gap-1.5">
+                           <span className="select-none text-muted-foreground">
+                              {detail?.status === 'error' ? <XCircle className="h-3 w-3 text-destructive inline" /> : <CheckCircle2 className="h-3 w-3 text-green-500 inline" />}
+                           </span>
+                           <span className={cn("text-blue-600 dark:text-blue-400", detail?.status === 'error' && "text-destructive line-through")} title={edit.file_path}>{edit.file_path}</span>
+                           <span className="text-muted-foreground text-[10px]">{edit.blocks?.length || 0} blocks</span>
+                        </div>
+                      );
+                    })}
                   </code>
                 </pre>
               )}
@@ -375,6 +389,8 @@ export function ChatMessage({
         <div className="flex items-center gap-1.5 shrink-0">
           {tool.status === "error" ? (
             <XCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+          ) : tool.status === "partial" ? (
+            <AlertTriangle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
           ) : (
             <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
           )}

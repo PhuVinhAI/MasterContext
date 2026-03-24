@@ -82,6 +82,7 @@ export const handleToolCalls = async (
           } else {
             let combinedResults = "";
             let successCount = 0;
+            const detailedResults: any[] = [];
 
             for (const fileReq of filesToRead) {
               try {
@@ -93,11 +94,19 @@ export const handleToolCalls = async (
                 });
                 combinedResults += `--- START OF FILE ${fileReq.file_path} ${fileReq.start_line ? `(Lines ${fileReq.start_line}-${fileReq.end_line})` : ''} ---\n${content}\n--- END OF FILE ${fileReq.file_path} ---\n\n`;
                 successCount++;
+                detailedResults.push({ status: "success", message: "OK" });
               } catch (err) {
                 combinedResults += `--- ERROR READING FILE ${fileReq.file_path} ---\n${err}\n\n`;
+                detailedResults.push({ status: "error", message: String(err) });
               }
             }
             toolResultContent = combinedResults.trim();
+            toolCalls[i].detailed_results = detailedResults;
+
+            if (successCount === filesToRead.length) toolCalls[i].status = "success";
+            else if (successCount > 0) toolCalls[i].status = "partial";
+            else toolCalls[i].status = "error";
+
             toolSucceeded = successCount > 0;
           }
         } catch (e) {
@@ -220,6 +229,7 @@ export const handleToolCalls = async (
           const ops = args.operations || [];
           let combinedResults = "";
           let successCount = 0;
+          const detailedResults: any[] = [];
 
           for (const op of ops) {
             try {
@@ -233,14 +243,22 @@ export const handleToolCalls = async (
                 await invoke("create_directory", { rootPathStr: rootPath, dirRelPath: op.path });
                 combinedResults += `[SUCCESS] Created directory: ${op.path}\n`;
               } else {
-                combinedResults += `[ERROR] Unknown action: ${op.action}\n`;
+                throw new Error(`Unknown action: ${op.action}`);
               }
               successCount++;
+              detailedResults.push({ status: "success", message: "OK" });
             } catch (err) {
               combinedResults += `[ERROR] Action ${op.action} on ${op.path} failed: ${err}\n`;
+              detailedResults.push({ status: "error", message: String(err) });
             }
           }
           toolResultContent = combinedResults.trim() || "No operations executed.";
+          toolCalls[i].detailed_results = detailedResults;
+
+          if (successCount === ops.length) toolCalls[i].status = "success";
+          else if (successCount > 0) toolCalls[i].status = "partial";
+          else toolCalls[i].status = "error";
+
           toolSucceeded = successCount > 0;
         } catch (e) {
           toolResultContent = `Error parsing operations: ${e}`;
@@ -259,6 +277,7 @@ export const handleToolCalls = async (
           let combinedResults = "";
           let successCount = 0;
 
+          const detailedResults: any[] = [];
           for (const edit of edits) {
             try {
               // Defensive Parsing: Handle hallucinated JSON structures where 'blocks' array is missing
@@ -283,11 +302,19 @@ export const handleToolCalls = async (
               });
               combinedResults += `[SUCCESS] Applied ${blocks.length} diff block(s) to ${edit.file_path}\n`;
               successCount++;
+              detailedResults.push({ status: "success", message: "OK" });
             } catch (err) {
               combinedResults += `[ERROR] Failed to apply diff to ${edit.file_path}: ${err}\n-> HÀNH ĐỘNG BẮT BUỘC: Bạn đã cung cấp sai search_block (sai khoảng trắng, thụt lề, hoặc code đã bị thay đổi). KHÔNG ĐƯỢC thử lại diff cũ. Hãy gọi ngay tool 'read_file' để lấy nội dung file mới nhất, sau đó mới tạo ra diff mới chuẩn xác.\n`;
+              detailedResults.push({ status: "error", message: String(err) });
             }
           }
           toolResultContent = combinedResults.trim() || "No diffs executed.";
+          toolCalls[i].detailed_results = detailedResults;
+
+          if (successCount === edits.length) toolCalls[i].status = "success";
+          else if (successCount > 0) toolCalls[i].status = "partial";
+          else toolCalls[i].status = "error";
+
           toolSucceeded = successCount > 0;
         } catch (e) {
           toolResultContent = `Error parsing diff blocks: ${e}`;
@@ -391,7 +418,10 @@ export const handleToolCalls = async (
       requiresRescan = true;
     }
 
-    toolCalls[i].status = toolSucceeded ? "success" : "error";
+    // toolCalls[i].status đã được set cụ thể ở trên cho các tool hỗ trợ partial
+    if (!toolCalls[i].status) {
+      toolCalls[i].status = toolSucceeded ? "success" : "error";
+    }
     toolCalls[i].result = toolResultContent;
 
     combinedToolResults.push(`[TOOL_RESULT for ${tool.function.name}]\n${toolResultContent}`);

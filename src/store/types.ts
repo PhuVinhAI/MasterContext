@@ -164,8 +164,12 @@ export interface ToolCall {
     name: string;
     arguments: string; // JSON string
   };
-  status?: "success" | "error"; // To track execution status for UI
+  status?: "success" | "error" | "partial"; // To track execution status for UI
   result?: string; // Store result text for terminal UI
+  detailed_results?: Array<{
+    status: "success" | "error";
+    message: string;
+  }>;
 }
 
 export interface PatchOpUI {
