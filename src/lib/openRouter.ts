@@ -358,20 +358,26 @@ export const handleToolCalls = async (
     if (!toolCalls[i].status) {
       toolCalls[i].status = toolSucceeded ? "success" : "error";
     }
-    toolCalls[i].result = toolResultContent;
+    
+    // KHÔNG LƯU toolResultContent vào toolCalls[i].result.
+    // Việc lưu dữ liệu siêu lớn (hàng MB) vào object state sẽ làm React/Zustand đứng hình khi xử lý.
+    delete toolCalls[i].result;
 
     combinedToolResults.push(`[TOOL_RESULT for ${tool.function.name}]\n${toolResultContent}`);
-  }
 
-  // 3. Update the assistant message in state with the tool's execution status
-  setState((state) => {
-    const newMessages = [...state.chatMessages];
-    const lastMessage = newMessages[newMessages.length - 1];
-    if (lastMessage?.role === "assistant" && lastMessage.tool_calls) {
-      lastMessage.tool_calls = toolCalls; // Update the UI with execution results
-    }
-    return { chatMessages: newMessages };
-  });
+    // Cập nhật State NGAY LẬP TỨC để UI đổi trạng thái (Spinning -> Success/Error) từng bước
+    setState((state) => {
+      const newMessages = [...state.chatMessages];
+      const lastMessage = newMessages[newMessages.length - 1];
+      if (lastMessage?.role === "assistant" && lastMessage.tool_calls) {
+        lastMessage.tool_calls = [...toolCalls]; 
+      }
+      return { chatMessages: newMessages };
+    });
+
+    // Ép nhường luồng thực thi cho trình duyệt để Paint UI (Rất quan trọng tránh treo máy)
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
 
   // 4. Add tool result as a hidden user message and re-fetch AI response
   const toolResultMessage: ChatMessage = {
