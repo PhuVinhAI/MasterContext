@@ -83,7 +83,6 @@ export const handleNonStreamingResponseGoogle = async (
     };
   }
   const candidate = data.candidates[0];
-  const content = candidate.content.parts[0].text;
   const usage = data.usageMetadata;
 
   const generationInfo: GenerationInfo | undefined = usage ? {
@@ -94,30 +93,36 @@ export const handleNonStreamingResponseGoogle = async (
 
   const assistantMessage: ChatMessage = {
     role: "assistant",
-    content: content,
+    content: "",
     ...(generationInfo && { generationInfo }),
   };
 
+  const toolCallsToExecute: ToolCall[] = [];
+
+  for (const part of candidate.content.parts) {
+    if (part.functionCall) {
+      const { name, args } = part.functionCall;
+      toolCallsToExecute.push({
+        id: `call_${Date.now()}_${Math.random().toString(36).substring(7)}`, // Google doesn't provide an ID
+        type: "function",
+        function: {
+          name: name,
+          arguments: JSON.stringify(args), // Gemini provides args as an object
+        },
+      });
+    } else if (part.text) {
+      assistantMessage.content += part.text;
+    }
+  }
+
   // Check for tool calls
-  const functionCallPart = candidate.content.parts.find(
-    (p: any) => p.functionCall
-  );
-  if (functionCallPart) {
-    const { name, args } = functionCallPart.functionCall;
-    const toolCall: ToolCall = {
-      id: `call_${Date.now()}`, // Google doesn't provide an ID, so we generate one
-      type: "function",
-      function: {
-        name: name,
-        arguments: JSON.stringify(args), // Gemini provides args as an object
-      },
-    };
-    assistantMessage.tool_calls = [toolCall];
+  if (toolCallsToExecute.length > 0) {
+    assistantMessage.tool_calls = toolCallsToExecute;
     assistantMessage.content = null; // As per OpenAI spec, content is null when tool_calls are present
 
     // Reuse existing tool handling logic
     await handleToolCalls(
-      [toolCall],
+      toolCallsToExecute,
       {
         getState: useAppStore.getState,
         setState: useAppStore.setState,
@@ -200,22 +205,16 @@ export const handleStreamingResponseGoogle = async (
     if (objectsToProcess.length > 0) {
       let combinedText = "";
 
+      let chunkUsage: GenerationInfo | undefined;
+
       for (const chunk of objectsToProcess) {
         if (chunk.usageMetadata) {
-          finalUsage = {
+          chunkUsage = {
             tokens_prompt: chunk.usageMetadata.promptTokenCount || 0,
             tokens_completion: chunk.usageMetadata.candidatesTokenCount || 0,
             total_cost: 0,
           };
-          // Cập nhật State token ngay lập tức nếu API gửi kèm
-          setState((state) => {
-            const newMessages = [...state.chatMessages];
-            const lastIndex = newMessages.length - 1;
-            if (newMessages[lastIndex] && newMessages[lastIndex].role === "assistant") {
-              newMessages[lastIndex] = { ...newMessages[lastIndex], generationInfo: finalUsage! };
-            }
-            return { chatMessages: newMessages };
-          });
+          finalUsage = chunkUsage;
         }
 
         const parts = chunk?.candidates?.[0]?.content?.parts;
@@ -233,6 +232,12 @@ export const handleStreamingResponseGoogle = async (
             combinedText += part.text;
           }
         }
+      }
+
+      if (toolCallsToExecute.length > 0) {
+        reader.cancel();
+        await handleToolCalls(toolCallsToExecute, storeApi, chunkUsage || finalUsage || undefined);
+        return;
       }
 
       if (combinedText) {
