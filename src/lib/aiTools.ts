@@ -140,6 +140,85 @@ const ALL_TOOLS: Record<string, ToolDefinition> = {
       required: ["name"],
     },
   },
+  MANAGE_FILESYSTEM: {
+    name: "manage_filesystem",
+    description: "Quản lý hệ thống file (Tạo file, xóa file, tạo thư mục). Xử lý nhiều thao tác cùng lúc. Tạo file ở thư mục chưa tồn tại sẽ tự động tạo thư mục con.",
+    parameters: {
+      type: "object",
+      properties: {
+        operations: {
+          type: "array",
+          description: "Danh sách các thao tác file system.",
+          items: {
+            type: "object",
+            properties: {
+              action: { type: "string", description: "'create_file' hoặc 'delete' hoặc 'create_dir'" },
+              path: { type: "string", description: "Đường dẫn tương đối từ gốc dự án" },
+              content: { type: "string", description: "Nội dung file (bắt buộc khi action = 'create_file')" }
+            },
+            required: ["action", "path"]
+          }
+        }
+      },
+      required: ["operations"]
+    }
+  },
+  EDIT_FILE_BY_LINES: {
+    name: "edit_file_by_lines",
+    description: "Ghi đè, thay thế hoặc chèn code vào file dựa trên Line Numbers (từ dòng A đến dòng B).",
+    parameters: {
+      type: "object",
+      properties: {
+        edits: {
+          type: "array",
+          description: "Danh sách các file cần sửa",
+          items: {
+            type: "object",
+            properties: {
+              file_path: { type: "string", description: "Đường dẫn file cần sửa" },
+              start_line: { type: "number", description: "Dòng bắt đầu (Tính từ 1)" },
+              end_line: { type: "number", description: "Dòng kết thúc. Mã nguồn từ start đến end sẽ bị xóa và đè bằng new_content" },
+              new_content: { type: "string", description: "Mã nguồn mới để chèn vào" }
+            },
+            required: ["file_path", "start_line", "end_line", "new_content"]
+          }
+        }
+      },
+      required: ["edits"]
+    }
+  },
+  APPLY_DIFF_BLOCKS: {
+    name: "apply_diff_blocks",
+    description: "Sửa đổi nội dung file bằng định dạng SEARCH/REPLACE Diff blocks. Code trong search_block PHẢI khớp chính xác 100% với file gốc.",
+    parameters: {
+      type: "object",
+      properties: {
+        edits: {
+          type: "array",
+          description: "Danh sách các file cần sửa bằng diff",
+          items: {
+            type: "object",
+            properties: {
+              file_path: { type: "string", description: "Đường dẫn file" },
+              blocks: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    search_block: { type: "string", description: "Mã nguồn gốc cần tìm (Khớp 100% khoảng trắng, thụt lề)" },
+                    replace_block: { type: "string", description: "Mã nguồn mới thay thế" }
+                  },
+                  required: ["search_block", "replace_block"]
+                }
+              }
+            },
+            required: ["file_path", "blocks"]
+          }
+        }
+      },
+      required: ["edits"]
+    }
+  }
 };
 
 /**
@@ -163,14 +242,18 @@ function getAvailableTools(
     tools.push(ALL_TOOLS.CREATE_CONTEXT_GROUP);
     tools.push(ALL_TOOLS.MODIFY_CONTEXT_GROUP);
     tools.push(ALL_TOOLS.ADD_EXCLUSION_RANGE_TO_FILE);
+    tools.push(ALL_TOOLS.MANAGE_FILESYSTEM);
+    tools.push(ALL_TOOLS.EDIT_FILE_BY_LINES);
+    tools.push(ALL_TOOLS.APPLY_DIFF_BLOCKS);
     if (editingGroupId) {
       tools.push(ALL_TOOLS.GET_CURRENT_CONTEXT_GROUP_FILES);
     }
   } else if (aiChatMode === "context") {
+    tools.push(ALL_TOOLS.CREATE_CONTEXT_GROUP);
+    tools.push(ALL_TOOLS.MODIFY_CONTEXT_GROUP);
+    tools.push(ALL_TOOLS.ADD_EXCLUSION_RANGE_TO_FILE);
     if (editingGroupId) {
       tools.push(ALL_TOOLS.GET_CURRENT_CONTEXT_GROUP_FILES);
-      tools.push(ALL_TOOLS.MODIFY_CONTEXT_GROUP);
-      tools.push(ALL_TOOLS.ADD_EXCLUSION_RANGE_TO_FILE);
     }
   }
 

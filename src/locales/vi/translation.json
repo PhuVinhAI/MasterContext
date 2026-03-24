@@ -220,7 +220,19 @@
       "modifiedGroup": "Đã sửa đổi nhóm ngữ cảnh",
       "listingGroupFiles": "Liệt kê tệp trong nhóm hiện tại",
       "gettingDummyContext": "Đang phân tích cấu trúc mã nguồn (Dummy DLLs)...",
-      "creatingGroup": "Đang tạo nhóm ngữ cảnh:"
+      "creatingGroup": "Đang tạo nhóm ngữ cảnh:",
+      "creatingGroupFallback": "Đang tạo nhóm ngữ cảnh...",
+      "manageFilesystem": "Thực thi tác vụ Hệ thống File",
+      "manageFilesystemCount": "Thực thi tác vụ Hệ thống File ({{count}} tác vụ)",
+      "editFileByLines": "Cập nhật mã nguồn theo dòng",
+      "editFileByLinesCount": "Cập nhật mã nguồn theo dòng ({{count}} file)",
+      "applyDiffBlocks": "Áp dụng Bản vá (Diff Blocks)",
+      "applyDiffBlocksCount": "Áp dụng Bản vá Diff Blocks ({{count}} file)",
+      "actions": {
+        "create_file": "Tạo tệp",
+        "delete": "Xóa",
+        "create_dir": "Tạo thư mục"
+      }
     },
     "addedExclusion": "Đã thêm vùng loại trừ cho",
     "addedExclusionError": "Không thể thêm vùng loại trừ cho"

@@ -46,6 +46,8 @@ export const handleToolCalls = async (
 
   const combinedToolResults: string[] = [];
 
+  let requiresRescan = false;
+
   for (let i = 0; i < toolCalls.length; i++) {
     const tool = toolCalls[i];
     let toolResultContent = `Error: Tool '${tool.function.name}' not found or failed to execute.`;
@@ -206,6 +208,112 @@ export const handleToolCalls = async (
         toolResultContent = `Error creating group: ${e}`;
         toolSucceeded = false;
       }
+    } else if (tool.function.name === "manage_filesystem") {
+      const { rootPath } = getState();
+      if (!rootPath) {
+        toolResultContent = "Error: Project path not found.";
+      } else {
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const ops = args.operations || [];
+          let combinedResults = "";
+          let successCount = 0;
+
+          for (const op of ops) {
+            try {
+              if (op.action === "create_file") {
+                await invoke("create_file", { rootPathStr: rootPath, fileRelPath: op.path, content: op.content || "" });
+                combinedResults += `[SUCCESS] Created file: ${op.path}\n`;
+              } else if (op.action === "delete") {
+                await invoke("delete_file", { rootPathStr: rootPath, fileRelPath: op.path });
+                combinedResults += `[SUCCESS] Deleted: ${op.path}\n`;
+              } else if (op.action === "create_dir") {
+                await invoke("create_directory", { rootPathStr: rootPath, dirRelPath: op.path });
+                combinedResults += `[SUCCESS] Created directory: ${op.path}\n`;
+              } else {
+                combinedResults += `[ERROR] Unknown action: ${op.action}\n`;
+              }
+              successCount++;
+            } catch (err) {
+              combinedResults += `[ERROR] Action ${op.action} on ${op.path} failed: ${err}\n`;
+            }
+          }
+          toolResultContent = combinedResults.trim() || "No operations executed.";
+          toolSucceeded = successCount > 0;
+        } catch (e) {
+          toolResultContent = `Error parsing operations: ${e}`;
+        }
+      }
+    } else if (tool.function.name === "edit_file_by_lines") {
+      const { rootPath } = getState();
+      if (!rootPath) {
+        toolResultContent = "Error: Project path not found.";
+      } else {
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const edits = args.edits || [];
+          let combinedResults = "";
+          let successCount = 0;
+
+          for (const edit of edits) {
+            try {
+              await invoke("replace_file_lines", {
+                rootPathStr: rootPath,
+                fileRelPath: edit.file_path,
+                startLine: edit.start_line,
+                endLine: edit.end_line,
+                newContent: edit.new_content
+              });
+              combinedResults += `[SUCCESS] Updated lines ${edit.start_line}-${edit.end_line} in ${edit.file_path}\n`;
+              successCount++;
+            } catch (err) {
+              combinedResults += `[ERROR] Failed to edit lines in ${edit.file_path}: ${err}\n`;
+            }
+          }
+          toolResultContent = combinedResults.trim() || "No edits executed.";
+          toolSucceeded = successCount > 0;
+        } catch (e) {
+          toolResultContent = `Error parsing edits: ${e}`;
+        }
+      }
+    } else if (tool.function.name === "apply_diff_blocks") {
+      const { rootPath } = getState();
+      if (!rootPath) {
+        toolResultContent = "Error: Project path not found.";
+      } else {
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const edits = args.edits || [];
+          let combinedResults = "";
+          let successCount = 0;
+
+          for (const edit of edits) {
+            try {
+              const blocks = edit.blocks.map((b: any) => ({
+                search: b.search_block,
+                replace: b.replace_block
+              }));
+              await invoke("apply_multiple_search_replace", {
+                rootPathStr: rootPath,
+                fileRelPath: edit.file_path,
+                blocks
+              });
+              combinedResults += `[SUCCESS] Applied ${blocks.length} diff block(s) to ${edit.file_path}\n`;
+              successCount++;
+            } catch (err) {
+              combinedResults += `[ERROR] Failed to apply diff to ${edit.file_path}: ${err}\n`;
+            }
+          }
+          toolResultContent = combinedResults.trim() || "No diffs executed.";
+          toolSucceeded = successCount > 0;
+        } catch (e) {
+          toolResultContent = `Error parsing diff blocks: ${e}`;
+        }
+      }
+    }
+
+    if (toolSucceeded && ["manage_filesystem", "edit_file_by_lines", "apply_diff_blocks"].includes(tool.function.name)) {
+      requiresRescan = true;
     }
 
     toolCalls[i].status = toolSucceeded ? "success" : "error";
@@ -235,6 +343,10 @@ export const handleToolCalls = async (
   }));
   await getState().actions.saveCurrentChatSession();
   await getState().actions.fetchAiResponse();
+
+  if (requiresRescan && !getState().isScanning) {
+    getState().actions.rescanProject();
+  }
 };
 
 /**

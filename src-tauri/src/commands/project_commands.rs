@@ -430,9 +430,84 @@ pub fn apply_search_replace(
 }
 
 #[command]
+pub fn replace_file_lines(
+    root_path_str: String,
+    file_rel_path: String,
+    start_line: usize,
+    end_line: usize,
+    new_content: String,
+) -> Result<(), String> {
+    let root_path = Path::new(&root_path_str);
+    let full_path = root_path.join(&file_rel_path);
+
+    if !full_path.exists() {
+        return Err("File does not exist".into());
+    }
+
+    let content = fs::read_to_string(&full_path).map_err(|e| e.to_string())?;
+    // Chuẩn hóa xuống dòng để xử lý mảng
+    let normalized_content = content.replace("\r\n", "\n").replace('\r', "\n");
+    let lines: Vec<&str> = normalized_content.split('\n').collect();
+
+    // Hệ thống tính từ 1, mảng tính từ 0
+    let start_idx = if start_line > 0 { start_line - 1 } else { 0 };
+    let end_idx = if end_line > 0 { end_line - 1 } else { 0 };
+
+    if start_idx > lines.len() || start_idx > end_idx {
+        return Err("Khoảng dòng (Line range) cung cấp không hợp lệ".into());
+    }
+
+    let end_idx_clamped = std::cmp::min(end_idx, lines.len().saturating_sub(1));
+
+    let mut new_lines = Vec::new();
+    new_lines.extend_from_slice(&lines[..start_idx]);
+    new_lines.push(new_content.as_str());
+    if end_idx_clamped + 1 < lines.len() {
+        new_lines.extend_from_slice(&lines[end_idx_clamped + 1..]);
+    }
+
+    let final_content = new_lines.join("\n");
+    fs::write(full_path, final_content).map_err(|e| e.to_string())
+}
+
+#[derive(serde::Deserialize)]
+pub struct SearchReplaceBlock {
+    pub search: String,
+    pub replace: String,
+}
+
+#[command]
+pub fn apply_multiple_search_replace(
+    root_path_str: String,
+    file_rel_path: String,
+    blocks: Vec<SearchReplaceBlock>,
+) -> Result<(), String> {
+    let root_path = Path::new(&root_path_str);
+    let full_path = root_path.join(file_rel_path);
+
+    if !full_path.exists() {
+        return Err("File does not exist".into());
+    }
+
+    let mut content = fs::read_to_string(&full_path).map_err(|e| e.to_string())?;
+
+    for (i, block) in blocks.iter().enumerate() {
+        let clean_content = content.replace("\r\n", "\n").replace('\r', "\n");
+        let clean_search = block.search.replace("\r\n", "\n").replace('\r', "\n");
+
+        if !clean_content.contains(&clean_search) {
+            return Err(format!("Block sửa đổi thứ {} không khớp mã nguồn. Đảm bảo copy đúng từng khoảng trắng và thụt lề.", i + 1));
+        }
+        content = clean_content.replace(&clean_search, &block.replace);
+    }
+
+    fs::write(full_path, content).map_err(|e| e.to_string())
+}
+
+#[command]
 pub async fn execute_terminal_command(root_path_str: String, command: String) -> Result<String, String> {
     let root_path = Path::new(&root_path_str);
-    
+
     use tokio::process::Command;
     let mut cmd = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");

@@ -15,6 +15,9 @@ import {
   Brain,
   ChevronDown,
   ChevronUp,
+  FileEdit,
+  Code,
+  FileDiff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type ChatMessage as ChatMessageType } from "@/store/types";
@@ -201,7 +204,7 @@ export function ChatMessage({
         ToolIcon = Brain;
         toolContent = (
           <p className="font-medium text-foreground">
-            {t("aiPanel.toolCall.gettingDummyContext", "Đang phân tích cấu trúc mã nguồn (Dummy DLLs)...")}
+            {t("aiPanel.toolCall.gettingDummyContext")}
           </p>
         );
         break;
@@ -212,11 +215,103 @@ export function ChatMessage({
           const args = JSON.parse(tool.function.arguments);
           toolContent = (
             <p className="font-medium text-foreground">
-              {t("aiPanel.toolCall.creatingGroup", "Đang tạo nhóm ngữ cảnh:")} <code className="ml-1 px-1.5 py-0.5 bg-background rounded-md text-xs">{args.name}</code>
+              {t("aiPanel.toolCall.creatingGroup")} <code className="ml-1 px-1.5 py-0.5 bg-background rounded-md text-xs">{args.name}</code>
             </p>
           );
         } catch (e) {
-          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.creatingGroup", "Đang tạo nhóm ngữ cảnh...")}</p>;
+          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.creatingGroupFallback")}</p>;
+        }
+        break;
+
+      case "manage_filesystem":
+        ToolIcon = FileEdit;
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const ops: any[] = args.operations || [];
+          toolContent = (
+            <div className="w-full">
+              <p className="font-medium text-foreground">
+                {t("aiPanel.toolCall.manageFilesystemCount", { count: ops.length })}
+              </p>
+              {ops.length > 0 && (
+                <pre className="mt-2 bg-muted/30 dark:bg-muted/20 p-2 rounded-md text-xs font-mono max-h-40 overflow-auto custom-scrollbar">
+                  <code>
+                    {ops.map((op, idx) => (
+                      <div key={idx} className="whitespace-pre-wrap flex items-baseline gap-1.5">
+                         <span className="select-none text-muted-foreground">• </span>
+                         <span className="text-purple-600 dark:text-purple-400 font-semibold">
+                            [{t(`aiPanel.toolCall.actions.${op.action}` as any, { defaultValue: op.action })}]
+                         </span>
+                         <span title={op.path}>{op.path}</span>
+                      </div>
+                    ))}
+                  </code>
+                </pre>
+              )}
+            </div>
+          );
+        } catch (e) {
+          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.manageFilesystem")}</p>;
+        }
+        break;
+
+      case "edit_file_by_lines":
+        ToolIcon = Code;
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const edits: any[] = args.edits || [];
+          toolContent = (
+            <div className="w-full">
+              <p className="font-medium text-foreground">
+                {t("aiPanel.toolCall.editFileByLinesCount", { count: edits.length })}
+              </p>
+              {edits.length > 0 && (
+                <pre className="mt-2 bg-muted/30 dark:bg-muted/20 p-2 rounded-md text-xs font-mono max-h-40 overflow-auto custom-scrollbar">
+                  <code>
+                    {edits.map((edit, idx) => (
+                      <div key={idx} className="whitespace-pre-wrap flex items-baseline gap-1.5">
+                         <span className="select-none text-muted-foreground">• </span>
+                         <span className="text-blue-600 dark:text-blue-400" title={edit.file_path}>{edit.file_path}</span>
+                         <span className="text-muted-foreground text-[10px]">({edit.start_line}-{edit.end_line})</span>
+                      </div>
+                    ))}
+                  </code>
+                </pre>
+              )}
+            </div>
+          );
+        } catch (e) {
+          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.editFileByLines")}</p>;
+        }
+        break;
+
+      case "apply_diff_blocks":
+        ToolIcon = FileDiff;
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const edits: any[] = args.edits || [];
+          toolContent = (
+            <div className="w-full">
+              <p className="font-medium text-foreground">
+                {t("aiPanel.toolCall.applyDiffBlocksCount", { count: edits.length })}
+              </p>
+              {edits.length > 0 && (
+                <pre className="mt-2 bg-muted/30 dark:bg-muted/20 p-2 rounded-md text-xs font-mono max-h-40 overflow-auto custom-scrollbar">
+                  <code>
+                    {edits.map((edit, idx) => (
+                      <div key={idx} className="whitespace-pre-wrap flex items-baseline gap-1.5">
+                         <span className="select-none text-muted-foreground">• </span>
+                         <span className="text-blue-600 dark:text-blue-400" title={edit.file_path}>{edit.file_path}</span>
+                         <span className="text-muted-foreground text-[10px]">{edit.blocks?.length || 0} blocks</span>
+                      </div>
+                    ))}
+                  </code>
+                </pre>
+              )}
+            </div>
+          );
+        } catch (e) {
+          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.applyDiffBlocks")}</p>;
         }
         break;
 
