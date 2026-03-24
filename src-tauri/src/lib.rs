@@ -68,6 +68,8 @@ pub fn run() {
             commands::apply_multiple_search_replace,
             commands::execute_terminal_command,
             commands::delete_file,
+            commands::glob_search,
+            commands::grep_search,
             commands::update_groups_in_project_data,
             commands::start_group_update,
             commands::start_group_export,

@@ -140,126 +140,77 @@ const ALL_TOOLS: Record<string, ToolDefinition> = {
       required: ["name"],
     },
   },
-  MANAGE_FILESYSTEM: {
-    name: "manage_filesystem",
-    description: "Quản lý hệ thống file (Tạo file, xóa file, tạo thư mục). Xử lý nhiều thao tác cùng lúc. Tạo file ở thư mục chưa tồn tại sẽ tự động tạo thư mục con.",
+  BASH: {
+    name: "bash",
+    description: "Chạy các lệnh terminal/shell (ví dụ: git, npm, cargo check, python, ls). KHÔNG dùng tool này để đọc, ghi hay tìm kiếm file (sử dụng read, write, glob, grep thay thế). Cần chờ tiến trình kết thúc nên hãy dùng cho các lệnh có tính dừng.",
     parameters: {
       type: "object",
       properties: {
-        operations: {
-          type: "array",
-          description: "Danh sách các thao tác file system.",
-          items: {
-            type: "object",
-            properties: {
-              action: { type: "string", description: "'create_file' hoặc 'delete' hoặc 'create_dir'" },
-              path: { type: "string", description: "Đường dẫn tương đối từ gốc dự án" },
-              content: { type: "string", description: "Nội dung file (bắt buộc khi action = 'create_file')" }
-            },
-            required: ["action", "path"]
-          }
-        }
+        command: { type: "string", description: "Lệnh terminal cần thực thi." }
       },
-      required: ["operations"]
+      required: ["command"]
     }
   },
-  APPLY_DIFF_BLOCKS: {
-    name: "apply_diff_blocks",
-    description: "Sửa đổi nội dung file bằng định dạng SEARCH/REPLACE Diff blocks. Đoạn code trong search_block PHẢI khớp chính xác 100% từng khoảng trắng, thụt lề với file gốc.",
+  READ: {
+    name: "read",
+    description: "Đọc nội dung của file từ ổ đĩa. Hỗ trợ phân trang bằng offset và limit để đọc các file lớn mà không bị tràn token.",
     parameters: {
       type: "object",
       properties: {
-        edits: {
-          type: "array",
-          description: "Danh sách các file cần sửa",
-          items: {
-            type: "object",
-            properties: {
-              file_path: { type: "string", description: "Đường dẫn file" },
-              blocks: {
-                type: "array",
-                description: "Mảng chứa các khối search/replace",
-                items: {
-                  type: "object",
-                  properties: {
-                    search_block: { type: "string", description: "Mã nguồn gốc cần tìm (Khớp 100%)" },
-                    replace_block: { type: "string", description: "Mã nguồn mới thay thế" }
-                  },
-                  required: ["search_block", "replace_block"]
-                }
-              }
-            },
-            required: ["file_path", "blocks"]
-          }
-        }
+        file_path: { type: "string", description: "Đường dẫn file (tương đối từ gốc dự án)." },
+        offset: { type: "number", description: "Dòng bắt đầu đọc (1-indexed). Mặc định là 1." },
+        limit: { type: "number", description: "Số lượng dòng tối đa muốn đọc. Mặc định là 2000." }
       },
-      required: ["edits"]
+      required: ["file_path"]
     }
   },
-  GIT_STATUS: {
-    name: "git_status",
-    description: "Xem trạng thái các file bị thay đổi và nội dung diff chi tiết. Mặc định sẽ trả về toàn bộ diff để bạn phân tích, trừ khi bạn chỉ cần cấu hình cây thư mục thì đặt include_diff=false.",
+  WRITE: {
+    name: "write",
+    description: "Tạo mới hoặc ghi đè HOÀN TOÀN nội dung vào một file. Không dùng tool này để sửa một vài dòng (hãy dùng tool 'edit' thay thế).",
     parameters: {
       type: "object",
       properties: {
-        include_diff: {
-          type: "boolean",
-          description: "Mặc định là true. Nếu false, chỉ trả về danh sách các file bị ảnh hưởng.",
-        },
+        file_path: { type: "string", description: "Đường dẫn file (tương đối từ gốc dự án)." },
+        content: { type: "string", description: "Nội dung hoàn chỉnh của file." }
       },
-    },
+      required: ["file_path", "content"]
+    }
   },
-  GIT_COMMIT_ALL: {
-    name: "git_commit_all",
-    description: "Tự động thêm tất cả thay đổi (git add .) và commit với nội dung chỉ định.",
+  EDIT: {
+    name: "edit",
+    description: "Sửa đổi nội dung file bằng cách thay thế chuỗi chính xác (Exact string replacement). Đảm bảo 'old_string' khớp 100% với mã nguồn hiện tại bao gồm cả khoảng trắng và thụt lề (indentation).",
     parameters: {
       type: "object",
       properties: {
-        message: { type: "string", description: "Nội dung commit message." }
+        file_path: { type: "string", description: "Đường dẫn file (tương đối từ gốc dự án)." },
+        old_string: { type: "string", description: "Chuỗi code cũ cần được thay thế (Phải khớp chính xác tuyệt đối)." },
+        new_string: { type: "string", description: "Chuỗi code mới sẽ được thay vào." },
+        replace_all: { type: "boolean", description: "Thay thế tất cả các lần xuất hiện của old_string. Mặc định: false" }
       },
-      required: ["message"]
-    },
+      required: ["file_path", "old_string", "new_string"]
+    }
   },
-  GIT_PUSH: {
-    name: "git_push",
-    description: "Đẩy các commit lên remote repository (git push).",
-    parameters: {
-      type: "object",
-      properties: {},
-    },
-  },
-  GIT_CREATE_BRANCH: {
-    name: "git_create_branch",
-    description: "Tạo một nhánh mới và chuyển sang nhánh đó (git checkout -b <branch_name>).",
+  GLOB: {
+    name: "glob",
+    description: "Tìm kiếm đường dẫn file trong dự án bằng mẫu glob pattern (ví dụ: 'src/**/*.ts', '*.md'). Rất nhanh và nhẹ.",
     parameters: {
       type: "object",
       properties: {
-        branch_name: { type: "string", description: "Tên nhánh muốn tạo." }
+        pattern: { type: "string", description: "Mẫu glob để tìm kiếm." }
       },
-      required: ["branch_name"]
-    },
+      required: ["pattern"]
+    }
   },
-  GIT_SWITCH_BRANCH: {
-    name: "git_switch_branch",
-    description: "Chuyển sang một nhánh đã tồn tại (git checkout <branch_name>).",
+  GREP: {
+    name: "grep",
+    description: "Tìm kiếm nội dung (chuỗi hoặc regex) bên trong các file của dự án. Trả về đường dẫn file, số dòng và nội dung dòng chứa từ khóa.",
     parameters: {
       type: "object",
       properties: {
-        branch_name: { type: "string", description: "Tên nhánh muốn chuyển tới." }
+        pattern: { type: "string", description: "Chuỗi hoặc Regex cần tìm." }
       },
-      required: ["branch_name"]
-    },
-  },
-  GIT_DELETE_BRANCH: {
-    name: "git_delete_branch",
-    description: "Xóa một nhánh cục bộ (git branch -D <branch_name>).",
-    parameters: {
-      type: "object",
-      properties: {
-        branch_name: { type: "string", description: "Tên nhánh muốn xóa." }
-      },
-      required: ["branch_name"]
-    },
+      required: ["pattern"]
+    }
   }
 };
 
@@ -284,14 +235,13 @@ function getAvailableTools(
     tools.push(ALL_TOOLS.CREATE_CONTEXT_GROUP);
     tools.push(ALL_TOOLS.MODIFY_CONTEXT_GROUP);
     tools.push(ALL_TOOLS.ADD_EXCLUSION_RANGE_TO_FILE);
-    tools.push(ALL_TOOLS.MANAGE_FILESYSTEM);
-    tools.push(ALL_TOOLS.APPLY_DIFF_BLOCKS);
-    tools.push(ALL_TOOLS.GIT_STATUS);
-    tools.push(ALL_TOOLS.GIT_COMMIT_ALL);
-    tools.push(ALL_TOOLS.GIT_PUSH);
-    tools.push(ALL_TOOLS.GIT_CREATE_BRANCH);
-    tools.push(ALL_TOOLS.GIT_SWITCH_BRANCH);
-    tools.push(ALL_TOOLS.GIT_DELETE_BRANCH);
+    // Opencode Primitives
+    tools.push(ALL_TOOLS.BASH);
+    tools.push(ALL_TOOLS.READ);
+    tools.push(ALL_TOOLS.WRITE);
+    tools.push(ALL_TOOLS.EDIT);
+    tools.push(ALL_TOOLS.GLOB);
+    tools.push(ALL_TOOLS.GREP);
     if (editingGroupId) {
       tools.push(ALL_TOOLS.GET_CURRENT_CONTEXT_GROUP_FILES);
     }

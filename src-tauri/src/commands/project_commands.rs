@@ -554,6 +554,50 @@ pub async fn execute_terminal_command(root_path_str: String, command: String) ->
 }
 
 #[command]
+pub fn glob_search(root_path_str: String, pattern: String) -> Result<Vec<String>, String> {
+    let mut results = Vec::new();
+    let re_str = format!("^{}$", pattern.replace(".", "\\.").replace("*", ".*").replace("?", "."));
+    let re = regex::Regex::new(&re_str).map_err(|e| e.to_string())?;
+
+    for result in ignore::WalkBuilder::new(&root_path_str).build().filter_map(Result::ok) {
+        if result.path().is_file() {
+            if let Ok(rel_path) = result.path().strip_prefix(&root_path_str) {
+                let rel_path_str = rel_path.to_string_lossy().replace("\\", "/");
+                if re.is_match(&rel_path_str) {
+                    results.push(rel_path_str);
+                    if results.len() > 1000 { break; }
+                }
+            }
+        }
+    }
+    Ok(results)
+}
+
+#[command]
+pub fn grep_search(root_path_str: String, pattern: String) -> Result<Vec<String>, String> {
+    let mut results = Vec::new();
+    let re = regex::Regex::new(&pattern).map_err(|e| e.to_string())?;
+    
+    for result in ignore::WalkBuilder::new(&root_path_str).build().filter_map(Result::ok) {
+        if result.path().is_file() {
+            if let Ok(content) = std::fs::read_to_string(result.path()) {
+                if let Ok(rel_path) = result.path().strip_prefix(&root_path_str) {
+                    let rel_path_str = rel_path.to_string_lossy().replace("\\", "/");
+                    for (i, line) in content.lines().enumerate() {
+                        if re.is_match(line) {
+                            results.push(format!("{}:{}: {}", rel_path_str, i + 1, line.trim()));
+                            if results.len() > 500 { break; }
+                        }
+                    }
+                }
+            }
+        }
+        if results.len() > 500 { break; }
+    }
+    Ok(results)
+}
+
+#[command]
 pub fn update_file_exclusions(
     app: AppHandle,
     path: String,

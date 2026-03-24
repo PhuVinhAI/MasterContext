@@ -17,11 +17,10 @@ import {
   ChevronDown,
   ChevronUp,
   FileEdit,
-  FileDiff,
-  GitBranch,
-  GitCommit,
-  UploadCloud,
-  FileSearch,
+  Terminal,
+  Pencil,
+  Search,
+  Files,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type ChatMessage as ChatMessageType } from "@/store/types";
@@ -230,149 +229,88 @@ export function ChatMessage({
         }
         break;
 
-      case "manage_filesystem":
+      case "bash":
+        ToolIcon = Terminal;
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          toolContent = (
+            <p className="font-medium text-foreground">
+              {t("aiPanel.toolCall.bash")} <code className="ml-1 text-xs text-muted-foreground truncate max-w-[300px] inline-block align-bottom">{args.command}</code>
+            </p>
+          );
+        } catch (e) {
+          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.bash")}</p>;
+        }
+        break;
+
+      case "read":
+        ToolIcon = FileText;
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const filePath = args.file_path ?? "unknown";
+          toolContent = (
+            <p className="font-medium text-foreground">
+              {t("aiPanel.toolCall.read")} <code className="ml-1 text-xs text-muted-foreground">{filePath}</code>
+            </p>
+          );
+        } catch (e) {
+          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.read")}</p>;
+        }
+        break;
+
+      case "write":
         ToolIcon = FileEdit;
         try {
           const args = JSON.parse(tool.function.arguments);
-          const ops: any[] = args.operations || [];
           toolContent = (
-            <div className="w-full">
-              <p className="font-medium text-foreground">
-                {t("aiPanel.toolCall.manageFilesystemCount", { count: ops.length })}
-              </p>
-              {ops.length > 0 && (
-                <pre className="mt-2 bg-muted/30 dark:bg-muted/20 p-2 rounded-md text-xs font-mono max-h-40 overflow-auto custom-scrollbar">
-                  <code>
-                    {ops.map((op, idx) => {
-                      const detail = tool.detailed_results?.[idx];
-                      return (
-                        <div key={idx} className="whitespace-pre-wrap flex items-baseline gap-1.5">
-                           <span className="select-none text-muted-foreground">
-                              {detail?.status === 'error' ? <XCircle className="h-3 w-3 text-destructive inline" /> : <CheckCircle2 className="h-3 w-3 text-green-500 inline" />}
-                           </span>
-                           <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                              [{t(`aiPanel.toolCall.actions.${op.action}` as any, { defaultValue: op.action })}]
-                           </span>
-                           <span title={op.path} className={cn(detail?.status === 'error' && "text-destructive line-through")}>{op.path}</span>
-                        </div>
-                      );
-                    })}
-                  </code>
-                </pre>
-              )}
-            </div>
+            <p className="font-medium text-foreground">
+              {t("aiPanel.toolCall.write")} <code className="ml-1 text-xs text-muted-foreground">{args.file_path}</code>
+            </p>
           );
         } catch (e) {
-          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.manageFilesystem")}</p>;
+          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.write")}</p>;
         }
         break;
 
-      case "apply_diff_blocks":
-        ToolIcon = FileDiff;
-        try {
-          const args = JSON.parse(tool.function.arguments);
-          const edits: any[] = args.edits || [];
-          toolContent = (
-            <div className="w-full">
-              <p className="font-medium text-foreground">
-                {t("aiPanel.toolCall.applyDiffBlocksCount", { count: edits.length })}
-              </p>
-              {edits.length > 0 && (
-                <pre className="mt-2 bg-muted/30 dark:bg-muted/20 p-2 rounded-md text-xs font-mono max-h-40 overflow-auto custom-scrollbar">
-                  <code>
-                    {edits.map((edit, idx) => {
-                      const detail = tool.detailed_results?.[idx];
-                      return (
-                        <div key={idx} className="whitespace-pre-wrap flex items-baseline gap-1.5">
-                           <span className="select-none text-muted-foreground">
-                              {detail?.status === 'error' ? <XCircle className="h-3 w-3 text-destructive inline" /> : <CheckCircle2 className="h-3 w-3 text-green-500 inline" />}
-                           </span>
-                           <span className={cn("text-blue-600 dark:text-blue-400", detail?.status === 'error' && "text-destructive line-through")} title={edit.file_path}>{edit.file_path}</span>
-                           <span className="text-muted-foreground text-[10px]">{edit.blocks?.length || 0} blocks</span>
-                        </div>
-                      );
-                    })}
-                  </code>
-                </pre>
-              )}
-            </div>
-          );
-        } catch (e) {
-          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.applyDiffBlocks")}</p>;
-        }
-        break;
-
-      case "git_status":
-        ToolIcon = FileSearch;
-        toolContent = (
-          <p className="font-medium text-foreground">
-            {t("aiPanel.toolCall.gitStatus")}
-          </p>
-        );
-        break;
-
-      case "git_commit_all":
-        ToolIcon = GitCommit;
+      case "edit":
+        ToolIcon = Pencil;
         try {
           const args = JSON.parse(tool.function.arguments);
           toolContent = (
             <p className="font-medium text-foreground">
-              {t("aiPanel.toolCall.gitCommitAll")} <code className="ml-1 text-xs text-muted-foreground">"{args.message}"</code>
+              {t("aiPanel.toolCall.edit")} <code className="ml-1 text-xs text-muted-foreground">{args.file_path}</code>
             </p>
           );
         } catch (e) {
-          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.gitCommitAll")}</p>;
+          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.edit")}</p>;
         }
         break;
 
-      case "git_push":
-        ToolIcon = UploadCloud;
-        toolContent = (
-          <p className="font-medium text-foreground">
-            {t("aiPanel.toolCall.gitPush")}
-          </p>
-        );
-        break;
-
-      case "git_create_branch":
-        ToolIcon = GitBranch;
+      case "glob":
+        ToolIcon = Files;
         try {
           const args = JSON.parse(tool.function.arguments);
           toolContent = (
             <p className="font-medium text-foreground">
-              {t("aiPanel.toolCall.gitCreateBranch")} <code className="ml-1 text-xs text-muted-foreground">{args.branch_name}</code>
+              {t("aiPanel.toolCall.glob")} <code className="ml-1 text-xs text-muted-foreground">{args.pattern}</code>
             </p>
           );
         } catch (e) {
-          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.gitCreateBranch")}</p>;
+          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.glob")}</p>;
         }
         break;
 
-      case "git_switch_branch":
-        ToolIcon = GitBranch;
+      case "grep":
+        ToolIcon = Search;
         try {
           const args = JSON.parse(tool.function.arguments);
           toolContent = (
             <p className="font-medium text-foreground">
-              {t("aiPanel.toolCall.gitSwitchBranch")} <code className="ml-1 text-xs text-muted-foreground">{args.branch_name}</code>
+              {t("aiPanel.toolCall.grep")} <code className="ml-1 text-xs text-muted-foreground truncate max-w-[200px] inline-block align-bottom">{args.pattern}</code>
             </p>
           );
         } catch (e) {
-          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.gitSwitchBranch")}</p>;
-        }
-        break;
-
-      case "git_delete_branch":
-        ToolIcon = GitBranch;
-        try {
-          const args = JSON.parse(tool.function.arguments);
-          toolContent = (
-            <p className="font-medium text-foreground">
-              {t("aiPanel.toolCall.gitDeleteBranch")} <code className="ml-1 text-xs text-muted-foreground line-through decoration-destructive">{args.branch_name}</code>
-            </p>
-          );
-        } catch (e) {
-          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.gitDeleteBranch")}</p>;
+          toolContent = <p className="font-medium text-foreground">{t("aiPanel.toolCall.grep")}</p>;
         }
         break;
 

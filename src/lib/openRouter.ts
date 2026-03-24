@@ -66,16 +66,15 @@ export const handleToolCalls = async (
             .join("");
       }
       toolSucceeded = true;
-    } else if (tool.function.name === "read_file") {
+    } else if (tool.function.name === "read_file" || tool.function.name === "read") {
       const { rootPath } = getState();
       if (!rootPath) {
         toolResultContent = "Error: Project path is not available to read file.";
       } else {
         try {
           const args = JSON.parse(tool.function.arguments);
-          // Hỗ trợ cả định dạng cũ (file_path) và mới (files_to_read)
           const filesToRead = args.files_to_read || (args.file_path ? [args] : []);
-
+          
           if (filesToRead.length === 0) {
             toolResultContent = "Error: No files specified to read.";
             toolSucceeded = false;
@@ -86,13 +85,27 @@ export const handleToolCalls = async (
 
             for (const fileReq of filesToRead) {
               try {
+                // Hỗ trợ cả chuẩn cũ (start_line, end_line) và chuẩn Opencode (offset, limit)
+                let startLine = fileReq.start_line;
+                let endLine = fileReq.end_line;
+
+                if (fileReq.offset) {
+                  startLine = fileReq.offset;
+                  endLine = startLine + (fileReq.limit || 2000) - 1;
+                }
+
                 const content = await invoke<string>("read_file_with_lines", {
                   rootPathStr: rootPath,
                   fileRelPath: fileReq.file_path,
-                  startLine: fileReq.start_line,
-                  endLine: fileReq.end_line,
+                  startLine: startLine,
+                  endLine: endLine,
                 });
-                combinedResults += `--- START OF FILE ${fileReq.file_path} ${fileReq.start_line ? `(Lines ${fileReq.start_line}-${fileReq.end_line})` : ''} ---\n${content}\n--- END OF FILE ${fileReq.file_path} ---\n\n`;
+                
+                // Trả về định dạng line-numbered giống Opencode
+                const lines = content.split('\n');
+                const numberedLines = lines.map((line, idx) => `${(startLine || 1) + idx}: ${line}`).join('\n');
+
+                combinedResults += `--- START OF FILE ${fileReq.file_path} ---\n${numberedLines}\n--- END OF FILE ${fileReq.file_path} ---\n\n`;
                 successCount++;
                 detailedResults.push({ status: "success", message: "OK" });
               } catch (err) {
@@ -217,204 +230,117 @@ export const handleToolCalls = async (
         toolResultContent = `Error creating group: ${e}`;
         toolSucceeded = false;
       }
-    } else if (tool.function.name === "manage_filesystem") {
-      const { rootPath, gitRepoInfo } = getState();
-      if (!gitRepoInfo?.isRepository) {
-        toolResultContent = "Error: Project must be a Git repository to use file modification tools. This is a strict safety policy. Please initialize Git first.";
-      } else if (!rootPath) {
-        toolResultContent = "Error: Project path not found.";
-      } else {
-        try {
-          const args = JSON.parse(tool.function.arguments);
-          const ops = args.operations || [];
-          let combinedResults = "";
-          let successCount = 0;
-          const detailedResults: any[] = [];
-
-          for (const op of ops) {
-            try {
-              if (op.action === "create_file") {
-                await invoke("create_file", { rootPathStr: rootPath, fileRelPath: op.path, content: op.content || "" });
-                combinedResults += `[SUCCESS] Created file: ${op.path}\n`;
-              } else if (op.action === "delete") {
-                await invoke("delete_file", { rootPathStr: rootPath, fileRelPath: op.path });
-                combinedResults += `[SUCCESS] Deleted: ${op.path}\n`;
-              } else if (op.action === "create_dir") {
-                await invoke("create_directory", { rootPathStr: rootPath, dirRelPath: op.path });
-                combinedResults += `[SUCCESS] Created directory: ${op.path}\n`;
-              } else {
-                throw new Error(`Unknown action: ${op.action}`);
-              }
-              successCount++;
-              detailedResults.push({ status: "success", message: "OK" });
-            } catch (err) {
-              combinedResults += `[ERROR] Action ${op.action} on ${op.path} failed: ${err}\n`;
-              detailedResults.push({ status: "error", message: String(err) });
-            }
-          }
-          toolResultContent = combinedResults.trim() || "No operations executed.";
-          toolCalls[i].detailed_results = detailedResults;
-
-          if (successCount === ops.length) toolCalls[i].status = "success";
-          else if (successCount > 0) toolCalls[i].status = "partial";
-          else toolCalls[i].status = "error";
-
-          toolSucceeded = successCount > 0;
-        } catch (e) {
-          toolResultContent = `Error parsing operations: ${e}`;
-        }
-      }
-    } else if (tool.function.name === "apply_diff_blocks") {
-      const { rootPath, gitRepoInfo } = getState();
-      if (!gitRepoInfo?.isRepository) {
-        toolResultContent = "Error: Project must be a Git repository to use file modification tools. This is a strict safety policy. Please initialize Git first.";
-      } else if (!rootPath) {
-        toolResultContent = "Error: Project path not found.";
-      } else {
-        try {
-          const args = JSON.parse(tool.function.arguments);
-          const edits = args.edits || [];
-          let combinedResults = "";
-          let successCount = 0;
-
-          const detailedResults: any[] = [];
-          for (const edit of edits) {
-            try {
-              // Defensive Parsing: Handle hallucinated JSON structures where 'blocks' array is missing
-              let rawBlocks = [];
-              if (Array.isArray(edit.blocks)) {
-                rawBlocks = edit.blocks;
-              } else if (edit.search_block && edit.replace_block) {
-                rawBlocks = [edit];
-              } else {
-                throw new Error(`Malformed JSON: 'blocks' array is missing for file ${edit.file_path || 'unknown'}.`);
-              }
-
-              const blocks = rawBlocks.map((b: any) => ({
-                search: b.search_block,
-                replace: b.replace_block
-              }));
-
-              await invoke("apply_multiple_search_replace", {
-                rootPathStr: rootPath,
-                fileRelPath: edit.file_path,
-                blocks
-              });
-              combinedResults += `[SUCCESS] Applied ${blocks.length} diff block(s) to ${edit.file_path}\n`;
-              successCount++;
-              detailedResults.push({ status: "success", message: "OK" });
-            } catch (err) {
-              combinedResults += `[ERROR] Failed to apply diff to ${edit.file_path}: ${err}\n-> HÀNH ĐỘNG BẮT BUỘC: Bạn đã cung cấp sai search_block (sai khoảng trắng, thụt lề, hoặc code đã bị thay đổi). KHÔNG ĐƯỢC thử lại diff cũ. Hãy gọi ngay tool 'read_file' để lấy nội dung file mới nhất, sau đó mới tạo ra diff mới chuẩn xác.\n`;
-              detailedResults.push({ status: "error", message: String(err) });
-            }
-          }
-          toolResultContent = combinedResults.trim() || "No diffs executed.";
-          toolCalls[i].detailed_results = detailedResults;
-
-          if (successCount === edits.length) toolCalls[i].status = "success";
-          else if (successCount > 0) toolCalls[i].status = "partial";
-          else toolCalls[i].status = "error";
-
-          toolSucceeded = successCount > 0;
-        } catch (e) {
-          toolResultContent = `Error parsing diff blocks: ${e}`;
-        }
-      }
-    } else if (tool.function.name === "git_status") {
+    } else if (tool.function.name === "bash") {
       const { rootPath } = getState();
       if (!rootPath) {
         toolResultContent = "Error: Project path not found.";
       } else {
         try {
           const args = JSON.parse(tool.function.arguments);
-          const status = await invoke("get_git_status", { 
-            path: rootPath,
-            includeDiff: args.include_diff !== undefined ? args.include_diff : true 
+          const result = await invoke<string>("execute_terminal_command", {
+            rootPathStr: rootPath,
+            command: args.command,
           });
-          toolResultContent = JSON.stringify(status, null, 2);
+          toolResultContent = `[BASH OUTPUT]\n${result}`;
           toolSucceeded = true;
-        } catch (e) {
-          toolResultContent = `Error fetching git status: ${e}`;
-        }
-      }
-    } else if (tool.function.name === "git_commit_all") {
-      const { rootPath } = getState();
-      if (!rootPath) {
-        toolResultContent = "Error: Project path not found.";
-      } else {
-        try {
-          const args = JSON.parse(tool.function.arguments);
-          const result = await invoke<string>("git_commit_all", { path: rootPath, message: args.message });
-          toolResultContent = `[SUCCESS] Git Commit All executed:\n${result}`;
-          toolSucceeded = true;
-          getState().actions.checkGitRepo();
-        } catch (e) {
-          toolResultContent = `Error during git commit: ${e}`;
-        }
-      }
-    } else if (tool.function.name === "git_push") {
-      const { rootPath } = getState();
-      if (!rootPath) {
-        toolResultContent = "Error: Project path not found.";
-      } else {
-        try {
-          const result = await invoke<string>("git_push", { path: rootPath });
-          toolResultContent = `[SUCCESS] Git Push executed:\n${result}`;
-          toolSucceeded = true;
-          getState().actions.checkGitRepo();
-        } catch (e) {
-          toolResultContent = `Error during git push: ${e}`;
-        }
-      }
-    } else if (tool.function.name === "git_create_branch") {
-      const { rootPath } = getState();
-      if (!rootPath) {
-        toolResultContent = "Error: Project path not found.";
-      } else {
-        try {
-          const args = JSON.parse(tool.function.arguments);
-          const result = await invoke<string>("git_create_branch", { path: rootPath, branchName: args.branch_name });
-          toolResultContent = `[SUCCESS] Git Create Branch executed:\n${result}`;
-          toolSucceeded = true;
-          getState().actions.checkGitRepo();
-        } catch (e) {
-          toolResultContent = `Error during git branch creation: ${e}`;
-        }
-      }
-    } else if (tool.function.name === "git_switch_branch") {
-      const { rootPath } = getState();
-      if (!rootPath) {
-        toolResultContent = "Error: Project path not found.";
-      } else {
-        try {
-          const args = JSON.parse(tool.function.arguments);
-          await invoke("checkout_branch", { path: rootPath, branch: args.branch_name });
-          toolResultContent = `[SUCCESS] Switched to branch: ${args.branch_name}`;
-          toolSucceeded = true;
-          getState().actions.checkGitRepo();
           requiresRescan = true;
         } catch (e) {
-          toolResultContent = `Error switching branch: ${e}`;
+          toolResultContent = `Error executing bash: ${e}`;
+          toolSucceeded = false;
         }
       }
-    } else if (tool.function.name === "git_delete_branch") {
+    } else if (tool.function.name === "write") {
       const { rootPath } = getState();
       if (!rootPath) {
         toolResultContent = "Error: Project path not found.";
       } else {
         try {
           const args = JSON.parse(tool.function.arguments);
-          const result = await invoke<string>("git_delete_branch", { path: rootPath, branchName: args.branch_name });
-          toolResultContent = `[SUCCESS] Git Delete Branch executed:\n${result}`;
+          await invoke("create_file", {
+            rootPathStr: rootPath,
+            fileRelPath: args.file_path,
+            content: args.content || "",
+          });
+          toolResultContent = `[SUCCESS] File written: ${args.file_path}`;
           toolSucceeded = true;
-          getState().actions.checkGitRepo();
+          requiresRescan = true;
         } catch (e) {
-          toolResultContent = `Error deleting branch: ${e}`;
+          toolResultContent = `Error writing file: ${e}`;
+          toolSucceeded = false;
+        }
+      }
+    } else if (tool.function.name === "edit") {
+      const { rootPath } = getState();
+      if (!rootPath) {
+        toolResultContent = "Error: Project path not found.";
+      } else {
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          if (args.replace_all) {
+            await invoke("apply_multiple_search_replace", {
+              rootPathStr: rootPath,
+              fileRelPath: args.file_path,
+              blocks: [{ search: args.old_string, replace: args.new_string }]
+            });
+          } else {
+            await invoke("apply_search_replace", {
+              rootPathStr: rootPath,
+              fileRelPath: args.file_path,
+              searchText: args.old_string,
+              replaceText: args.new_string,
+            });
+          }
+          toolResultContent = `[SUCCESS] File edited: ${args.file_path}`;
+          toolSucceeded = true;
+          requiresRescan = true;
+        } catch (e) {
+          toolResultContent = `[ERROR] Failed to edit file: ${e}\n-> HÀNH ĐỘNG BẮT BUỘC: Chuỗi 'old_string' của bạn không khớp 100% với mã nguồn gốc (thụt lề, khoảng trắng). Hãy gọi 'read' để kiểm tra lại file gốc.`;
+          toolSucceeded = false;
+        }
+      }
+    } else if (tool.function.name === "glob") {
+      const { rootPath } = getState();
+      if (!rootPath) {
+        toolResultContent = "Error: Project path not found.";
+      } else {
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const result = await invoke<string[]>("glob_search", {
+            rootPathStr: rootPath,
+            pattern: args.pattern,
+          });
+          toolResultContent = result.length > 0 
+            ? `[MATCHING FILES]\n${result.join("\n")}` 
+            : "No files found matching the pattern.";
+          toolSucceeded = true;
+        } catch (e) {
+          toolResultContent = `Error executing glob: ${e}`;
+          toolSucceeded = false;
+        }
+      }
+    } else if (tool.function.name === "grep") {
+      const { rootPath } = getState();
+      if (!rootPath) {
+        toolResultContent = "Error: Project path not found.";
+      } else {
+        try {
+          const args = JSON.parse(tool.function.arguments);
+          const result = await invoke<string[]>("grep_search", {
+            rootPathStr: rootPath,
+            pattern: args.pattern,
+          });
+          toolResultContent = result.length > 0 
+            ? `[MATCHING LINES]\n${result.join("\n")}` 
+            : "No content found matching the regex pattern.";
+          toolSucceeded = true;
+        } catch (e) {
+          toolResultContent = `Error executing grep: ${e}`;
+          toolSucceeded = false;
         }
       }
     }
 
-    if (toolSucceeded && ["manage_filesystem", "apply_diff_blocks"].includes(tool.function.name)) {
+    if (toolSucceeded && ["write", "edit", "bash"].includes(tool.function.name)) {
       requiresRescan = true;
     }
 

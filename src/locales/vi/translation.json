@@ -228,21 +228,12 @@
       "gettingDummyContext": "Đang phân tích cấu trúc mã nguồn (Dummy DLLs)...",
       "creatingGroup": "Đang tạo nhóm ngữ cảnh:",
       "creatingGroupFallback": "Đang tạo nhóm ngữ cảnh...",
-      "manageFilesystem": "Thực thi tác vụ Hệ thống File",
-      "manageFilesystemCount": "Thực thi tác vụ Hệ thống File ({{count}} tác vụ)",
-      "applyDiffBlocks": "Áp dụng Bản vá (Diff Blocks)",
-      "applyDiffBlocksCount": "Áp dụng Bản vá Diff Blocks ({{count}} file)",
-      "actions": {
-        "create_file": "Tạo tệp",
-        "delete": "Xóa",
-        "create_dir": "Tạo thư mục"
-      },
-      "gitStatus": "Xem trạng thái thay đổi Git",
-      "gitCommitAll": "Git Commit:",
-      "gitPush": "Đẩy mã nguồn (Git Push) lên Remote",
-      "gitCreateBranch": "Tạo & chuyển sang nhánh mới:",
-      "gitSwitchBranch": "Chuyển sang nhánh:",
-      "gitDeleteBranch": "Xóa nhánh cục bộ:"
+      "bash": "Đang chạy Terminal...",
+      "read": "Đang đọc nội dung file...",
+      "write": "Đang ghi đè file...",
+      "edit": "Đang chỉnh sửa file...",
+      "glob": "Đang tìm kiếm file...",
+      "grep": "Đang tìm nội dung trong mã nguồn..."
     },
     "addedExclusion": "Đã thêm vùng loại trừ cho",
     "addedExclusionError": "Không thể thêm vùng loại trừ cho"
